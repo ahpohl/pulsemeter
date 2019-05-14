@@ -8,10 +8,14 @@ private:
 
 public:
 	~Pulse(void);
+
+	// sensor methods
 	int OpenSerialPort(const char * device);
 	void SetTriggerLevel(int low, int high);
 	void RawMode(void);
 	void TriggerMode(void);
+
+	// RRD data methods
 	void CreateRRDFile(const char * file);
 };
 
