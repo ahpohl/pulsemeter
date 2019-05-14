@@ -12,60 +12,39 @@
 #include <errno.h> // error integer and strerror() function
 
 // program headers
-#include "aurora.h"
-#include "constants.h"
-#include "strings.h"
+#include "pulse.h"
 
 using namespace std;
 
-Aurora::Aurora(string device, int address)
-	:SerialDevice(device), InverterAddress(address)
+// destructor
+Pulse::~Pulse(void)
 {
-	OpenSerialConnection();
-	SetupSerialConnection();
-	//ReadSerialConnection();
+	// close serial port
+	if (SerialPort > 0)
+    {
+        close(SerialPort);
+    }
 }
 
-Aurora::~Aurora(void)
+int Pulse::OpenSerialPort(const char * device)
 {
-	CloseSerialConnection();
-}
+	int ret = 0;
+	struct termios tty;
 
-int Aurora::OpenSerialConnection(void)
-{	
-	SerialPort = open(SerialDevice.c_str(), O_RDWR | O_NOCTTY);
-	
-	// error handling
+	// open serial port	
+	SerialPort = open(device, O_RDWR | O_NOCTTY);
 	if (SerialPort < 0)
 	{
-		cerr << "Error opening device " << SerialDevice << ": "
+		cerr << "Error opening device " << device << ": "
              << strerror(errno) << " (" << errno << ")" << endl;
-		return SerialPort;
+		return 1;
 	}
-	// success
 	else
 	{
-		cout << "Opened serial device " << SerialDevice << endl;
+		cout << "Opened serial device " << device << endl;
 	}
 
-	return SerialPort;
-}
-
-void Aurora::CloseSerialConnection(void)
-{
-	if (SerialPort > 0)
-	{
-		close(SerialPort);
-		cout << "Closed serial device " << SerialDevice << endl;
-	}	
-}
-
-int Aurora::SetupSerialConnection(void)
-{
-	int ret = 0; 
-
-	// create new termios struc, we call it 'tty' for convention
-    struct termios tty;
+	// init termios struct
     memset(&tty, 0, sizeof(tty));
 
     // read in existing settings
@@ -74,7 +53,7 @@ int Aurora::SetupSerialConnection(void)
     {
         cerr << "Error getting serial port attributes: " << strerror(errno) 
              << " (" << errno << ")" << endl;
-        return ret;
+        return 1;
     }
 
 	// set raw mode
@@ -85,8 +64,8 @@ int Aurora::SetupSerialConnection(void)
     tty.c_cc[VTIME] = 10; // wait for up to 1 second
 
     // set in/out baud rate to be 19200 baud
-    cfsetispeed(&tty, B19200);
-    cfsetospeed(&tty, B19200);
+    cfsetispeed(&tty, B9600);
+    cfsetospeed(&tty, B9600);
 
     // save tty settings
     ret = tcsetattr(SerialPort, TCSANOW, &tty);
@@ -94,22 +73,35 @@ int Aurora::SetupSerialConnection(void)
     {
 		cerr << "Error setting serial port attributes: " << strerror(errno)
              << " (" << errno << ")" << endl;
-		return ret;
+		return 1;
     }
 
-	return ret;
+	return 0;
 }
 
-int Aurora::ReadSerialConnection(void)
+// set trigger level
+void SetTriggerLevel(int low, int high)
 {
+
+}
+
+// put sensor into raw mode
+void Pulse::RawMode(void)
+{
+
+}
+
+// put sensor into trigger mode
+void Pulse::TriggerMode(void)
+{
+	char ReadBuf[256];
+
 	while (1)
     {
 		// reset buffer
         memset(&ReadBuf, '\0', sizeof(ReadBuf));
 
-        // Read bytes. The behaviour of read() (e.g. does it block?,
-        // how long does it block for?) depends on the configuration
-        // settings above, specifically VMIN and VTIME
+        // Read bytes
         ssize_t length = read(SerialPort, &ReadBuf, sizeof(ReadBuf));
 
 		if (length == -1)
@@ -123,31 +115,9 @@ int Aurora::ReadSerialConnection(void)
             cout.write((char *)ReadBuf, length);
         }
     }
-
-	return 0;
 }
 
-uint16_t Aurora::CRC(uint8_t *data, int count)
+void Pulse::CreateRRDFile(const char * file)
 {
-    uint8_t BccLo = 0xFF, BccHi = 0xFF;
-    uint8_t New = 0, Tmp = 0;
-	uint16_t crc = 0;
 
-    for (int i = 0; i < count; i++)
-    {
-        New = data[i] ^ BccLo;
-        Tmp = New << 4;
-        New = Tmp ^ New;
-        Tmp = New >> 5;
-        BccLo = BccHi;
-        BccHi = New ^ Tmp;
-        Tmp = New << 3;
-        BccLo = BccLo ^ Tmp;
-        Tmp = New >> 4;
-        BccLo = BccLo ^ Tmp;
-        crc = ((BccHi & 0xFF) << 8) | (BccLo & 0xFF);
-        crc = ~crc;
-    }
-
-    return crc;
-}
+]

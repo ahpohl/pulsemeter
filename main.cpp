@@ -1,12 +1,14 @@
 #include <iostream>
 #include <string>
-#include "aurora.h"
+#include "pulse.h"
 
 using namespace std;
 
 int main(int argc, char* argv[])
 {
-	Aurora inverter("/dev/ttyUSB0");
+	Pulse meter;
+	meter.OpenSerialPort("/dev/ttyACM0");
+	meter.ReadSerialPort();
 	
 	return 0;
 }
