@@ -8,7 +8,7 @@ int main(int argc, char* argv[])
 {
 	Pulse meter;
 	meter.OpenSerialPort("/dev/ttyACM0");
-	meter.ReadSerialPort();
+	meter.TriggerMode();
 	
 	return 0;
 }

@@ -120,4 +120,4 @@ void Pulse::TriggerMode(void)
 void Pulse::CreateRRDFile(const char * file)
 {
 
-]
+}

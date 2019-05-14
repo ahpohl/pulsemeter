@@ -9,7 +9,6 @@ private:
 public:
 	~Pulse(void);
 	int OpenSerialPort(const char * device);
-	void ReadSerialPort(void);
 	void SetTriggerLevel(int low, int high);
 	void RawMode(void);
 	void TriggerMode(void);
