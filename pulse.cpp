@@ -13,6 +13,7 @@
 
 // program headers
 #include "pulse.h"
+#include "cobs.h"
 
 using namespace std;
 
@@ -79,70 +80,41 @@ int Pulse::OpenSerialPort(const char * device)
 	return 0;
 }
 
-// read serial device into buffer
-int Pulse::ReadSerialPort(char * buffer, int size)
+// read raw sensor values
+void Pulse::ReadSerialRaw(void)
 {
+	const int buf_size = 256;
+	unsigned char serial_buffer[buf_size];
+    unsigned char encoded_buffer[buf_size];
+	unsigned char decoded_buffer[buf_size];
+	int decoded_length = 0, encoded_length = 0;
 	int length = 0;
-
-	// reset buffer
-    memset(buffer, '\0', size);
-
-   	// Read bytes
-	length = read(SerialPort, buffer, size);
-
-	// error handling
-    if (length == -1)
-    {
-		cerr << "Error reading serial port: " << strerror(errno)
-             << " (" << errno << ")" << endl;
-    }
-
-	return length;
-}
-
-// set sensor mode, R: raw, T: trigger
-void Pulse::SetSensorMode(char mode)
-{
-	const int BufSize = 256;
-    char ReadBuf[BufSize];
-	int length;
-	char msg[] = {'C','\n',mode,'\n'};
-
-	// put sensor in mode
-	length = write(SerialPort, msg, sizeof(msg)/sizeof(msg[0]));
-    if (length == -1)
-    {
-        cerr << "Error sending command: " << strerror(errno)
-             << " (" << errno << ")" << endl;
-    }
-	else if (mode == 'R')
-	{
-		cout << "Raw mode: " << length << " bytes written" << endl;
-	}
-	else if (mode == 'T')
-	{
-		cout << "Trigger mode: " << length << " bytes written" << endl;
-	}
-	else
-	{
-		cerr << "unknown mode" << endl;
-	}
 
     // print raw sensor values to console
     while (1)
     {		
-        // Read bytes
-        length = ReadSerialPort(ReadBuf, BufSize);
+    	// reset buffer
+    	memset(encoded_buffer, '\0', buf_size);
+
+    	// Read bytes
+		do {
+    		length = read(SerialPort, serial_buffer, buf_size);
+
+    		// error handling
+    		if (length == -1)
+    		{
+        		cerr << "Error reading serial port: " << strerror(errno)
+             	 	 << " (" << errno << ")" << endl;
+    		}
+		} while ( length < 8);
+
+		// decode packet data
+		decoded_length = cobs_decode(serial_buffer, length, decoded_buffer);
 
 		// write to console
-        cout.write(ReadBuf, length);
+        //cout.write((char *)decodedBuffer, length);
+		cout << decoded_length << " packet size" << endl;
     }
-}
-
-// set trigger level
-void Pulse::SetTriggerLevel(int low, int high)
-{
-
 }
 
 void Pulse::CreateRRDFile(const char * file)

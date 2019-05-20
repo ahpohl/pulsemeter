@@ -11,9 +11,7 @@ public:
 
 	// sensor methods
 	int OpenSerialPort(const char * device);
-	int ReadSerialPort(char * buffer, int size);
-	void SetTriggerLevel(int low, int high);
-	void SetSensorMode(char mode);
+	void ReadSerialRaw(void);
 
 	// RRD data methods
 	void CreateRRDFile(const char * file);

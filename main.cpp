@@ -7,9 +7,6 @@ using namespace std;
 
 int main(int argc, char* argv[])
 {
-   	Pulse meter;
-    meter.OpenSerialPort("/dev/ttyACM0");
-    
 	const struct option longOpts[] = {
         { "help", no_argument, NULL, 'h' },
         { "version", no_argument, NULL, 'V' },
@@ -22,6 +19,7 @@ int main(int argc, char* argv[])
     const char* optString = "hVvtr";
     int opt = 0;
     int longIndex = 0;
+	char mode = '\0';
 
     do {
         opt = getopt_long( argc, argv, optString, longOpts, &longIndex );
@@ -36,11 +34,11 @@ int main(int argc, char* argv[])
             break;
 
         case 't':
-            meter.SetSensorMode('T');
+            mode = 'T';
             break;
 
         case 'r':
-            meter.SetSensorMode('R');
+            mode = 'R';
             break;
 
 		default:
@@ -48,6 +46,10 @@ int main(int argc, char* argv[])
         }
 
 	} while (opt != -1);
+
+	Pulse meter;
+    meter.OpenSerialPort("/dev/ttyACM0");
+	meter.ReadSerialRaw();
 	
 	return 0;
 }
