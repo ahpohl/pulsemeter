@@ -79,42 +79,70 @@ int Pulse::OpenSerialPort(const char * device)
 	return 0;
 }
 
-// set trigger level
-void SetTriggerLevel(int low, int high)
+// read serial device into buffer
+int Pulse::ReadSerialPort(char * buffer, int size)
 {
+	int length = 0;
 
-}
+	// reset buffer
+    memset(buffer, '\0', size);
 
-// put sensor into raw mode
-void Pulse::RawMode(void)
-{
+   	// Read bytes
+	length = read(SerialPort, buffer, size);
 
-}
-
-// put sensor into trigger mode
-void Pulse::TriggerMode(void)
-{
-	char ReadBuf[256];
-
-	while (1)
+	// error handling
+    if (length == -1)
     {
-		// reset buffer
-        memset(&ReadBuf, '\0', sizeof(ReadBuf));
-
-        // Read bytes
-        ssize_t length = read(SerialPort, &ReadBuf, sizeof(ReadBuf));
-
-		if (length == -1)
-        {
-			cerr << "Error reading serial port: " << strerror(errno)
-				 << " (" << errno << ")" << endl;
-            break;
-        }
-        else
-        {
-            cout.write((char *)ReadBuf, length);
-        }
+		cerr << "Error reading serial port: " << strerror(errno)
+             << " (" << errno << ")" << endl;
     }
+
+	return length;
+}
+
+// set sensor mode, R: raw, T: trigger
+void Pulse::SetSensorMode(char mode)
+{
+	const int BufSize = 256;
+    char ReadBuf[BufSize];
+	int length;
+	char msg[] = {'C','\n',mode,'\n'};
+
+	// put sensor in mode
+	length = write(SerialPort, msg, sizeof(msg)/sizeof(msg[0]));
+    if (length == -1)
+    {
+        cerr << "Error sending command: " << strerror(errno)
+             << " (" << errno << ")" << endl;
+    }
+	else if (mode == 'R')
+	{
+		cout << "Raw mode: " << length << " bytes written" << endl;
+	}
+	else if (mode == 'T')
+	{
+		cout << "Trigger mode: " << length << " bytes written" << endl;
+	}
+	else
+	{
+		cerr << "unknown mode" << endl;
+	}
+
+    // print raw sensor values to console
+    while (1)
+    {		
+        // Read bytes
+        length = ReadSerialPort(ReadBuf, BufSize);
+
+		// write to console
+        cout.write(ReadBuf, length);
+    }
+}
+
+// set trigger level
+void Pulse::SetTriggerLevel(int low, int high)
+{
+
 }
 
 void Pulse::CreateRRDFile(const char * file)
