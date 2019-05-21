@@ -3,6 +3,7 @@
 #include <string>
 #include <stdexcept>
 #include <typeinfo>
+#include <iomanip>
 
 // c headers
 #include <cstring>
@@ -61,7 +62,7 @@ int Pulse::OpenSerialPort(const char * device)
     cfmakeraw(&tty);
 
     // set vmin and vtime
-    tty.c_cc[VMIN] = 0; // returning as soon as any data is received
+    tty.c_cc[VMIN] = 16; // returning when 16 bytes are available
     tty.c_cc[VTIME] = 10; // wait for up to 1 second
 
     // set in/out baud rate to be 19200 baud
@@ -83,12 +84,27 @@ int Pulse::OpenSerialPort(const char * device)
 // read raw sensor values
 void Pulse::ReadSerialRaw(void)
 {
-	const int buf_size = 256;
-	unsigned char serial_buffer[buf_size];
+	const int buf_size = 16;
     unsigned char encoded_buffer[buf_size];
 	unsigned char decoded_buffer[buf_size];
-	int decoded_length = 0, encoded_length = 0;
 	int length = 0;
+	int packet_length = 0;
+	unsigned char header;
+
+	// synchronise with sensor data stream
+	do
+	{
+        // Read one byte at a time
+        length = read(SerialPort, &header, 1);
+
+        // error handling
+        if (length == -1)
+        {
+            cerr << "Error reading serial port: " << strerror(errno)
+                 << " (" << errno << ")" << endl;
+        }
+	}
+	while (header != 0x00); // test if read byte is a zero
 
     // print raw sensor values to console
     while (1)
@@ -97,23 +113,26 @@ void Pulse::ReadSerialRaw(void)
     	memset(encoded_buffer, '\0', buf_size);
 
     	// Read bytes
-		do {
-    		length = read(SerialPort, serial_buffer, buf_size);
+    	length = read(SerialPort, encoded_buffer, 7);
 
-    		// error handling
-    		if (length == -1)
-    		{
-        		cerr << "Error reading serial port: " << strerror(errno)
-             	 	 << " (" << errno << ")" << endl;
-    		}
-		} while ( length < 8);
+    	// error handling
+    	if (length == -1)
+    	{
+        	cerr << "Error reading serial port: " << strerror(errno)
+             	 << " (" << errno << ")" << endl;
+    	}
 
 		// decode packet data
-		decoded_length = cobs_decode(serial_buffer, length, decoded_buffer);
+		packet_length = cobs_decode(encoded_buffer, length-1, decoded_buffer);
 
 		// write to console
-        //cout.write((char *)decodedBuffer, length);
-		cout << decoded_length << " packet size" << endl;
+		for (int i = 0; i < 7; i++)
+		{
+        	//cout.write((char *)decoded_buffer, packet_length);
+			cout << setfill('0') << setw(2) << hex 
+				 << (unsigned short) encoded_buffer[i] << " ";
+		}
+		cout << endl;
     }
 }
 
