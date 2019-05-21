@@ -90,6 +90,7 @@ void Pulse::ReadSerialRaw(void)
 	int length = 0;
 	int packet_length = 0;
 	unsigned char header;
+	unsigned short crc = 0;
 
 	// synchronise with sensor data stream
 	do
@@ -123,17 +124,57 @@ void Pulse::ReadSerialRaw(void)
     	}
 
 		// decode packet data
-		packet_length = cobs_decode(encoded_buffer, length-1, decoded_buffer);
+		packet_length = cobs_decode(encoded_buffer, length, decoded_buffer);
 
 		// write to console
-		for (int i = 0; i < 7; i++)
+		for (int i = 0; i < packet_length-1; i++)
 		{
         	//cout.write((char *)decoded_buffer, packet_length);
 			cout << setfill('0') << setw(2) << hex 
-				 << (unsigned short) encoded_buffer[i] << " ";
+				 << (unsigned short) decoded_buffer[i] << " ";
 		}
-		cout << endl;
+
+		// calculate crc16 of data inside packet
+		crc = Crc16(decoded_buffer, 3);
+		
+		cout << " crc: 0x" << hex << setfill('0') 
+			 << setw(4) << crc << endl;
     }
+}
+
+/*--------------------------------------------------------------------------
+    crc16
+                                         16   12   5
+    this is the CCITT CRC 16 polynomial X  + X  + X  + 1.
+    This is 0x1021 when x is 2, but the way the algorithm works
+    we use 0x8408 (the reverse of the bit pattern).  The high
+    bit is always assumed to be set, thus we only use 16 bits to
+    represent the 17 bit value.
+----------------------------------------------------------------------------*/
+
+#define POLY 0x8408   /* 1021H bit reversed */
+
+unsigned short Pulse::Crc16(unsigned char * data_p, unsigned short length)
+{
+	unsigned char i;
+	unsigned int data;
+	unsigned int crc = 0xffff;
+
+    if (length == 0)
+      return (~crc);
+    do
+    {
+    	for (i=0, data=(unsigned int)0xff & *data_p++; i < 8; i++, data >>= 1)
+        {
+        	if ((crc & 0x0001) ^ (data & 0x0001))
+            	crc = (crc >> 1) ^ POLY;
+        	else  crc >>= 1;
+        }
+	} while (--length);
+
+	crc = ~crc;
+
+	return (crc);
 }
 
 void Pulse::CreateRRDFile(const char * file)
