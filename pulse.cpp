@@ -121,8 +121,98 @@ int Pulse::OpenSerialPort(const char * device)
 	return 0;
 }
 
+// send command to sensor
+int Pulse::SendCommand(unsigned char * decoded_buffer, unsigned short decoded_length)
+{
+	const int BUF_SIZE = 16;
+    unsigned char encoded_buffer[BUF_SIZE] = {0};
+	const int ENCODED_PACKET_SIZE = 9;
+	int encoded_length = 0;
+
+	// encode packet data
+    cobs_encode(decoded_buffer, decoded_length, encoded_buffer);
+
+	if (Debug)
+	{
+		cout << "dec: ";
+        for (int i = 0; i < decoded_length; i++)
+        {
+            cout << setfill('0') << setw(2) << hex
+                 << (unsigned short) decoded_buffer[i] << " ";
+        }	
+		cout << "enc: ";
+		for (int i = 0; i < ENCODED_PACKET_SIZE; i++)
+    	{
+    		cout << setfill('0') << setw(2) << hex
+             	 << (unsigned short) encoded_buffer[i] << " ";
+    	}
+    	cout << endl;
+	}
+
+	// flush input and output buffers
+    tcflush(SerialPort, TCIOFLUSH);
+
+    // send buffer via serial port
+    encoded_length = write(SerialPort, encoded_buffer, ENCODED_PACKET_SIZE);
+
+    // error handling
+    if (encoded_length == -1)
+    {
+    	cerr << "Error reading serial port: " << strerror(errno)
+             << " (" << errno << ")" << endl;
+	}
+	else if (encoded_length != ENCODED_PACKET_SIZE)
+	{
+		cerr << "Error sending encoded packet: " << encoded_length << " bytes transmitted " << endl;
+	}
+
+	return 0;
+}
+
+// set raw mode, command 0x10
+void Pulse::SetRawMode()
+{
+	unsigned char buf[7] = {0};
+	unsigned short int crc = 0xFFFF;
+
+	// command
+	buf[0] = 0x10; // raw mode
+
+	// calculate cyclic redundancy check value
+	crc = Crc16(buf, 5);
+	buf[5] = crc >> 8; // crc, high byte
+	buf[6] = crc & 0xFF; // crc, low byte
+
+	// send command to sensor
+	SendCommand(buf, 7);
+}
+
+// set trigger mode, command 0x20
+void Pulse::SetTriggerMode(short int trigger_level_low, short int trigger_level_high)
+{
+    unsigned char buf[7] = {0};
+    unsigned short int crc = 0xFFFF;
+
+    // command
+    buf[0] = 0x20; // trigger mode
+
+    // trigger threshold values
+    buf[1] = trigger_level_low >> 8; // low trigger threshold, high byte
+    buf[2] = trigger_level_low & 0xFF; // low trigger threshold, low byte
+    buf[3] = trigger_level_high >> 8; // high trigger threshold, high byte
+    buf[4] = trigger_level_high & 0xFF; // high trigger threshold, low byte
+
+    // calculate cyclic redundancy check value
+    crc = Crc16(buf, 5);
+    buf[5] = crc >> 8; // crc, high byte
+    buf[6] = crc & 0xFF; // crc, low byte
+
+	// send command to sensor
+	SendCommand(buf, 7);
+}
+
 // read raw sensor values
-void Pulse::ReadSerialRaw(void)
+void Pulse::ReadSensorValue(void)
 {
 	const int BUF_SIZE = 16;
 	const int ENCODED_PACKET_SIZE = 7; 
@@ -171,18 +261,18 @@ void Pulse::ReadSerialRaw(void)
     	}
 		else if (encoded_length != ENCODED_PACKET_SIZE)
 		{
-			cerr << "Wrong encoded packet length: " << encoded_length << endl;
+			cerr << "Error: wrong encoded packet length ( " << encoded_length << ")" << endl;
 			break;
 		}
 		else if (encoded_buffer[ENCODED_PACKET_SIZE-1] != 0x00)
 		{
-			cerr << "Encoded packet fragmetation: ";
+			cerr << "Error: encoded packet fragmetation (";
 		    for (int i = 0; i < ENCODED_PACKET_SIZE; i++)
         	{
             	cout << setfill('0') << setw(2) << hex
                      << (unsigned short) encoded_buffer[i] << " ";
             }
-			cout << endl;
+			cout << ")" << endl;
 			break;
 		}
 
@@ -245,11 +335,7 @@ void Pulse::ReadSerialRaw(void)
     }
 }
 
-void Pulse::ReadSerialTrigger(void)
-{
-
-}
-
+// create rrd database
 void Pulse::CreateRRDFile(const char * file)
 {
 
