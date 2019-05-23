@@ -134,13 +134,13 @@ int Pulse::SendCommand(unsigned char * decoded_buffer, unsigned short decoded_le
 
 	if (Debug)
 	{
-		cout << "dec: ";
+		cout << "Cmd: dec ";
         for (int i = 0; i < decoded_length; i++)
         {
             cout << setfill('0') << setw(2) << hex
                  << (unsigned short) decoded_buffer[i] << " ";
         }	
-		cout << "enc: ";
+		cout << ", enc ";
 		for (int i = 0; i < ENCODED_PACKET_SIZE; i++)
     	{
     		cout << setfill('0') << setw(2) << hex
@@ -152,8 +152,11 @@ int Pulse::SendCommand(unsigned char * decoded_buffer, unsigned short decoded_le
 	// flush input and output buffers
     tcflush(SerialPort, TCIOFLUSH);
 
-    // send buffer via serial port
-    encoded_length = write(SerialPort, encoded_buffer, ENCODED_PACKET_SIZE);
+    // send buffer via serial port (3x)
+	for (int i = 0; i < 3; i++)
+	{
+    	encoded_length = write(SerialPort, encoded_buffer, ENCODED_PACKET_SIZE);
+	}
 
     // error handling
     if (encoded_length == -1)
@@ -165,6 +168,9 @@ int Pulse::SendCommand(unsigned char * decoded_buffer, unsigned short decoded_le
 	{
 		cerr << "Error sending encoded packet: " << encoded_length << " bytes transmitted " << endl;
 	}
+
+	// receive acknowlegement
+	ReadSensorValue();
 
 	return 0;
 }
@@ -212,7 +218,7 @@ void Pulse::SetTriggerMode(short int trigger_level_low, short int trigger_level_
 }
 
 // read raw sensor values
-void Pulse::ReadSensorValue(void)
+int Pulse::ReadSensorValue(void)
 {
 	const int BUF_SIZE = 16;
 	const int ENCODED_PACKET_SIZE = 7; 
@@ -225,7 +231,10 @@ void Pulse::ReadSensorValue(void)
 	unsigned short crc_after = 0;
 	short sensor_value = 0;
 
+	//
     // synchronise with sensor data stream
+	//
+
     do
     {
 		// flush input and output buffers
@@ -243,96 +252,93 @@ void Pulse::ReadSensorValue(void)
     }
     while (header != 0x00); // test if read byte is a zero
 
+	//
     // read raw sensor values
-    while (1)
-    {	
-    	// reset buffer
-    	memset(encoded_buffer, '\0', BUF_SIZE);
-
-    	// Read bytes
-    	encoded_length = read(SerialPort, encoded_buffer, ENCODED_PACKET_SIZE);
-
-    	// error handling
-    	if (encoded_length == -1)
-    	{
-        	cerr << "Error reading serial port: " << strerror(errno)
-             	 << " (" << errno << ")" << endl;
-			break;
-    	}
-		else if (encoded_length != ENCODED_PACKET_SIZE)
-		{
-			cerr << "Error: wrong encoded packet length ( " << encoded_length << ")" << endl;
-			break;
-		}
-		else if (encoded_buffer[ENCODED_PACKET_SIZE-1] != 0x00)
-		{
-			cerr << "Error: encoded packet fragmetation (";
-		    for (int i = 0; i < ENCODED_PACKET_SIZE; i++)
-        	{
-            	cout << setfill('0') << setw(2) << hex
-                     << (unsigned short) encoded_buffer[i] << " ";
-            }
-			cout << ")" << endl;
-			break;
-		}
-
-		// decode packet data
-		decoded_length = cobs_decode(encoded_buffer, encoded_length, decoded_buffer);
-
-		// error handling
-		if (decoded_length == 0)
-		{
-			cerr << "Error: decoding serial packet failed" << endl;
-			break;
-		}
-
-		// get crc from decoded packet
-		crc_before = ((decoded_buffer[3] & 0xFF) << 8) | (decoded_buffer[4] & 0xFF);
-		
-		// recalculate crc after receiving packet
-        crc_after = Crc16(decoded_buffer, 3);
-		
-		// check crc
-		if (crc_after != crc_before)
-		{
-			cerr << "Error: CRC checksum mismatch" << endl;
-			break;
-		}
-		
-		// get sensor reading from decoded packet
-        sensor_value = ((decoded_buffer[1] & 0xFF) << 8) | (decoded_buffer[2] & 0xFF);
-
-		//
-		// console output
-		//
+    //
 	
-		if (Debug)
-		{	
-			// encoded packet
-        	cout << "enc: ";
-        	for (int i = 0; i < encoded_length; i++)
-        	{
-            	cout << setfill('0') << setw(2) << hex
-                 	 << (unsigned short) encoded_buffer[i] << " ";
-        	}
+	// reset buffer
+    memset(encoded_buffer, '\0', BUF_SIZE);
 
-        	// decoded packet
-        	cout << "dec: ";
-        	for (int i = 0; i < decoded_length-1; i++)
-        	{
-            	cout << setfill('0') << setw(2) << hex
-                 	 << (unsigned short) decoded_buffer[i] << " ";
-        	}
-        
-			// crc
-			cout << "crc: 0x" << setfill('0') << setw(4) << hex << crc_before 
-			 	 << " 0x" << setfill('0') << setw(4) << hex << crc_after << " : ";
+    // Read bytes
+    encoded_length = read(SerialPort, encoded_buffer, ENCODED_PACKET_SIZE);
 
-		}
-
-		// sensor value
-        cout << dec << sensor_value << endl; ;
+    // error handling
+    if (encoded_length == -1)
+    {
+        cerr << "Error reading serial port: " << strerror(errno)
+             << " (" << errno << ")" << endl;
     }
+	else if (encoded_length != ENCODED_PACKET_SIZE)
+	{
+		cerr << "Error: wrong encoded packet length ( " << encoded_length << ")" << endl;
+	}
+	else if (encoded_buffer[ENCODED_PACKET_SIZE-1] != 0x00)
+	{
+		cerr << "Error: encoded packet fragmetation ( ";
+		for (int i = 0; i < ENCODED_PACKET_SIZE; i++)
+        {
+            cout << setfill('0') << setw(2) << hex
+                 << (unsigned short) encoded_buffer[i] << " ";
+        }
+		cout << ")" << endl;
+	}
+
+	// decode packet data
+	decoded_length = cobs_decode(encoded_buffer, encoded_length, decoded_buffer);
+
+	// error handling
+	if (decoded_length == 0)
+	{
+		cerr << "Error: decoding serial packet failed" << endl;
+	}
+
+	// get crc from decoded packet
+	crc_before = ((decoded_buffer[3] & 0xFF) << 8) | (decoded_buffer[4] & 0xFF);
+		
+	// recalculate crc after receiving packet
+    crc_after = Crc16(decoded_buffer, 3);
+		
+	// check crc
+	if (crc_after != crc_before)
+	{
+		cerr << "Error: CRC checksum mismatch" << endl;
+	}
+		
+	// get sensor reading from decoded packet
+    sensor_value = ((decoded_buffer[1] & 0xFF) << 8) | (decoded_buffer[2] & 0xFF);
+
+	//
+	// console output
+	//
+	
+	if (Debug)
+	{	
+		// encoded packet
+        cout << "Rec: enc ";
+        for (int i = 0; i < encoded_length; i++)
+        {
+            cout << setfill('0') << setw(2) << hex
+                 << (unsigned short) encoded_buffer[i] << " ";
+        }
+
+        // decoded packet
+        cout << ", dec ";
+        for (int i = 0; i < decoded_length-1; i++)
+        {
+            cout << setfill('0') << setw(2) << hex
+                 << (unsigned short) decoded_buffer[i] << " ";
+        }
+        
+		// crc
+		cout << ", crc 0x" << setfill('0') << setw(4) << hex << crc_before 
+			 << " 0x" << setfill('0') << setw(4) << hex << crc_after << " : ";
+
+	}
+
+	// sensor value
+    cout << dec << sensor_value << endl;
+
+	return sensor_value;
 }
 
 // create rrd database

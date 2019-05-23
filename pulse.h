@@ -17,7 +17,7 @@ public:
 	int SendCommand(unsigned char * decoded_buffer, unsigned short decoded_length);
 	void SetRawMode(void);
 	void SetTriggerMode(short int trigger_level_low, short int trigger_level_high);
-	void ReadSensorValue(void);
+	int ReadSensorValue(void);
 
 	// RRD data methods
 	void CreateRRDFile(const char * file);

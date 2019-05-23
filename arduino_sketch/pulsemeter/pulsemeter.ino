@@ -149,8 +149,11 @@ void sendSensorValue(int val, int state)
   buf[3] = crc >> 8; // crc high byte
   buf[4] = crc & 0xFF; // crc low byte
 
-  // send packet
-  myPacketSerial.send(buf, PACKET_SIZE);
+  // send packet (3x)
+  for (int i = 0; i < 2; i++)
+  {
+    myPacketSerial.send(buf, PACKET_SIZE);
+  }
 }
 
 // This is our handler callback function.
@@ -161,10 +164,13 @@ void onPacketReceived(const uint8_t* decoded_buffer, size_t decoded_length)
 {
   unsigned int crc_before = 0, crc_after = 0;
 
+  lcd.clear();
+  lcd.print("packet received");
+
   // check received packet length
   if (decoded_length != PACKET_SIZE)
   {
-    sendSensorValue(0, WRONG_PACKET_SIZE);
+    sendSensorValue(decoded_length, WRONG_PACKET_SIZE);
   }
 
   // check crc
@@ -186,14 +192,16 @@ void onPacketReceived(const uint8_t* decoded_buffer, size_t decoded_length)
       break;
     default:
       mode = '\0'; // unknown command received
-      sendSensorValue(0, UNKNOWN_COMMAND);
+      sendSensorValue(decoded_buffer[0], UNKNOWN_COMMAND);
       break;
     }
   }
   else
   {
-    sendSensorValue(0, CRC_CHECKSUM_MISMATCH);
+    sendSensorValue(crc_after, CRC_CHECKSUM_MISMATCH);
   }
+
+
   
   // send acknowledgement packet
   sendSensorValue(0, ACK);
@@ -229,7 +237,6 @@ void loop() {
   // perform measurement
   // turn IR LED off
   digitalWrite(irOutPin, LOW);
-  // wait 10 milliseconds
   delay(10);
   // read the analog in value:
   sensorValueOff = analogRead(analogInPin);           
@@ -253,7 +260,7 @@ void loop() {
     // detect trigger
     detectTrigger(sensorValueOn - sensorValueOff);
   }
-  
+
   // The PacketSerial::update() method attempts to read in any incoming serial
   // data and emits received and decoded packets via the packet handler
   // function specified by the user in the void setup() function.
@@ -262,6 +269,4 @@ void loop() {
   // to call the PacketSerial::update() frequently enough may result in buffer
   // serial overflows.
   myPacketSerial.update();
-
-  delay(10);
 }
