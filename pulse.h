@@ -14,7 +14,8 @@ public:
 	// sensor methods
 	unsigned short Crc16(unsigned char * data_p, unsigned short length);
 	int OpenSerialPort(const char * device);
-	int SendCommand(unsigned char * decoded_buffer, unsigned short decoded_length);
+	int SerialSyncPacket(unsigned char* encoded_buffer, unsigned short encoded_length);
+	void SendCommand(unsigned char * decoded_buffer, unsigned short decoded_length);
 	void SetRawMode(void);
 	void SetTriggerMode(short int trigger_level_low, short int trigger_level_high);
 	int ReadSensorValue(void);

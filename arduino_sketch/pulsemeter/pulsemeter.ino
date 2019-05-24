@@ -171,38 +171,38 @@ void onPacketReceived(const uint8_t* decoded_buffer, size_t decoded_length)
   if (decoded_length != PACKET_SIZE)
   {
     sendSensorValue(decoded_length, WRONG_PACKET_SIZE);
+    lcd.print("packet size");
+    return;
   }
 
   // check crc
   crc_before = ((decoded_buffer[5] & 0xFF) << 8) | (decoded_buffer[6] & 0xFF);
   crc_after = crc16(decoded_buffer, decoded_length);
 
-  // set mode
-  if (crc_before == crc_after)
-  {
-    // process decoded packet
-    switch (decoded_buffer[0]) {
-    case 0x10:
-      mode = 'R'; // raw mode
-      break;
-    case 0x20:
-      mode = 'T'; // trigger mode
-      triggerLevelLow = ((decoded_buffer[1] & 0xFF) << 8) | (decoded_buffer[2] & 0xFF);
-      triggerLevelHigh = ((decoded_buffer[3] & 0xFF) << 8) | (decoded_buffer[4] & 0xFF);
-      break;
-    default:
-      mode = '\0'; // unknown command received
-      sendSensorValue(decoded_buffer[0], UNKNOWN_COMMAND);
-      break;
-    }
-  }
-  else
+  if (crc_before != crc_after)
   {
     sendSensorValue(crc_after, CRC_CHECKSUM_MISMATCH);
+    lcd.print("CRC checksum");
+    return;
+  }
+  
+  // set mode
+  switch (decoded_buffer[0]) {
+  case 0x10:
+    mode = 'R'; // raw mode
+    break;
+  case 0x20:
+    mode = 'T'; // trigger mode
+    triggerLevelLow = ((decoded_buffer[1] & 0xFF) << 8) | (decoded_buffer[2] & 0xFF);
+    triggerLevelHigh = ((decoded_buffer[3] & 0xFF) << 8) | (decoded_buffer[4] & 0xFF);
+    break;
+  default:
+    mode = '\0'; // unknown command received
+    sendSensorValue(decoded_buffer[0], UNKNOWN_COMMAND);
+    lcd.print("unknown cmd");
+    return;
   }
 
-
-  
   // send acknowledgement packet
   sendSensorValue(0, ACK);
 }
@@ -246,18 +246,19 @@ void loop() {
   // read the analog in value:
   sensorValueOn = analogRead(analogInPin);
 
+  // raw mode
   if (mode == 'R')
   {
     // send raw sensor value over serial
-    sendSensorValue(sensorValueOn - sensorValueOff, 0);
+    // sendSensorValue(sensorValueOn - sensorValueOff, 0);
 
     // output raw value on LCD
     lcdPrintRaw(sensorValueOn - sensorValueOff);  
   }
 
+  // detect trigger
   else if (mode == 'T')
   {
-    // detect trigger
     detectTrigger(sensorValueOn - sensorValueOff);
   }
 

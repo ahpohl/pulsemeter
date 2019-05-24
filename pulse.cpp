@@ -15,6 +15,7 @@
 // program headers
 #include "pulse.h"
 #include "cobs.h"
+#include "constants.h"
 
 using namespace std;
 
@@ -77,9 +78,8 @@ int Pulse::OpenSerialPort(const char * device)
 	SerialPort = open(device, O_RDWR | O_NOCTTY);
 	if (SerialPort < 0)
 	{
-		cerr << "Error opening device " << device << ": "
-             << strerror(errno) << " (" << errno << ")" << endl;
-		return 1;
+		throw runtime_error(string("Error opening device ") + device + ": "
+             + strerror(errno) + " (" + to_string(errno) + ")");
 	}
 	else
 	{
@@ -93,9 +93,8 @@ int Pulse::OpenSerialPort(const char * device)
     ret = tcgetattr(SerialPort, &tty);
 	if (ret != 0)
     {
-        cerr << "Error getting serial port attributes: " << strerror(errno) 
-             << " (" << errno << ")" << endl;
-        return 1;
+        throw runtime_error(string("Error getting serial port attributes: ") 
+			+ strerror(errno) + " (" + to_string(errno) + ")");
     }
 
 	// set raw mode
@@ -113,20 +112,53 @@ int Pulse::OpenSerialPort(const char * device)
     ret = tcsetattr(SerialPort, TCSANOW, &tty);
 	if (ret != 0)
     {
-		cerr << "Error setting serial port attributes: " << strerror(errno)
-             << " (" << errno << ")" << endl;
-		return 1;
+		throw runtime_error(string("Error setting serial port attributes: ") 
+			+ strerror(errno) + " (" + to_string(errno) + ")");
     }
 
 	return 0;
 }
 
-// send command to sensor
-int Pulse::SendCommand(unsigned char * decoded_buffer, unsigned short decoded_length)
+// synchronise with sensor data stream
+int Pulse::SerialSyncPacket(unsigned char * encoded_buffer, unsigned short encoded_length)
 {
-	const int BUF_SIZE = 16;
+    unsigned char data_byte;
+	int bytes_received = 0;
+
+	// reset buffer
+    memset(encoded_buffer, '\0', BUF_SIZE);
+
+    do
+    {
+        // flush input and output buffers
+        tcflush(SerialPort, TCIOFLUSH);
+
+        // Read one byte at a time
+        encoded_length = read(SerialPort, &data_byte, 1);
+
+        // error handling
+        if (encoded_length == -1)
+        {
+            throw runtime_error(string("Error reading serial port: ")
+                + strerror(errno) + " (" + to_string(errno) + ")");
+        }
+
+		// fill buffer
+		*encoded_buffer = data_byte;
+		encoded_buffer++;
+
+		// count bytes received
+		bytes_received++;
+    }
+    while (data_byte != 0x00); // test if read byte is a zero
+
+	return bytes_received;
+}
+
+// send command to sensor
+void Pulse::SendCommand(unsigned char * decoded_buffer, unsigned short decoded_length)
+{
     unsigned char encoded_buffer[BUF_SIZE] = {0};
-	const int ENCODED_PACKET_SIZE = 9;
 	int encoded_length = 0;
 
 	// encode packet data
@@ -141,7 +173,7 @@ int Pulse::SendCommand(unsigned char * decoded_buffer, unsigned short decoded_le
                  << (unsigned short) decoded_buffer[i] << " ";
         }	
 		cout << ", enc ";
-		for (int i = 0; i < ENCODED_PACKET_SIZE; i++)
+		for (int i = 0; i < COMMAND_PACKET_SIZE; i++)
     	{
     		cout << setfill('0') << setw(2) << hex
              	 << (unsigned short) encoded_buffer[i] << " ";
@@ -155,24 +187,26 @@ int Pulse::SendCommand(unsigned char * decoded_buffer, unsigned short decoded_le
     // send buffer via serial port (3x)
 	for (int i = 0; i < 3; i++)
 	{
-    	encoded_length = write(SerialPort, encoded_buffer, ENCODED_PACKET_SIZE);
+    	encoded_length = write(SerialPort, encoded_buffer, COMMAND_PACKET_SIZE);
 	}
 
     // error handling
     if (encoded_length == -1)
     {
-    	cerr << "Error reading serial port: " << strerror(errno)
-             << " (" << errno << ")" << endl;
+		throw runtime_error(string("Error reading serial port: ") 
+			+ strerror(errno) + " (" + to_string(errno) + ")");
 	}
-	else if (encoded_length != ENCODED_PACKET_SIZE)
+	else if (encoded_length != COMMAND_PACKET_SIZE)
 	{
-		cerr << "Error sending encoded packet: " << encoded_length << " bytes transmitted " << endl;
+		throw runtime_error(string("Error sending encoded packet: ") 
+			+ to_string(encoded_length) + " bytes transmitted ");
 	}
+
+	// reset buffer
+	memset(&encoded_buffer, '\0', BUF_SIZE);
 
 	// receive acknowlegement
-	ReadSensorValue();
-
-	return 0;
+	SerialSyncPacket(encoded_buffer, DATA_PACKET_SIZE);
 }
 
 // set raw mode, command 0x10
@@ -220,67 +254,34 @@ void Pulse::SetTriggerMode(short int trigger_level_low, short int trigger_level_
 // read raw sensor values
 int Pulse::ReadSensorValue(void)
 {
-	const int BUF_SIZE = 16;
-	const int ENCODED_PACKET_SIZE = 7; 
 	unsigned char encoded_buffer[BUF_SIZE];
 	unsigned char decoded_buffer[BUF_SIZE];
 	int encoded_length = 0;
 	int decoded_length = 0;
-	unsigned char header;
 	unsigned short crc_before = 0;
 	unsigned short crc_after = 0;
 	short sensor_value = 0;
 
-	//
-    // synchronise with sensor data stream
-	//
-
-    do
-    {
-		// flush input and output buffers
-    	tcflush(SerialPort, TCIOFLUSH);			
-
-    	// Read one byte at a time
-        encoded_length = read(SerialPort, &header, 1);
-
-        // error handling
-        if (encoded_length == -1)
-        {
-        	cerr << "Error reading serial port: " << strerror(errno)
-                 << " (" << errno << ")" << endl;
-        }
-    }
-    while (header != 0x00); // test if read byte is a zero
-
-	//
-    // read raw sensor values
-    //
-	
 	// reset buffer
     memset(encoded_buffer, '\0', BUF_SIZE);
 
     // Read bytes
-    encoded_length = read(SerialPort, encoded_buffer, ENCODED_PACKET_SIZE);
+    encoded_length = read(SerialPort, encoded_buffer, DATA_PACKET_SIZE);
 
     // error handling
     if (encoded_length == -1)
     {
-        cerr << "Error reading serial port: " << strerror(errno)
-             << " (" << errno << ")" << endl;
+		throw runtime_error(string("Error reading serial port: ") 
+			+ strerror(errno) + " (" + to_string(errno) + ")");
     }
-	else if (encoded_length != ENCODED_PACKET_SIZE)
+	else if (encoded_length != DATA_PACKET_SIZE)
 	{
-		cerr << "Error: wrong encoded packet length ( " << encoded_length << ")" << endl;
+		throw runtime_error(string("Error: wrong encoded packet length ( ") 
+			+ to_string(encoded_length) + ")");
 	}
-	else if (encoded_buffer[ENCODED_PACKET_SIZE-1] != 0x00)
+	else if (encoded_buffer[DATA_PACKET_SIZE-1] != 0x00)
 	{
-		cerr << "Error: encoded packet fragmetation ( ";
-		for (int i = 0; i < ENCODED_PACKET_SIZE; i++)
-        {
-            cout << setfill('0') << setw(2) << hex
-                 << (unsigned short) encoded_buffer[i] << " ";
-        }
-		cout << ")" << endl;
+		throw runtime_error("Packet framing error: out of sync");
 	}
 
 	// decode packet data
@@ -289,7 +290,7 @@ int Pulse::ReadSensorValue(void)
 	// error handling
 	if (decoded_length == 0)
 	{
-		cerr << "Error: decoding serial packet failed" << endl;
+		throw runtime_error("Error: decoding serial packet failed");
 	}
 
 	// get crc from decoded packet
@@ -301,7 +302,7 @@ int Pulse::ReadSensorValue(void)
 	// check crc
 	if (crc_after != crc_before)
 	{
-		cerr << "Error: CRC checksum mismatch" << endl;
+		throw runtime_error("Error: CRC checksum mismatch");
 	}
 		
 	// get sensor reading from decoded packet
