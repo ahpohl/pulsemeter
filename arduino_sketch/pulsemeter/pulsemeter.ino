@@ -149,11 +149,7 @@ void sendSensorValue(int val, int state)
   buf[3] = crc >> 8; // crc high byte
   buf[4] = crc & 0xFF; // crc low byte
 
-  // send packet (3x)
-  for (int i = 0; i < 2; i++)
-  {
-    myPacketSerial.send(buf, PACKET_SIZE);
-  }
+  myPacketSerial.send(buf, PACKET_SIZE);
 }
 
 // This is our handler callback function.
