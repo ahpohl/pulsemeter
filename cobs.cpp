@@ -85,5 +85,5 @@ size_t cobs_decode(const uint8_t * __restrict__ input, size_t length, uint8_t * 
         }
     }
 
-    return write_index;
+    return --write_index;
 }

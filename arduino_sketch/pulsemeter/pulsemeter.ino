@@ -207,11 +207,8 @@ void onPacketReceived(const uint8_t* decoded_buffer, size_t decoded_length)
     return;
   }
 
-  // send acknowledgement packet (10x)
-  for (int i = 0; i < 1; i++)
-  {
-    sendSensorValue(0, ACK);
-  }
+  // send acknowledgement packet
+  sendSensorValue(0, ACK);
 }
 
 
@@ -225,7 +222,7 @@ void setup() {
   
   // We begin communication with our PacketSerial object by setting the
   // communication speed in bits / second (baud).
-  myPacketSerial.begin(9600);
+  myPacketSerial.begin(300);
 
   // If we want to receive packets, we must specify a packet handler function.
   // The packet handler is a custom function with a signature like the
@@ -257,7 +254,7 @@ void loop() {
   if (mode == 'R')
   {
     // send raw sensor value over serial
-    // sendSensorValue(sensorValueOn - sensorValueOff, 0);
+    //sendSensorValue(sensorValueOn - sensorValueOff, 0);
 
     // output raw value on LCD
     lcdPrintRaw(sensorValueOn - sensorValueOff);  

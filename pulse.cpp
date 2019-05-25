@@ -104,9 +104,9 @@ int Pulse::OpenSerialPort(const char * device)
     tty.c_cc[VMIN] = 16; // returning when 16 bytes are available
     tty.c_cc[VTIME] = 10; // wait for up to 1 second
 
-    // set in/out baud rate to be 19200 baud
-    cfsetispeed(&tty, B9600);
-    cfsetospeed(&tty, B9600);
+    // set in/out baud rate
+    cfsetispeed(&tty, B300);
+    cfsetospeed(&tty, B300);
 
     // save tty settings
     ret = tcsetattr(SerialPort, TCSANOW, &tty);
@@ -137,13 +137,13 @@ void Pulse::SendCommand(unsigned char * command, int command_length)
 
 	if (Debug)
 	{
-		cout << "Command: ";
+		cout << "Cmd: ";
         for (int i = 0; i < command_length; i++)
         {
             cout << hex << setfill('0') << setw(2) 
 				 << (unsigned short) command[i] << " ";
         }	
-		cout << ", cobs ";
+		cout << ": cobs ";
 		for (int i = 0; i < cobs_command_length; i++)
     	{
     		cout << hex << setfill('0') << setw(2) 
@@ -153,7 +153,7 @@ void Pulse::SendCommand(unsigned char * command, int command_length)
 	}
 
     // send buffer via serial port (100x)
-	for (int i = 0; i < 1; i++)
+	for (int i = 0; i < 10; i++)
 	{
     	bytes_sent = write(SerialPort, cobs_command, cobs_command_length);
 	}
@@ -173,8 +173,8 @@ void Pulse::SendCommand(unsigned char * command, int command_length)
 	//
 	// get response
 	// 
-	
-	packet_length = ReceivePacket(packet, BUF_SIZE);
+	while (1)	
+		packet_length = ReceivePacket(packet, BUF_SIZE);
 }
 
 // receive response data packet
@@ -214,25 +214,6 @@ int Pulse::ReceivePacket(unsigned char * packet, int buffer_size)
 	// decode packet data
 	packet_length = cobs_decode(cobs_packet, bytes_received, packet);
 
-    if (Debug)
-    {
-        // decoded packet
-        cout << "Response: ";
-        for (int i = 0; i < packet_length; i++)
-        {
-            cout << hex << setfill('0') << setw(2)
-                 << (unsigned short) packet[i] << " ";
-        }
-
-        // encoded packet
-        cout << ", cobs ";
-        for (int i = 0; i < bytes_received; i++)
-        {
-            cout << hex << setfill('0') << setw(2)
-                 << (unsigned short) cobs_packet[i] << " ";
-        }
-    }
-
 	// error handling
 	if (packet_length == 0)
 	{
@@ -257,7 +238,30 @@ int Pulse::ReceivePacket(unsigned char * packet, int buffer_size)
              << " 0x" << setfill('0') << setw(4) << hex << crc_after << endl;;
 		throw runtime_error("Error: CRC checksum mismatch");
 	}
-		
+
+	if (Debug)
+    {
+		static int count = 0;
+        // decoded packet
+        cout << dec << setfill('0') << setw(4) << count << " Res: ";
+        for (int i = 0; i < packet_length; i++)
+        {
+            cout << hex << setfill('0') << setw(2)
+                 << (unsigned short) packet[i] << " ";
+        }
+
+        // encoded packet
+        cout << "      : cobs ";
+        for (int i = 0; i < bytes_received; i++)
+        {
+            cout << hex << setfill('0') << setw(2)
+                 << (unsigned short) cobs_packet[i] << " ";
+        }
+		cout << endl;
+
+		count++;
+    }
+	
 	return packet_length;
 }
 
@@ -315,14 +319,18 @@ int Pulse::ReadSensorValue(void)
 	// get response
 	packet_length = ReceivePacket(packet, BUF_SIZE);
 
-	if (packet_length != DATA_PACKET_SIZE)
-    {
-        throw runtime_error(string("Error: wrong length of data packet (")
-            + to_string(packet_length) + ")");
-    }
-   
+	if (packet[0] != SENSOR_VALUE)
+	{
+		throw runtime_error("Error: packet not a sensor reading");
+	}
+
 	// get sensor reading from decoded packet
     sensor_value = ((packet[1] & 0xFF) << 8) | (packet[2] & 0xFF);
+
+	if (Debug)
+	{
+		cout << sensor_value << endl;
+	}
 
 	return sensor_value;
 }
