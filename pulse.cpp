@@ -153,7 +153,7 @@ void Pulse::SendCommand(unsigned char * command, int command_length)
 	}
 
     // send buffer via serial port (100x)
-	for (int i = 0; i < 100; i++)
+	for (int i = 0; i < 1; i++)
 	{
     	bytes_sent = write(SerialPort, cobs_command, cobs_command_length);
 	}
@@ -173,26 +173,8 @@ void Pulse::SendCommand(unsigned char * command, int command_length)
 	//
 	// get response
 	// 
-
-	packet_length = ReceivePacket(packet, BUF_SIZE);
-
-	if (packet_length != DATA_PACKET_SIZE)
-	{
-		throw runtime_error(string("Error: wrong length of packet (")
-            + to_string(packet_length) + ")");
-	}
-
-	if (Debug)
-	{
-        cout << "Packet received: ";
-        for (int i = 0; i < packet_length; i++)
-        {
-            cout << hex << setfill('0') << setw(2) 
-			     << (unsigned short) packet[i] << " ";
-        }
-		cout << endl;
-	}
 	
+	packet_length = ReceivePacket(packet, BUF_SIZE);
 }
 
 // receive response data packet
@@ -203,7 +185,7 @@ int Pulse::ReceivePacket(unsigned char * packet, int buffer_size)
 	int bytes_received = 0;
 	unsigned short crc_before = 0, crc_after = 0;
 	int packet_length = 0;
-
+	
 	// reset buffer
     memset(cobs_packet, '\0', BUF_SIZE);
 
@@ -232,11 +214,35 @@ int Pulse::ReceivePacket(unsigned char * packet, int buffer_size)
 	// decode packet data
 	packet_length = cobs_decode(cobs_packet, bytes_received, packet);
 
+    if (Debug)
+    {
+        // decoded packet
+        cout << "Response: ";
+        for (int i = 0; i < packet_length; i++)
+        {
+            cout << hex << setfill('0') << setw(2)
+                 << (unsigned short) packet[i] << " ";
+        }
+
+        // encoded packet
+        cout << ", cobs ";
+        for (int i = 0; i < bytes_received; i++)
+        {
+            cout << hex << setfill('0') << setw(2)
+                 << (unsigned short) cobs_packet[i] << " ";
+        }
+    }
+
 	// error handling
 	if (packet_length == 0)
 	{
 		throw runtime_error("Error: decoding serial packet failed");
 	}
+    else if (packet_length != DATA_PACKET_SIZE)
+    {
+        throw runtime_error(string("Error: wrong decoded packet length (")
+            + to_string(packet_length) + ")");
+    }	
 
 	// get crc from decoded packet
 	crc_before = ((packet[3] & 0xFF) << 8) | (packet[4] & 0xFF);
@@ -252,29 +258,6 @@ int Pulse::ReceivePacket(unsigned char * packet, int buffer_size)
 		throw runtime_error("Error: CRC checksum mismatch");
 	}
 		
-	//
-	// console output
-	//
-	
-	if (Debug)
-	{	
-		// encoded packet
-        cout << "Response: cobs ";
-        for (int i = 0; i < bytes_received; i++)
-        {
-            cout << hex << setfill('0') << setw(2) 
-				 << (unsigned short) cobs_packet[i] << " ";
-        }
-
-        // decoded packet
-        cout << ", dec ";
-        for (int i = 0; i < packet_length; i++)
-        {
-            cout << hex << setfill('0') << setw(2) 
-			     << (unsigned short) packet[i] << " ";
-        }
-	}
-	
 	return packet_length;
 }
 

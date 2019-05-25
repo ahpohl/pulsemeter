@@ -162,6 +162,7 @@ void onPacketReceived(const uint8_t* decoded_buffer, size_t decoded_length)
   unsigned int crc_before = 0, crc_after = 0;
 
   // check received packet length
+  
   if (decoded_length != COMMAND_PACKET_SIZE)
   {
     sendSensorValue(decoded_length, WRONG_PACKET_SIZE);
@@ -206,8 +207,8 @@ void onPacketReceived(const uint8_t* decoded_buffer, size_t decoded_length)
     return;
   }
 
-  // send acknowledgement packet (100x)
-  for (int i = 0; i < 100; i++)
+  // send acknowledgement packet (10x)
+  for (int i = 0; i < 1; i++)
   {
     sendSensorValue(0, ACK);
   }
