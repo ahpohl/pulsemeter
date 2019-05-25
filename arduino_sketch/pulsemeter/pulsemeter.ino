@@ -35,7 +35,8 @@ volatile boolean triggerState = false;
 PacketSerial myPacketSerial;
 
 // size of a sensor value packet
-const int PACKET_SIZE = 5;
+const int DATA_PACKET_SIZE = 5;
+const int COMMAND_PACKET_SIZE = 7;
 
 // sensor mode, R: raw, T: trigger
 volatile char mode = '\0';
@@ -134,7 +135,7 @@ void lcdPrintRaw(int val)
 // send packet via serial line
 void sendSensorValue(int val, int state) 
 {
-  byte buf[PACKET_SIZE] = {0};
+  byte buf[DATA_PACKET_SIZE] = {0};
   unsigned int crc = 0xFFFF;
 
   // transmission state
@@ -149,7 +150,7 @@ void sendSensorValue(int val, int state)
   buf[3] = crc >> 8; // crc high byte
   buf[4] = crc & 0xFF; // crc low byte
 
-  myPacketSerial.send(buf, PACKET_SIZE);
+  myPacketSerial.send(buf, DATA_PACKET_SIZE);
 }
 
 // This is our handler callback function.
@@ -160,25 +161,30 @@ void onPacketReceived(const uint8_t* decoded_buffer, size_t decoded_length)
 {
   unsigned int crc_before = 0, crc_after = 0;
 
-  lcd.clear();
-  lcd.print("packet received");
-
   // check received packet length
-  if (decoded_length != PACKET_SIZE)
+  if (decoded_length != COMMAND_PACKET_SIZE)
   {
     sendSensorValue(decoded_length, WRONG_PACKET_SIZE);
+    lcd.clear();
     lcd.print("packet size");
+    lcd.setCursor(0,1);
+    lcd.print(decoded_length);
     return;
   }
 
   // check crc
   crc_before = ((decoded_buffer[5] & 0xFF) << 8) | (decoded_buffer[6] & 0xFF);
-  crc_after = crc16(decoded_buffer, decoded_length);
+  crc_after = crc16(decoded_buffer, 5);
 
   if (crc_before != crc_after)
   {
     sendSensorValue(crc_after, CRC_CHECKSUM_MISMATCH);
+    lcd.clear();
     lcd.print("CRC checksum");
+    lcd.setCursor(0,1);
+    lcd.print(crc_before);
+    lcd.print(" ");
+    lcd.print(crc_after);
     return;
   }
   
@@ -195,12 +201,16 @@ void onPacketReceived(const uint8_t* decoded_buffer, size_t decoded_length)
   default:
     mode = '\0'; // unknown command received
     sendSensorValue(decoded_buffer[0], UNKNOWN_COMMAND);
+    lcd.clear();
     lcd.print("unknown cmd");
     return;
   }
 
-  // send acknowledgement packet
-  sendSensorValue(0, ACK);
+  // send acknowledgement packet (100x)
+  for (int i = 0; i < 100; i++)
+  {
+    sendSensorValue(0, ACK);
+  }
 }
 
 

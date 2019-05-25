@@ -74,8 +74,8 @@ int main(int argc, char* argv[])
 	if (mode == 'R')
 	{
 		meter.SetRawMode();
-		while (1)
-			meter.ReadSensorValue();
+		// while (1)
+		//	meter.ReadSensorValue();
 	}
 
 	// read trigger data

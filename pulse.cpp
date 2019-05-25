@@ -46,7 +46,7 @@ void Pulse::SetDebug(void)
 
 #define POLY 0x8408   /* 1021H bit reversed */
 
-unsigned short Pulse::Crc16(unsigned char * data_p, unsigned short length)
+unsigned short Pulse::Crc16(unsigned char * data_p, int length)
 {
     unsigned char i;
     unsigned int data;
@@ -119,195 +119,139 @@ int Pulse::OpenSerialPort(const char * device)
 	return 0;
 }
 
-// synchronise with sensor data stream
-int Pulse::SerialSyncPacket(unsigned char * encoded_buffer, unsigned short encoded_length)
+// send command to sensor
+void Pulse::SendCommand(unsigned char * command, int command_length)
 {
-    unsigned char data_byte;
+	// command
+    unsigned char cobs_command[BUF_SIZE] = {0};
+	int cobs_command_length = 0;
+	int bytes_sent = 0;
+	
+	// response
+	unsigned char packet[BUF_SIZE] = {0};
+	int packet_length = 0;
 	int bytes_received = 0;
 
-	// reset buffer
-    memset(encoded_buffer, '\0', BUF_SIZE);
-
-    do
-    {
-        // flush input and output buffers
-        tcflush(SerialPort, TCIOFLUSH);
-
-        // Read one byte at a time
-        encoded_length = read(SerialPort, &data_byte, 1);
-
-        // error handling
-        if (encoded_length == -1)
-        {
-            throw runtime_error(string("Error reading serial port: ")
-                + strerror(errno) + " (" + to_string(errno) + ")");
-        }
-
-		// fill buffer
-		*encoded_buffer = data_byte;
-		encoded_buffer++;
-
-		// count bytes received
-		bytes_received++;
-    }
-    while (data_byte != 0x00); // test if read byte is a zero
-
-	return bytes_received;
-}
-
-// send command to sensor
-void Pulse::SendCommand(unsigned char * decoded_buffer, unsigned short decoded_length)
-{
-    unsigned char encoded_buffer[BUF_SIZE] = {0};
-	int encoded_length = 0;
-
 	// encode packet data
-    cobs_encode(decoded_buffer, decoded_length, encoded_buffer);
+    cobs_command_length = cobs_encode(command, command_length, cobs_command);
 
 	if (Debug)
 	{
-		cout << "Cmd: dec ";
-        for (int i = 0; i < decoded_length; i++)
+		cout << "Command: ";
+        for (int i = 0; i < command_length; i++)
         {
-            cout << setfill('0') << setw(2) << hex
-                 << (unsigned short) decoded_buffer[i] << " ";
+            cout << hex << setfill('0') << setw(2) 
+				 << (unsigned short) command[i] << " ";
         }	
-		cout << ", enc ";
-		for (int i = 0; i < COMMAND_PACKET_SIZE; i++)
+		cout << ", cobs ";
+		for (int i = 0; i < cobs_command_length; i++)
     	{
-    		cout << setfill('0') << setw(2) << hex
-             	 << (unsigned short) encoded_buffer[i] << " ";
+    		cout << hex << setfill('0') << setw(2) 
+			     << (unsigned short) cobs_command[i] << " ";
     	}
     	cout << endl;
 	}
 
-	// flush input and output buffers
-    tcflush(SerialPort, TCIOFLUSH);
-
-    // send buffer via serial port (3x)
-	for (int i = 0; i < 3; i++)
+    // send buffer via serial port (100x)
+	for (int i = 0; i < 100; i++)
 	{
-    	encoded_length = write(SerialPort, encoded_buffer, COMMAND_PACKET_SIZE);
+    	bytes_sent = write(SerialPort, cobs_command, cobs_command_length);
 	}
 
     // error handling
-    if (encoded_length == -1)
+    if (bytes_sent == -1)
     {
 		throw runtime_error(string("Error reading serial port: ") 
 			+ strerror(errno) + " (" + to_string(errno) + ")");
 	}
-	else if (encoded_length != COMMAND_PACKET_SIZE)
+	else if (bytes_sent != cobs_command_length)
 	{
 		throw runtime_error(string("Error sending encoded packet: ") 
-			+ to_string(encoded_length) + " bytes transmitted ");
+			+ to_string(bytes_sent) + " bytes transmitted ");
 	}
 
-	// reset buffer
-	memset(&encoded_buffer, '\0', BUF_SIZE);
+	//
+	// get response
+	// 
 
-	// receive acknowlegement
-	SerialSyncPacket(encoded_buffer, DATA_PACKET_SIZE);
+	packet_length = ReceivePacket(packet, BUF_SIZE);
+
+	if (packet_length != DATA_PACKET_SIZE)
+	{
+		throw runtime_error(string("Error: wrong length of packet (")
+            + to_string(packet_length) + ")");
+	}
+
+	if (Debug)
+	{
+        cout << "Packet received: ";
+        for (int i = 0; i < packet_length; i++)
+        {
+            cout << hex << setfill('0') << setw(2) 
+			     << (unsigned short) packet[i] << " ";
+        }
+		cout << endl;
+	}
+	
 }
 
-// set raw mode, command 0x10
-void Pulse::SetRawMode()
+// receive response data packet
+int Pulse::ReceivePacket(unsigned char * packet, int buffer_size)
 {
-	unsigned char buf[7] = {0};
-	unsigned short int crc = 0xFFFF;
-
-	// command
-	buf[0] = 0x10; // raw mode
-
-	// calculate cyclic redundancy check value
-	crc = Crc16(buf, 5);
-	buf[5] = crc >> 8; // crc, high byte
-	buf[6] = crc & 0xFF; // crc, low byte
-
-	// send command to sensor
-	SendCommand(buf, 7);
-}
-
-// set trigger mode, command 0x20
-void Pulse::SetTriggerMode(short int trigger_level_low, short int trigger_level_high)
-{
-    unsigned char buf[7] = {0};
-    unsigned short int crc = 0xFFFF;
-
-    // command
-    buf[0] = 0x20; // trigger mode
-
-    // trigger threshold values
-    buf[1] = trigger_level_low >> 8; // low trigger threshold, high byte
-    buf[2] = trigger_level_low & 0xFF; // low trigger threshold, low byte
-    buf[3] = trigger_level_high >> 8; // high trigger threshold, high byte
-    buf[4] = trigger_level_high & 0xFF; // high trigger threshold, low byte
-
-    // calculate cyclic redundancy check value
-    crc = Crc16(buf, 5);
-    buf[5] = crc >> 8; // crc, high byte
-    buf[6] = crc & 0xFF; // crc, low byte
-
-	// send command to sensor
-	SendCommand(buf, 7);
-}
-
-// read raw sensor values
-int Pulse::ReadSensorValue(void)
-{
-	unsigned char encoded_buffer[BUF_SIZE];
-	unsigned char decoded_buffer[BUF_SIZE];
-	int encoded_length = 0;
-	int decoded_length = 0;
-	unsigned short crc_before = 0;
-	unsigned short crc_after = 0;
-	short sensor_value = 0;
+	unsigned char cobs_packet[BUF_SIZE];
+	int cobs_packet_length = 0;
+	int bytes_received = 0;
+	unsigned short crc_before = 0, crc_after = 0;
+	int packet_length = 0;
 
 	// reset buffer
-    memset(encoded_buffer, '\0', BUF_SIZE);
+    memset(cobs_packet, '\0', BUF_SIZE);
 
     // Read bytes
-    encoded_length = read(SerialPort, encoded_buffer, DATA_PACKET_SIZE);
+    bytes_received = read(SerialPort, cobs_packet, COBS_DATA_PACKET_SIZE);
 
     // error handling
-    if (encoded_length == -1)
+    if (bytes_received == -1)
     {
 		throw runtime_error(string("Error reading serial port: ") 
 			+ strerror(errno) + " (" + to_string(errno) + ")");
     }
-	else if (encoded_length != DATA_PACKET_SIZE)
+	else if (bytes_received != COBS_DATA_PACKET_SIZE)
 	{
-		throw runtime_error(string("Error: wrong encoded packet length ( ") 
-			+ to_string(encoded_length) + ")");
+		throw runtime_error(string("Error: wrong encoded packet length (") 
+			+ to_string(bytes_received) + ")");
 	}
-	else if (encoded_buffer[DATA_PACKET_SIZE-1] != 0x00)
+	else if (cobs_packet[bytes_received-1] != 0x00)
 	{
 		throw runtime_error("Packet framing error: out of sync");
 	}
 
+	// reset packet buffer
+	memset(packet, '\0', buffer_size);
+
 	// decode packet data
-	decoded_length = cobs_decode(encoded_buffer, encoded_length, decoded_buffer);
+	packet_length = cobs_decode(cobs_packet, bytes_received, packet);
 
 	// error handling
-	if (decoded_length == 0)
+	if (packet_length == 0)
 	{
 		throw runtime_error("Error: decoding serial packet failed");
 	}
 
 	// get crc from decoded packet
-	crc_before = ((decoded_buffer[3] & 0xFF) << 8) | (decoded_buffer[4] & 0xFF);
+	crc_before = ((packet[3] & 0xFF) << 8) | (packet[4] & 0xFF);
 		
 	// recalculate crc after receiving packet
-    crc_after = Crc16(decoded_buffer, 3);
+    crc_after = Crc16(packet, 3);
 		
 	// check crc
 	if (crc_after != crc_before)
 	{
+		cout << "crc: 0x" << setfill('0') << setw(4) << hex << crc_before
+             << " 0x" << setfill('0') << setw(4) << hex << crc_after << endl;;
 		throw runtime_error("Error: CRC checksum mismatch");
 	}
 		
-	// get sensor reading from decoded packet
-    sensor_value = ((decoded_buffer[1] & 0xFF) << 8) | (decoded_buffer[2] & 0xFF);
-
 	//
 	// console output
 	//
@@ -315,29 +259,87 @@ int Pulse::ReadSensorValue(void)
 	if (Debug)
 	{	
 		// encoded packet
-        cout << "Rec: enc ";
-        for (int i = 0; i < encoded_length; i++)
+        cout << "Response: cobs ";
+        for (int i = 0; i < bytes_received; i++)
         {
-            cout << setfill('0') << setw(2) << hex
-                 << (unsigned short) encoded_buffer[i] << " ";
+            cout << hex << setfill('0') << setw(2) 
+				 << (unsigned short) cobs_packet[i] << " ";
         }
 
         // decoded packet
         cout << ", dec ";
-        for (int i = 0; i < decoded_length-1; i++)
+        for (int i = 0; i < packet_length; i++)
         {
-            cout << setfill('0') << setw(2) << hex
-                 << (unsigned short) decoded_buffer[i] << " ";
+            cout << hex << setfill('0') << setw(2) 
+			     << (unsigned short) packet[i] << " ";
         }
-        
-		// crc
-		cout << ", crc 0x" << setfill('0') << setw(4) << hex << crc_before 
-			 << " 0x" << setfill('0') << setw(4) << hex << crc_after << " : ";
-
 	}
+	
+	return packet_length;
+}
 
-	// sensor value
-    cout << dec << sensor_value << endl;
+// set raw mode, command 0x10
+void Pulse::SetRawMode()
+{
+    unsigned char command[COMMAND_PACKET_SIZE] = {0};
+    unsigned short int crc = 0xFFFF;
+
+    // command
+    command[0] = 0x10; // raw mode
+
+    // calculate cyclic redundancy check value
+    crc = Crc16(command, 5);
+    command[5] = crc >> 8; // crc, high byte
+    command[6] = crc & 0xFF; // crc, low byte
+
+    // send command to sensor
+    SendCommand(command, COMMAND_PACKET_SIZE);
+}
+
+// set trigger mode, command 0x20
+void Pulse::SetTriggerMode(short int trigger_level_low, short int trigger_level_high)
+{
+    unsigned char command[COMMAND_PACKET_SIZE] = {0};
+    unsigned short int crc = 0xFFFF;
+
+    // command
+    command[0] = 0x20; // trigger mode
+
+    // trigger threshold values
+    command[1] = trigger_level_low >> 8; // low trigger threshold, high byte
+    command[2] = trigger_level_low & 0xFF; // low trigger threshold, low byte
+    command[3] = trigger_level_high >> 8; // high trigger threshold, high byte
+    command[4] = trigger_level_high & 0xFF; // high trigger threshold, low byte
+
+    // calculate cyclic redundancy check value
+    crc = Crc16(command, 5);
+    command[5] = crc >> 8; // crc, high byte
+    command[6] = crc & 0xFF; // crc, low byte
+
+    // send command to sensor
+    SendCommand(command, COMMAND_PACKET_SIZE);
+}
+
+int Pulse::ReadSensorValue(void)
+{
+	int sensor_value = 0;
+	unsigned char packet[BUF_SIZE];
+	unsigned short packet_length = 0;
+
+	// reset buffer
+	memset(packet, '\0', BUF_SIZE);
+
+	// get response
+	packet_length = ReceivePacket(packet, BUF_SIZE);
+
+	if (packet_length != DATA_PACKET_SIZE)
+    {
+        throw runtime_error(string("Error: wrong length of data packet (")
+            + to_string(packet_length) + ")");
+    }
+   
+	// get sensor reading from decoded packet
+    sensor_value = ((packet[1] & 0xFF) << 8) | (packet[2] & 0xFF);
 
 	return sensor_value;
 }

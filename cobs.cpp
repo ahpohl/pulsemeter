@@ -43,6 +43,7 @@ size_t cobs_encode(const uint8_t * __restrict__ input, size_t length, uint8_t * 
     }
 
     output[code_index] = code;
+	output[write_index++] = '\0';
 
     return write_index;
 }
