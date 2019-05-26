@@ -105,8 +105,8 @@ int Pulse::OpenSerialPort(const char * device)
     tty.c_cc[VTIME] = 10; // wait for up to 1 second
 
     // set in/out baud rate
-    cfsetispeed(&tty, B300);
-    cfsetospeed(&tty, B300);
+    cfsetispeed(&tty, B9600);
+    cfsetospeed(&tty, B9600);
 
     // save tty settings
     ret = tcsetattr(SerialPort, TCSANOW, &tty);
@@ -152,8 +152,8 @@ void Pulse::SendCommand(unsigned char * command, int command_length)
     	cout << endl;
 	}
 
-    // send buffer via serial port (100x)
-	for (int i = 0; i < 10; i++)
+    // send buffer via serial port
+	for (int i = 0; i < 1; i++)
 	{
     	bytes_sent = write(SerialPort, cobs_command, cobs_command_length);
 	}
@@ -172,9 +172,38 @@ void Pulse::SendCommand(unsigned char * command, int command_length)
 
 	//
 	// get response
-	// 
-	while (1)	
-		packet_length = ReceivePacket(packet, BUF_SIZE);
+	//
+	usleep(100); 
+	packet_length = ReceivePacket(packet, BUF_SIZE);
+
+	/*
+	int count = 1;
+	while (1)
+	{	
+		// reset buffer
+    	memset(packet, '\0', BUF_SIZE);
+
+    	// Read bytes
+    	bytes_received = read(SerialPort, packet, COBS_DATA_PACKET_SIZE);
+
+    	// error handling
+    	if (bytes_received == -1)
+    	{
+        	throw runtime_error(string("Error reading serial port: ")
+            	+ strerror(errno) + " (" + to_string(errno) + ")");
+    	}
+		
+		cout << dec << setfill('0') << setw(4) << count << ": cobs ";
+		for (int i = 0; i < bytes_received; i++)
+		{
+			cout << hex << setfill('0') << setw(2) 
+				 << (unsigned short) packet[i] << " ";
+		}
+		cout << endl;
+
+		count++;
+	}
+	*/
 }
 
 // receive response data packet
@@ -241,9 +270,8 @@ int Pulse::ReceivePacket(unsigned char * packet, int buffer_size)
 
 	if (Debug)
     {
-		static int count = 0;
         // decoded packet
-        cout << dec << setfill('0') << setw(4) << count << " Res: ";
+        cout << "Res: ";
         for (int i = 0; i < packet_length; i++)
         {
             cout << hex << setfill('0') << setw(2)
@@ -258,8 +286,6 @@ int Pulse::ReceivePacket(unsigned char * packet, int buffer_size)
                  << (unsigned short) cobs_packet[i] << " ";
         }
 		cout << endl;
-
-		count++;
     }
 	
 	return packet_length;

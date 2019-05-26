@@ -222,7 +222,7 @@ void setup() {
   
   // We begin communication with our PacketSerial object by setting the
   // communication speed in bits / second (baud).
-  myPacketSerial.begin(300);
+  myPacketSerial.begin(9600);
 
   // If we want to receive packets, we must specify a packet handler function.
   // The packet handler is a custom function with a signature like the
