@@ -101,7 +101,7 @@ int Pulse::OpenSerialPort(const char * device)
     cfmakeraw(&tty);
 
     // set vmin and vtime
-    tty.c_cc[VMIN] = 16; // returning when 16 bytes are available
+    tty.c_cc[VMIN] = BUF_SIZE; // returning when x bytes are available
     tty.c_cc[VTIME] = 10; // wait for up to 1 second
 
     // set in/out baud rate
@@ -122,7 +122,7 @@ int Pulse::OpenSerialPort(const char * device)
 // send command to sensor
 void Pulse::SendCommand(unsigned char * command, int command_length)
 {
-	// command
+// command
     unsigned char cobs_command[BUF_SIZE] = {0};
 	int cobs_command_length = 0;
 	int bytes_sent = 0;
@@ -173,8 +173,7 @@ void Pulse::SendCommand(unsigned char * command, int command_length)
 	//
 	// get response
 	//
-	usleep(100); 
-	packet_length = ReceivePacket(packet, BUF_SIZE);
+	//packet_length = ReceivePacket(packet, BUF_SIZE);
 
 	/*
 	int count = 1;
@@ -203,17 +202,53 @@ void Pulse::SendCommand(unsigned char * command, int command_length)
 
 		count++;
 	}
+	
 	*/
 }
 
+bool Pulse::SyncPacket(unsigned char * cobs_packet, int cobs_packet_size)
+{
+	unsigned char header = 0xFF;
+	int count = 0;
+	int byte_received = 0;
+
+	do
+	{
+    	// Read byte
+    	byte_received = read(SerialPort, &header, 1);
+
+    	// error handling
+    	if (byte_received == -1)
+    	{
+        	throw runtime_error(string("Error reading serial port: ")
+            	+ strerror(errno) + " (" + to_string(errno) + ")");
+    	}
+
+		count++;
+
+		if (count == 100)
+		{
+			cerr << "Unable to sync packets" << endl;
+			return false;
+		}
+		
+	} while (header != 0x00);
+
+	if (Debug)
+		cout << "Packet re-sync successful (" << count << ")" << endl;
+
+	return true;
+}
+
 // receive response data packet
-int Pulse::ReceivePacket(unsigned char * packet, int buffer_size)
+void Pulse::ReceivePacket(unsigned char * packet, int buffer_size)
 {
 	unsigned char cobs_packet[BUF_SIZE];
 	int cobs_packet_length = 0;
 	int bytes_received = 0;
 	unsigned short crc_before = 0, crc_after = 0;
 	int packet_length = 0;
+	bool is_synced = true;
 	
 	// reset buffer
     memset(cobs_packet, '\0', BUF_SIZE);
@@ -234,7 +269,11 @@ int Pulse::ReceivePacket(unsigned char * packet, int buffer_size)
 	}
 	else if (cobs_packet[bytes_received-1] != 0x00)
 	{
-		throw runtime_error("Packet framing error: out of sync");
+		if (is_synced != SyncPacket(cobs_packet, COBS_DATA_PACKET_SIZE))
+		{
+			throw runtime_error("Packet framing error: out of sync");
+		}
+		return;
 	}
 
 	// reset packet buffer
@@ -288,7 +327,7 @@ int Pulse::ReceivePacket(unsigned char * packet, int buffer_size)
 		cout << endl;
     }
 	
-	return packet_length;
+	return;
 }
 
 // set raw mode, command 0x10
@@ -337,13 +376,12 @@ int Pulse::ReadSensorValue(void)
 {
 	int sensor_value = 0;
 	unsigned char packet[BUF_SIZE];
-	unsigned short packet_length = 0;
 
 	// reset buffer
 	memset(packet, '\0', BUF_SIZE);
 
 	// get response
-	packet_length = ReceivePacket(packet, BUF_SIZE);
+	ReceivePacket(packet, BUF_SIZE);
 
 	if (packet[0] != SENSOR_VALUE)
 	{
@@ -351,12 +389,10 @@ int Pulse::ReadSensorValue(void)
 	}
 
 	// get sensor reading from decoded packet
-    sensor_value = ((packet[1] & 0xFF) << 8) | (packet[2] & 0xFF);
+    sensor_value = static_cast<char>(packet[1]) << 8 | (packet[2] & 0xFF);
 
-	if (Debug)
-	{
-		cout << sensor_value << endl;
-	}
+	// console output	
+	cout << dec << sensor_value << endl;
 
 	return sensor_value;
 }

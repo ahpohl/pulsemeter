@@ -39,12 +39,12 @@ const int DATA_PACKET_SIZE = 5;
 const int COMMAND_PACKET_SIZE = 7;
 
 // sensor mode, R: raw, T: trigger
-volatile char mode = '\0';
+volatile char mode = 'R';
 
 // transmission state:
 enum {SENSOR_VALUE, 
       ACK,
-      UNKNOWN_COMMAND, 
+      UNKNOWN_COMMAND,
       CRC_CHECKSUM_MISMATCH, 
       WRONG_PACKET_SIZE};
 
@@ -162,10 +162,24 @@ void onPacketReceived(const uint8_t* decoded_buffer, size_t decoded_length)
   unsigned int crc_before = 0, crc_after = 0;
 
   // check received packet length
-  
   if (decoded_length != COMMAND_PACKET_SIZE)
   {
-    sendSensorValue(decoded_length, WRONG_PACKET_SIZE);
+    /*
+    lcd.clear();
+    for (int i = 0; i < 4; i++)
+    {
+      lcd.print(decoded_buffer[i], HEX);
+      lcd.print(" ");
+    }
+    lcd.setCursor(0,1);
+    for (int i = 4; i < decoded_length; i++)
+    {
+      lcd.print(decoded_buffer[i], HEX);
+      lcd.print(" ");
+    }
+    */
+    
+    //sendSensorValue(decoded_length, WRONG_PACKET_SIZE);
     lcd.clear();
     lcd.print("packet size");
     lcd.setCursor(0,1);
@@ -179,7 +193,7 @@ void onPacketReceived(const uint8_t* decoded_buffer, size_t decoded_length)
 
   if (crc_before != crc_after)
   {
-    sendSensorValue(crc_after, CRC_CHECKSUM_MISMATCH);
+    //sendSensorValue(crc_after, CRC_CHECKSUM_MISMATCH);
     lcd.clear();
     lcd.print("CRC checksum");
     lcd.setCursor(0,1);
@@ -208,7 +222,7 @@ void onPacketReceived(const uint8_t* decoded_buffer, size_t decoded_length)
   }
 
   // send acknowledgement packet
-  sendSensorValue(0, ACK);
+  //sendSensorValue(0, ACK);
 }
 
 
@@ -254,7 +268,7 @@ void loop() {
   if (mode == 'R')
   {
     // send raw sensor value over serial
-    //sendSensorValue(sensorValueOn - sensorValueOff, 0);
+    sendSensorValue(sensorValueOn - sensorValueOff, 0);
 
     // output raw value on LCD
     lcdPrintRaw(sensorValueOn - sensorValueOff);  

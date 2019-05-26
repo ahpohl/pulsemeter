@@ -73,18 +73,21 @@ int main(int argc, char* argv[])
 	// read raw sensor data
 	if (mode == 'R')
 	{
-		meter.SetRawMode();
-		//while (1)
-		//{
-		//  meter.ReadSensorValue();
-		//}
+		//meter.SetRawMode();
+		while (1)
+		{
+			meter.ReadSensorValue();
+		}
 	}
 
 	// read trigger data
 	else if (mode == 'T')
 	{
 		meter.SetTriggerMode(75, 90);
-		//meter.ReadSensorValue();
+		while (1)
+		{
+			meter.ReadSensorValue();
+		}
 	}
 
 	else
