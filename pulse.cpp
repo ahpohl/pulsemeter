@@ -153,7 +153,7 @@ void Pulse::SendCommand(unsigned char * command, int command_length)
 	}
 
     // send buffer via serial port
-	for (int i = 0; i < 1; i++)
+	for (int i = 0; i < 100; i++)
 	{
     	bytes_sent = write(SerialPort, cobs_command, cobs_command_length);
 	}

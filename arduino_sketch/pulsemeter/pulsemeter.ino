@@ -39,7 +39,7 @@ const int DATA_PACKET_SIZE = 5;
 const int COMMAND_PACKET_SIZE = 7;
 
 // sensor mode, R: raw, T: trigger
-volatile char mode = 'R';
+volatile char mode = 'T';
 
 // transmission state:
 enum {SENSOR_VALUE, 
@@ -105,9 +105,9 @@ void detectTrigger(int val)
       static unsigned long triggerCount;
       triggerCount++;
       lcd.clear();
-      lcd.print("lo ");
+      lcd.print("Low ");
       lcd.print(triggerLevelLow);
-      lcd.print(" hi ");
+      lcd.print(" High ");
       lcd.print(triggerLevelHigh);
       lcd.setCursor(0,1);
       lcd.print(triggerCount);

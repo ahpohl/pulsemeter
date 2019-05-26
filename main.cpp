@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
 	// read raw sensor data
 	if (mode == 'R')
 	{
-		//meter.SetRawMode();
+		meter.SetRawMode();
 		while (1)
 		{
 			meter.ReadSensorValue();
