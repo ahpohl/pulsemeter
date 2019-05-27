@@ -42,8 +42,10 @@ const int COMMAND_PACKET_SIZE = 7;
 volatile char mode = '\0';
 
 // transmission state:
-enum {SENSOR_VALUE, 
-      ACK,
+enum transmissionStatus {SENSOR_VALUE, 
+      SYNC_OK,
+      RAW_MODE,
+      TRIGGER_MODE,
       UNKNOWN_COMMAND,
       CRC_CHECKSUM_MISMATCH, 
       WRONG_PACKET_SIZE};
@@ -158,6 +160,9 @@ void onPacketReceived(const uint8_t* decoded_buffer, size_t decoded_length)
 {
   unsigned int crc_before = 0, crc_after = 0;
 
+  // reset mode (to silence sensor output)
+  mode = '\0';
+
   // check received packet length
   if (decoded_length != COMMAND_PACKET_SIZE)
   { 
@@ -189,22 +194,25 @@ void onPacketReceived(const uint8_t* decoded_buffer, size_t decoded_length)
   switch (decoded_buffer[0]) {
   case 0x10:
     mode = 'R'; // raw mode
+    sendSensorValue(0, RAW_MODE);
     break;
   case 0x20:
     mode = 'T'; // trigger mode
+    sendSensorValue(0, TRIGGER_MODE);
     triggerLevelLow = ((decoded_buffer[1] & 0xFF) << 8) | (decoded_buffer[2] & 0xFF);
     triggerLevelHigh = ((decoded_buffer[3] & 0xFF) << 8) | (decoded_buffer[4] & 0xFF);
     break;
-  default:
-    mode = '\0'; // unknown command received
+  case 0x30:
+    sendSensorValue(0, SYNC_OK);
+    lcd.clear();
+    lcd.print("Sync OK");
+    break;
+  default: // unknown command received 
     sendSensorValue(decoded_buffer[0], UNKNOWN_COMMAND);
     lcd.clear();
     lcd.print("unknown cmd");
-    return;
+    break;
   }
-
-  // send acknowledgement packet
-  sendSensorValue(0, ACK);
 }
 
 

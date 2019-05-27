@@ -2,9 +2,11 @@
 #define CONSTANTS_H
 
 // transmission state:
-enum {SENSOR_VALUE, 
-      ACK,
-      UNKNOWN_COMMAND, 
+enum transmission_status {SENSOR_VALUE, 
+      SYNC_OK,
+      RAW_MODE,
+      TRIGGER_MODE,
+      UNKNOWN_COMMAND,
       CRC_CHECKSUM_MISMATCH, 
       WRONG_PACKET_SIZE};
 

@@ -68,7 +68,10 @@ int main(int argc, char* argv[])
     }
 
 	// open serial port
-    meter.OpenSerialPort("/dev/ttyACM0");	
+    meter.OpenSerialPort("/dev/ttyACM0");
+
+	// sync communication with sensor
+	meter.SyncSerial();	
 
 	// read raw sensor data
 	if (mode == 'R')
@@ -83,7 +86,7 @@ int main(int argc, char* argv[])
 	// read trigger data
 	else if (mode == 'T')
 	{
-		meter.SetTriggerMode(75, 90);
+		meter.SetTriggerMode(1, 20);
 		while (1)
 		{
 			meter.ReadSensorValue();
