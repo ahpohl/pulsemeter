@@ -39,7 +39,7 @@ const int DATA_PACKET_SIZE = 5;
 const int COMMAND_PACKET_SIZE = 7;
 
 // sensor mode, R: raw, T: trigger
-volatile char mode = 'T';
+volatile char mode = '\0';
 
 // transmission state:
 enum {SENSOR_VALUE, 
@@ -105,10 +105,7 @@ void detectTrigger(int val)
       static unsigned long triggerCount;
       triggerCount++;
       lcd.clear();
-      lcd.print("Low ");
-      lcd.print(triggerLevelLow);
-      lcd.print(" High ");
-      lcd.print(triggerLevelHigh);
+      lcd.print("Trigger mode");
       lcd.setCursor(0,1);
       lcd.print(triggerCount);
     }
@@ -163,23 +160,8 @@ void onPacketReceived(const uint8_t* decoded_buffer, size_t decoded_length)
 
   // check received packet length
   if (decoded_length != COMMAND_PACKET_SIZE)
-  {
-    /*
-    lcd.clear();
-    for (int i = 0; i < 4; i++)
-    {
-      lcd.print(decoded_buffer[i], HEX);
-      lcd.print(" ");
-    }
-    lcd.setCursor(0,1);
-    for (int i = 4; i < decoded_length; i++)
-    {
-      lcd.print(decoded_buffer[i], HEX);
-      lcd.print(" ");
-    }
-    */
-    
-    //sendSensorValue(decoded_length, WRONG_PACKET_SIZE);
+  { 
+    sendSensorValue(decoded_length, WRONG_PACKET_SIZE);
     lcd.clear();
     lcd.print("packet size");
     lcd.setCursor(0,1);
@@ -193,7 +175,7 @@ void onPacketReceived(const uint8_t* decoded_buffer, size_t decoded_length)
 
   if (crc_before != crc_after)
   {
-    //sendSensorValue(crc_after, CRC_CHECKSUM_MISMATCH);
+    sendSensorValue(crc_after, CRC_CHECKSUM_MISMATCH);
     lcd.clear();
     lcd.print("CRC checksum");
     lcd.setCursor(0,1);
@@ -222,7 +204,7 @@ void onPacketReceived(const uint8_t* decoded_buffer, size_t decoded_length)
   }
 
   // send acknowledgement packet
-  //sendSensorValue(0, ACK);
+  sendSensorValue(0, ACK);
 }
 
 

@@ -153,7 +153,7 @@ void Pulse::SendCommand(unsigned char * command, int command_length)
 	}
 
     // send buffer via serial port
-	for (int i = 0; i < 100; i++)
+	for (int i = 0; i < 1; i++)
 	{
     	bytes_sent = write(SerialPort, cobs_command, cobs_command_length);
 	}
@@ -173,7 +173,7 @@ void Pulse::SendCommand(unsigned char * command, int command_length)
 	//
 	// get response
 	//
-	//packet_length = ReceivePacket(packet, BUF_SIZE);
+	ReceivePacket(packet, BUF_SIZE);
 
 	/*
 	int count = 1;
@@ -370,6 +370,10 @@ void Pulse::SetTriggerMode(short int trigger_level_low, short int trigger_level_
 
     // send command to sensor
     SendCommand(command, COMMAND_PACKET_SIZE);
+
+	// output
+	if (Debug)
+		cout << "Trigger level: " << trigger_level_low << " " << trigger_level_high << endl;
 }
 
 int Pulse::ReadSensorValue(void)
