@@ -22,7 +22,7 @@ int main(int argc, char* argv[])
     };
 
     const char * optString = "hDdtrl:g:c";
-    int opt = 0
+    int opt = 0;
     int longIndex = 0;
 	char mode = '\0'; // raw: R, trigger: T
 	bool debug = false;
@@ -70,6 +70,7 @@ int main(int argc, char* argv[])
 
 		case 'c':
 			rrd_file = optarg;
+			break;
 
 		default:
             break;
