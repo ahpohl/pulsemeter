@@ -120,7 +120,7 @@ void Pulse::ConfigureSerialPort(unsigned char vmin, unsigned char vtime)
     }
 
 	// flush serial buffer
-    tcflush(SerialPort,TCIOFLUSH);
+    //tcflush(SerialPort,TCIOFLUSH);
 }
 
 
