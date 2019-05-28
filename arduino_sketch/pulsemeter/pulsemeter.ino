@@ -203,11 +203,13 @@ void onPacketReceived(const uint8_t* decoded_buffer, size_t decoded_length)
     triggerLevelHigh = ((decoded_buffer[3] & 0xFF) << 8) | (decoded_buffer[4] & 0xFF);
     break;
   case 0x30:
+    mode = '\0';
     sendSensorValue(0, SYNC_OK);
     lcd.clear();
     lcd.print("Sync OK");
     break;
-  default: // unknown command received 
+  default: // unknown command received
+    mode = '\0'; 
     sendSensorValue(decoded_buffer[0], UNKNOWN_COMMAND);
     lcd.clear();
     lcd.print("unknown cmd");
