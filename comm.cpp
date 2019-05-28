@@ -484,7 +484,7 @@ int Pulse::ReadSensorValue(void)
 	}
 
 	// get sensor reading from decoded packet
-    sensor_value = static_cast<char>(packet[1]) << 8 | (packet[2] & 0xFF);
+    sensor_value = (short) ((packet[1] & 0xFF) << 8) | (packet[2] & 0xFF);
 
 	// console output	
 	cout << dec << sensor_value << endl;
