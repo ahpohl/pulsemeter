@@ -243,16 +243,16 @@ void setup() {
 void loop() {
   
   // perform measurement
-  // turn IR LED off
-  digitalWrite(irOutPin, LOW);
-  delay(10);
-  // read the analog in value:
-  sensorValueOff = analogRead(analogInPin);           
-  // turn IR LED on
+  // turn LED on
   digitalWrite(irOutPin, HIGH);
   delay(10);
   // read the analog in value:
-  sensorValueOn = analogRead(analogInPin);
+  sensorValueOn = analogRead(analogInPin);           
+  // turn LED off
+  digitalWrite(irOutPin, LOW);
+  delay(10);
+  // read the analog in value:
+  sensorValueOff = analogRead(analogInPin);
 
   // raw mode
   if (mode == 'R')
