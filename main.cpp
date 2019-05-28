@@ -17,15 +17,19 @@ int main(int argc, char* argv[])
         { "trigger", no_argument, NULL, 't' },
         { "low", required_argument, NULL, 'l' },
 		{ "high", required_argument, NULL, 'g' },
+		{ "create", required_argument, NULL, 'c'},
         { NULL, 0, NULL, 0 }
     };
 
-    const char * optString = "hDdtrl:g:";
-    int opt = 0;
+    const char * optString = "hDdtrl:g:c";
+    int opt = 0
     int longIndex = 0;
 	char mode = '\0'; // raw: R, trigger: T
 	bool debug = false;
 	bool help = false;
+
+	// set default RRD database filename
+	const char * rrd_file = "pulse_data.rrd";
 
 	// set default serial device
 	const char * serial_device = "/dev/ttyACM0";
@@ -64,6 +68,9 @@ int main(int argc, char* argv[])
 			trigger_level_high = atoi(optarg);
 			break;
 
+		case 'c':
+			rrd_file = optarg;
+
 		default:
             break;
         }
@@ -82,7 +89,8 @@ int main(int argc, char* argv[])
   -r --raw             Select raw mode\n\
   -t --trigger         Select trigger mode\n\
   -l --low [int]       Set trigger level low\n\
-  -g --high [int]      Set trigger level high\n"
+  -g --high [int]      Set trigger level high\n\
+  -c --create [fd]     Create RRD database\n"
 		<< endl;
 		return 0;
 	}
@@ -111,6 +119,9 @@ int main(int argc, char* argv[])
     {
         meter.SetDebug();
     }
+
+	// create RRD file if not exist
+	meter.CreateRRD(rrd_file);
 
 	// sync communication with sensor
 	meter.SyncSerial();	

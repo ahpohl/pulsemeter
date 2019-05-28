@@ -24,7 +24,7 @@ public:
 	int ReadSensorValue(void);
 
 	// RRD data methods
-	void CreateRRDFile(const char * file);
+	void CreateRRD(const char * filename);
 };
 
 #endif // PULSE_H
