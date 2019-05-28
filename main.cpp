@@ -12,6 +12,7 @@ int main(int argc, char* argv[])
 	const struct option longOpts[] = {
         { "help", no_argument, NULL, 'h' },
         { "debug", no_argument, NULL, 'D' },
+		{ "device", required_argument, NULL, 'd' },
 		{ "raw", no_argument, NULL, 'r' },
         { "trigger", no_argument, NULL, 't' },
         { "low", required_argument, NULL, 'l' },
@@ -19,12 +20,15 @@ int main(int argc, char* argv[])
         { NULL, 0, NULL, 0 }
     };
 
-    const char* optString = "hDtrl:g:";
+    const char * optString = "hDdtrl:g:";
     int opt = 0;
     int longIndex = 0;
 	char mode = '\0'; // raw: R, trigger: T
 	bool debug = false;
 	bool help = false;
+
+	// set default serial device
+	const char * serial_device = "/dev/ttyACM0";
 
 	// set default trigger levels
 	int trigger_level_low = 75, trigger_level_high = 90;
@@ -39,6 +43,10 @@ int main(int argc, char* argv[])
         case 'D':
 			debug = true;
             break;
+
+		case 'd':
+			serial_device = optarg;
+			break;
 
         case 'r':
             mode = 'R';
@@ -70,10 +78,11 @@ int main(int argc, char* argv[])
     	cout << "\
   -h --help            Show help message\n\
   -D --debug           Show debug messages\n\
+  -d --device [dev]    Set serial device\n\
   -r --raw             Select raw mode\n\
   -t --trigger         Select trigger mode\n\
-  -l --low             Set trigger level low\n\
-  -g --high            Set trigger level high\n"
+  -l --low [int]       Set trigger level low\n\
+  -g --high [int]      Set trigger level high\n"
 		<< endl;
 		return 0;
 	}
@@ -95,7 +104,7 @@ int main(int argc, char* argv[])
 	}
 
     // create pulsemeter object
-    Pulse meter("/dev/ttyACM0");
+    Pulse meter(serial_device);
 
 	// set debug flag
     if (debug)
