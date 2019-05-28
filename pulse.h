@@ -8,12 +8,13 @@ private:
 	bool Debug;
 
 public:
+	Pulse(const char * device);
 	~Pulse(void);
 	void SetDebug(void);
 
 	// sensor methods
 	unsigned short Crc16(unsigned char * data_p, int length);
-	int OpenSerialPort(const char * device);
+	void ConfigureSerialPort(unsigned char vmin, unsigned char vtime);
 	void SendCommand(unsigned char * command, int command_length);
 	void SyncSerial(void);
 	bool SyncPacket(void);

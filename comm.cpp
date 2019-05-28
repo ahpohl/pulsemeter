@@ -19,6 +19,21 @@
 
 using namespace std;
 
+// constructor
+Pulse::Pulse(const char * device)
+{
+    // open serial port 
+    SerialPort = open(device, O_RDWR | O_NOCTTY);
+    if (SerialPort < 0)
+    {
+        throw runtime_error(string("Error opening device ") + device + ": "
+             + strerror(errno) + " (" + to_string(errno) + ")");
+    }
+    
+    if (Debug)
+        cout << "Opened serial device " << device << endl;
+}
+
 // destructor
 Pulse::~Pulse(void)
 {
@@ -69,21 +84,10 @@ unsigned short Pulse::Crc16(unsigned char * data_p, int length)
     return (crc);
 }
 
-int Pulse::OpenSerialPort(const char * device)
+void Pulse::ConfigureSerialPort(unsigned char vmin, unsigned char vtime)
 {
-	int ret = 0;
 	struct termios tty;
-
-	// open serial port	
-	SerialPort = open(device, O_RDWR | O_NOCTTY);
-	if (SerialPort < 0)
-	{
-		throw runtime_error(string("Error opening device ") + device + ": "
-             + strerror(errno) + " (" + to_string(errno) + ")");
-	}
-	
-	if (Debug)
-		cout << "Opened serial device " << device << endl;
+	int ret = 0;
 
 	// init termios struct
     memset(&tty, 0, sizeof(tty));
@@ -100,8 +104,8 @@ int Pulse::OpenSerialPort(const char * device)
     cfmakeraw(&tty);
 
     // set vmin and vtime
-    tty.c_cc[VMIN] = 0; // return when data is available (timed read)
-    tty.c_cc[VTIME] = 1; // wait for up to 0.1 second
+    tty.c_cc[VMIN] = vmin;
+    tty.c_cc[VTIME] = vtime;
 
     // set in/out baud rate
     cfsetispeed(&tty, B9600);
@@ -117,56 +121,8 @@ int Pulse::OpenSerialPort(const char * device)
 
 	// flush serial buffer
     tcflush(SerialPort,TCIOFLUSH);
-
-	return 0;
 }
 
-// send command to sensor
-void Pulse::SendCommand(unsigned char * command, int command_length)
-{
-	// command
-    unsigned char cobs_command[BUF_SIZE] = {0};
-	int cobs_command_length = 0;
-	int bytes_sent = 0;
-	
-	// encode packet data
-    cobs_command_length = cobs_encode(command, command_length, cobs_command);
-
-	if (Debug)
-	{
-		cout << "Cmd: ";
-        for (int i = 0; i < command_length; i++)
-        {
-            cout << hex << setfill('0') << setw(2) 
-				 << (unsigned short) command[i] << " ";
-        }	
-		cout << ": cobs ";
-		for (int i = 0; i < cobs_command_length; i++)
-    	{
-    		cout << hex << setfill('0') << setw(2) 
-			     << (unsigned short) cobs_command[i] << " ";
-    	}
-    	cout << endl;
-	}
-
-    // send buffer via serial port
-	for (int i = 0; i < 1; i++)
-	{
-    	bytes_sent = write(SerialPort, cobs_command, cobs_command_length);
-	}
-
-    // error handling
-    if (bytes_sent == -1)
-    {
-		throw runtime_error(string("Error reading serial port: ") 
-			+ strerror(errno) + " (" + to_string(errno) + ")");
-	}
-	else if (bytes_sent != cobs_command_length)
-	{
-		throw runtime_error(string("Error sending encoded packet: ") 
-			+ to_string(bytes_sent) + " bytes transmitted ");
-	}
-}
 
 void Pulse::SyncSerial(void)
 {
@@ -179,9 +135,10 @@ void Pulse::SyncSerial(void)
 	int count = 0;
 	int garbage = 0;
 	
-	// adjust VMIN and VTIME
-	struct termios tty;
-	int ret = 0;
+	// configure serial port for non-blocking read
+	// vmin: return immediately if characters are available
+	// vtime: or wait for max 0.1 sec
+	ConfigureSerialPort(0, 1);
 
     // sync packet
 	command[0] = 0x30; // sync mode
@@ -239,37 +196,11 @@ void Pulse::SyncSerial(void)
     	throw runtime_error("Packet framing error: out of sync");
     }
 
-	//
-	// set VMIN and VTIME
-	//	
-
-	// init termios struct
-    memset(&tty, 0, sizeof(tty));
-
-    // read in existing settings
-    ret = tcgetattr(SerialPort, &tty);
-	if (ret != 0)
-    {
-        throw runtime_error(string("Error getting serial port attributes: ") 
-			+ strerror(errno) + " (" + to_string(errno) + ")");
-    }
-
-    // set vmin and vtime
-    tty.c_cc[VMIN] = BUF_SIZE; // returning when x bytes are available
-    tty.c_cc[VTIME] = 10; // wait for up to 1 second
-
-    // save tty settings
-    ret = tcsetattr(SerialPort, TCSANOW, &tty);
-	if (ret != 0)
-    {
-		throw runtime_error(string("Error setting serial port attributes: ") 
-			+ strerror(errno) + " (" + to_string(errno) + ")");
-    }
-
-	//
-	// test communication
-	//
-
+    // set vmin and vtime for blocking read
+	// vmin: returning when max 16 bytes are available
+	// vtime: wait for up to 1 second
+	ConfigureSerialPort(BUF_SIZE, 10);
+	
 	// send sync packet
 	SendCommand(command, COMMAND_PACKET_SIZE);
 
@@ -320,6 +251,53 @@ bool Pulse::SyncPacket(void)
 		cout << "Packet re-sync successful (" << count << ")" << endl;
 
 	return true;
+}
+
+// send command to sensor
+void Pulse::SendCommand(unsigned char * command, int command_length)
+{
+	// command
+    unsigned char cobs_command[BUF_SIZE] = {0};
+	int cobs_command_length = 0;
+	int bytes_sent = 0;
+	
+	// encode packet data
+    cobs_command_length = cobs_encode(command, command_length, cobs_command);
+
+	if (Debug)
+	{
+		cout << "Cmd: ";
+        for (int i = 0; i < command_length; i++)
+        {
+            cout << hex << setfill('0') << setw(2) 
+				 << (unsigned short) command[i] << " ";
+        }	
+		cout << ": cobs ";
+		for (int i = 0; i < cobs_command_length; i++)
+    	{
+    		cout << hex << setfill('0') << setw(2) 
+			     << (unsigned short) cobs_command[i] << " ";
+    	}
+    	cout << endl;
+	}
+
+    // send buffer via serial port
+	for (int i = 0; i < 1; i++)
+	{
+    	bytes_sent = write(SerialPort, cobs_command, cobs_command_length);
+	}
+
+    // error handling
+    if (bytes_sent == -1)
+    {
+		throw runtime_error(string("Error reading serial port: ") 
+			+ strerror(errno) + " (" + to_string(errno) + ")");
+	}
+	else if (bytes_sent != cobs_command_length)
+	{
+		throw runtime_error(string("Error sending encoded packet: ") 
+			+ to_string(bytes_sent) + " bytes transmitted ");
+	}
 }
 
 // receive response data packet
@@ -512,10 +490,4 @@ int Pulse::ReadSensorValue(void)
 	cout << dec << sensor_value << endl;
 
 	return sensor_value;
-}
-
-// create rrd database
-void Pulse::CreateRRDFile(const char * file)
-{
-
 }

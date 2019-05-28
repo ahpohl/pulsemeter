@@ -11,64 +11,97 @@ int main(int argc, char* argv[])
 	// parse command line
 	const struct option longOpts[] = {
         { "help", no_argument, NULL, 'h' },
-        { "version", no_argument, NULL, 'V' },
-        { "debug", no_argument, NULL, 'd' },
+        { "debug", no_argument, NULL, 'D' },
+		{ "raw", no_argument, NULL, 'r' },
         { "trigger", no_argument, NULL, 't' },
-        { "raw", no_argument, NULL, 'r' },
+        { "low", required_argument, NULL, 'l' },
+		{ "high", required_argument, NULL, 'g' },
         { NULL, 0, NULL, 0 }
     };
 
-    const char* optString = "hVdtr";
+    const char* optString = "hDtrl:g:";
     int opt = 0;
     int longIndex = 0;
 	char mode = '\0'; // raw: R, trigger: T
 	bool debug = false;
+	bool help = false;
+
+	// set default trigger levels
+	int trigger_level_low = 75, trigger_level_high = 90;
 
     do {
-        opt = getopt_long( argc, argv, optString, longOpts, &longIndex );
-        switch( opt ) {
+        opt = getopt_long(argc, argv, optString, longOpts, &longIndex);
+        switch (opt) {
         case 'h':
+			help = true;
             break;
 
-        case 'V':
-            break;
-
-        case 'd':
+        case 'D':
 			debug = true;
-            break;
-
-        case 't':
-            mode = 'T';
             break;
 
         case 'r':
             mode = 'R';
             break;
 
+	    case 't':
+            mode = 'T';
+            break;
+
+		case 'l':
+			trigger_level_low = atoi(optarg);
+			break;
+		
+		case 'g':
+			trigger_level_high = atoi(optarg);
+			break;
+
 		default:
             break;
         }
 
 	} while (opt != -1);
-	
-	// create object
-	Pulse meter;
 
-	// set debug flag
-	if (debug)
+	// display help
+	if (help)
 	{
-		meter.SetDebug();
+		cout << "Energy Pulsemeter Version <insert version>" << endl;
+    	cout << endl << "Usage: " << argv[0] << " [options]" << endl << endl;
+    	cout << "\
+  -h --help            Show help message\n\
+  -D --debug           Show debug messages\n\
+  -r --raw             Select raw mode\n\
+  -t --trigger         Select trigger mode\n\
+  -l --low             Set trigger level low\n\
+  -g --high            Set trigger level high\n"
+		<< endl;
+		return 0;
 	}
 
-    // print help if no mode was selected
+	// print message if no mode was selected
     if (mode == '\0')
     {
-        // print help
+        cout << "Please select raw or trigger mode for normal operation." << endl;
         return 0;
     }
 
-	// open serial port
-    meter.OpenSerialPort("/dev/ttyACM0");
+	// check trigger levels	
+	if (trigger_level_low > trigger_level_high)
+	{
+		cerr << "Trigger level low larger than level high (" 
+			 << trigger_level_low << " < " << trigger_level_high << ")"
+			 << endl;
+		return 1;
+	}
+
+    // create pulsemeter object
+    Pulse meter("/dev/ttyACM0");
+
+	// set debug flag
+    if (debug)
+    {
+        meter.SetDebug();
+    }
 
 	// sync communication with sensor
 	meter.SyncSerial();	
@@ -86,18 +119,12 @@ int main(int argc, char* argv[])
 	// read trigger data
 	else if (mode == 'T')
 	{
-		meter.SetTriggerMode(1, 20);
+		meter.SetTriggerMode(trigger_level_low, trigger_level_high);
 		while (1)
 		{
 			meter.ReadSensorValue();
 		}
 	}
 
-	else
-	{
-		cerr << "Unkown mode selected" << endl;
-		return 1;
-	}
-	
 	return 0;
 }
