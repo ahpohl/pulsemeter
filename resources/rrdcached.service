@@ -1,0 +1,11 @@
+[Unit]
+Description=Data caching daemon for rrdtool
+After=network.service
+
+[Service]
+Type=forking
+PIDFile=/run/rrdcached/rrdcached.pid
+ExecStart=/usr/bin/rrdcached -U rrdcached -G rrdcached -s rrdcached -l unix:/run/rrdcached/rrdcached.sock -z 3m -p /run/rrdcached/rrdcached.pid -b /var/lib/rrdcached
+
+[Install]
+WantedBy=default.target
