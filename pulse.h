@@ -6,9 +6,11 @@ class Pulse
 private:
 	int SerialPort;
 	bool Debug;
+	int RevPerKiloWattHour;
+	const char * RRDFile; 
 
 public:
-	Pulse(const char * device);
+	Pulse(const char * device, const char * rrd_file, int rev_per_kWh);
 	~Pulse(void);
 	void SetDebug(void);
 
@@ -24,7 +26,8 @@ public:
 	int ReadSensorValue(void);
 
 	// RRD data methods
-	void CreateRRD(const char * filename);
+	void CreateRRD(void);
+	void UpdateRRD(int trigger_state);
 };
 
 #endif // PULSE_H

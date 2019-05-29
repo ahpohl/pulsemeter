@@ -13,15 +13,16 @@ int main(int argc, char* argv[])
         { "help", no_argument, NULL, 'h' },
         { "debug", no_argument, NULL, 'D' },
 		{ "device", required_argument, NULL, 'd' },
-		{ "raw", no_argument, NULL, 'r' },
+		{ "raw", no_argument, NULL, 'a' },
         { "trigger", no_argument, NULL, 't' },
         { "low", required_argument, NULL, 'l' },
 		{ "high", required_argument, NULL, 'g' },
-		{ "create", required_argument, NULL, 'c'},
+		{ "rrd", required_argument, NULL, 'r'},
+		{ "kwh", required_argument, NULL, 'k'},
         { NULL, 0, NULL, 0 }
     };
 
-    const char * optString = "hDdtrl:g:c";
+    const char * optString = "hDd:tal:g:r:k:";
     int opt = 0;
     int longIndex = 0;
 	char mode = '\0'; // raw: R, trigger: T
@@ -29,13 +30,16 @@ int main(int argc, char* argv[])
 	bool help = false;
 
 	// set default RRD database filename
-	const char * rrd_file = "pulse_data.rrd";
+	const char * rrd_file = "pulse.rrd";
 
 	// set default serial device
 	const char * serial_device = "/dev/ttyACM0";
 
 	// set default trigger levels
 	int trigger_level_low = 75, trigger_level_high = 90;
+
+	// set revolutions per kWh of ferraris energy meter
+	int rev_per_kWh = 75;
 
     do {
         opt = getopt_long(argc, argv, optString, longOpts, &longIndex);
@@ -52,7 +56,7 @@ int main(int argc, char* argv[])
 			serial_device = optarg;
 			break;
 
-        case 'r':
+        case 'a':
             mode = 'R';
             break;
 
@@ -68,8 +72,12 @@ int main(int argc, char* argv[])
 			trigger_level_high = atoi(optarg);
 			break;
 
-		case 'c':
+		case 'r':
 			rrd_file = optarg;
+			break;
+
+		case 'k':
+			rev_per_kWh = atoi(optarg);
 			break;
 
 		default:
@@ -91,7 +99,8 @@ int main(int argc, char* argv[])
   -t --trigger         Select trigger mode\n\
   -l --low [int]       Set trigger level low\n\
   -g --high [int]      Set trigger level high\n\
-  -c --create [fd]     Create RRD database\n"
+  -r --rrd [fd]        Set round robin database\n\
+  -k --kwh [int]       Set revolutions per kWh\n"
 		<< endl;
 		return 0;
 	}
@@ -113,7 +122,9 @@ int main(int argc, char* argv[])
 	}
 
     // create pulsemeter object
-    Pulse meter(serial_device);
+    Pulse meter(serial_device,
+			    rrd_file,
+				rev_per_kWh);
 
 	// set debug flag
     if (debug)
@@ -122,7 +133,7 @@ int main(int argc, char* argv[])
     }
 
 	// create RRD file if not exist
-	meter.CreateRRD(rrd_file);
+	meter.CreateRRD();
 
 	// sync communication with sensor
 	meter.SyncSerial();	
