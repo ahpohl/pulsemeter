@@ -1,3 +1,4 @@
 pulse
 sensor.log
 pulse.rrd
+*.o
