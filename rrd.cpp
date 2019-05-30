@@ -47,7 +47,7 @@ void Pulse::RRDCreate(void)
 }
 
 // update meter reading in the rrd file (in kWh)
-void Pulse::RRDUpdateCounter(int trigger_state)
+void Pulse::RRDUpdateCounter(void)
 {
 	int ret = 0;
 	time_t timestamp = time(nullptr);
@@ -69,7 +69,7 @@ void Pulse::RRDUpdateCounter(int trigger_state)
 	*argv = (char *) malloc(RRD_BUF_SIZE * sizeof(char));
 
     // output for rrd update
-    if (trigger_state == 1)
+    if (SensorValue == 1)
     {
         meter_reading += counter_step_size;
         
@@ -94,8 +94,10 @@ void Pulse::RRDUpdateCounter(int trigger_state)
 		ret = rrd_update_r(RRDFile, "counter:energy", RRD_DS_LEN, (const char **) argv);
 		if (ret)
     	{
-        	throw runtime_error(string("Unable to update ")
- 				+ rrd_get_error());
+        	//throw runtime_error(string("Unable to update ")
+ 			//	+ rrd_get_error());
+			cerr << "Unable to update " << rrd_get_error() << endl;
+			rrd_clear_error();
     	}
 	}
 

@@ -132,16 +132,16 @@ int main(int argc, char* argv[])
         meter.SetDebug();
     }
 
-	// create RRD file if not exist
-	meter.RRDCreate();
-
 	// sync communication with sensor
 	meter.SyncSerial();	
 
 	// read raw sensor data
 	if (mode == 'R')
 	{
+		// set raw mode
 		meter.SetRawMode();
+
+		// read sensor values
 		while (1)
 		{
 			meter.ReadSensorValue();
@@ -151,10 +151,20 @@ int main(int argc, char* argv[])
 	// read trigger data
 	else if (mode == 'T')
 	{
+		// create RRD file if not exist
+    	meter.RRDCreate();		
+
+		// set trigger mode
 		meter.SetTriggerMode(trigger_level_low, trigger_level_high);
+		
+		// read sensor values
 		while (1)
 		{
+			// read sensor value
 			meter.ReadSensorValue();
+			
+			// update rrd file
+    		meter.RRDUpdateCounter();
 		}
 	}
 

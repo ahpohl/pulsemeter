@@ -7,7 +7,8 @@ private:
 	int SerialPort;
 	bool Debug;
 	int RevPerKiloWattHour;
-	const char * RRDFile; 
+	const char * RRDFile;
+	int SensorValue;
 
 public:
 	Pulse(const char * device, const char * rrd_file, int rev_per_kWh);
@@ -28,7 +29,7 @@ public:
 	// RRD data methods
 	void RRDConnect(const char * daemon_address);
 	void RRDCreate(void);
-	void RRDUpdateCounter(int trigger_state);
+	void RRDUpdateCounter(void);
 	double RRDGetCounter(void);
 	void RRDGetEnergyMeterN(char * energy_string, int length);
 	void RRDGetPowerMeterN(char * power_string, int length);

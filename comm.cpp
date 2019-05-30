@@ -471,7 +471,6 @@ void Pulse::SetTriggerMode(short int trigger_level_low, short int trigger_level_
 
 int Pulse::ReadSensorValue(void)
 {
-	int sensor_value = 0;
 	unsigned char packet[BUF_SIZE];
 
 	// reset buffer
@@ -486,13 +485,10 @@ int Pulse::ReadSensorValue(void)
 	}
 
 	// get sensor reading from decoded packet
-    sensor_value = (short) ((packet[1] & 0xFF) << 8) | (packet[2] & 0xFF);
+    SensorValue = (short) ((packet[1] & 0xFF) << 8) | (packet[2] & 0xFF);
 
-	// console output	
-	cout << dec << sensor_value << endl;
+	// screen output
+	cout << dec << SensorValue << endl;
 
-	// output for rrd update
-	RRDUpdateCounter(sensor_value);
-
-	return sensor_value;
+	return SensorValue;
 }
