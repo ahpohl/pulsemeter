@@ -307,7 +307,6 @@ void Pulse::SendCommand(unsigned char * command, int command_length)
 void Pulse::ReceivePacket(unsigned char * packet, int buffer_size)
 {
 	unsigned char cobs_packet[BUF_SIZE];
-	int cobs_packet_length = 0;
 	int bytes_received = 0;
 	unsigned short crc_before = 0, crc_after = 0;
 	int packet_length = 0;
@@ -491,6 +490,9 @@ int Pulse::ReadSensorValue(void)
 
 	// console output	
 	cout << dec << sensor_value << endl;
+
+	// output for rrd update
+	RRDUpdateCounter(sensor_value);
 
 	return sensor_value;
 }

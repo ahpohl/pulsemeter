@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sstream>
 #include <ctime>
 #include <rrd.h>
 #include <rrd_client.h>
@@ -45,19 +46,56 @@ void Pulse::RRDCreate(void)
     }
 }
 
+// update meter reading in the rrd file (in kWh)
 void Pulse::RRDUpdateCounter(int trigger_state)
 {
-	double trigger_step = 1.0 / RevPerKiloWattHour;
-	double kwh_count = 0.0;
-	
+	int ret = 0;;
 
-	if (trigger_state == 1)
-	{
+	// counter_step_size in kWh
+	double counter_step_size = 1.0 / RevPerKiloWattHour;
+
+	// total meter reading in kWh
+	static double meter_reading = 0;
+
+	// energy per revolution in Ws
+	int energy_per_rev = static_cast<int>(counter_step_size * 3600 * 1000);
 		
+	// rrd update string to write into rrd file
+	ostringstream rrd_update;
+
+    // output for rrd update
+    if (trigger_state == 1)
+    {
+        meter_reading += counter_step_size;
+        rrd_update << "N:" << scientific << meter_reading << ":" 
+				   << energy_per_rev << endl;
+
+		if (Debug)
+			cout << rrd_update.str();
+
+		const char * argv[] = {rrd_update.str().c_str(), nullptr};
+		ret = rrd_update_r(RRDFile, nullptr, 1, argv);
+
+		if (ret)
+    	{
+        	throw runtime_error(string("Unable to update ")
+ 				+ rrd_get_error());
+    	}
 	}
 }
 
-// get total kWh counter from rrd file
+/*
+    int       rrd_update_r(
+    const char *filename,
+    const char *_template,
+    int argc,
+    const char **argv);
+
+	int rrd_client_update(rrd_client_t *client, const char *filename, int values_num,
+    	const char * const *values);
+*/
+
+// get meter reading from rrd file (in kWh)
 double Pulse::RRDGetCounter(void)
 {
 	double energy_counter = 0;
@@ -78,15 +116,15 @@ int rrd_lastupdate_r (const char *filename,
     		const int rraindex);
 */
 
-// get total energy (in W) from rrd file in meterN format
-// e.g. pulse(1234.5*W) 
+// get total energy (in Wh) from rrd file in meterN format
+// e.g. pulse(1234.5*Wh) 
 void Pulse::RRDGetEnergyMeterN(char * energy_string, int length)
 {
 
 }
 
-// get total power (in Wh) from rrd file in meterN format
-// e.g. pulse(1234.5*Wh) 
+// get total power (in W) from rrd file in meterN format
+// e.g. pulse(1234.5*W) 
 void Pulse::RRDGetPowerMeterN(char * power_string, int length)
 {
 
