@@ -22,8 +22,8 @@ void Pulse::RRDCreate(void)
 	const int num_ds_rrd = 8;
 	const int step_size = 60;
 	const char * rrd_argv[] = {
-		"DS:counter:GAUGE:86400:0:1000000",
-    	"DS:energy:ABSOLUTE:86400:0:1000000",
+		"DS:energy:GAUGE:86400:0:1000000",
+    	"DS:power:DCOUNTER:86400:0:1000000",
 		"RRA:LAST:0.5:1:4320",
 		"RRA:AVERAGE:0.5:1:4320",
 		"RRA:LAST:0.5:1440:30",
@@ -91,7 +91,7 @@ void Pulse::RRDUpdateCounter(void)
 			cout << argv[0] << endl;
 
 		// update rrd file
-		ret = rrd_update_r(RRDFile, "counter:energy", RRD_DS_LEN, (const char **) argv);
+		ret = rrd_update_r(RRDFile, "energy:power", RRD_DS_LEN, (const char **) argv);
 		if (ret)
     	{
         	//throw runtime_error(string("Unable to update ")

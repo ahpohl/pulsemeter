@@ -20,21 +20,23 @@
 using namespace std;
 
 // constructor
-Pulse::Pulse(const char * device, const char * rrd_file, int rev_per_kWh)
+Pulse::Pulse(const char * serial_device, const char * rrd_file, 
+	double meter_reading, int rev_per_kWh)
 {
 	this -> RRDFile = rrd_file;
 	this -> RevPerKiloWattHour = rev_per_kWh;
+	this -> MeterReading = meter_reading;
 
     // open serial port 
-    SerialPort = open(device, O_RDWR | O_NOCTTY);
+    SerialPort = open(serial_device, O_RDWR | O_NOCTTY);
     if (SerialPort < 0)
     {
-        throw runtime_error(string("Error opening device ") + device + ": "
+        throw runtime_error(string("Error opening device ") + serial_device + ": "
              + strerror(errno) + " (" + to_string(errno) + ")");
     }
     
     if (Debug)
-        cout << "Opened serial device " << device << endl;
+        cout << "Opened serial device " << serial_device << endl;
 }
 
 // destructor

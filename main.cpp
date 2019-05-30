@@ -13,30 +13,35 @@ int main(int argc, char* argv[])
         { "help", no_argument, NULL, 'h' },
         { "debug", no_argument, NULL, 'D' },
 		{ "device", required_argument, NULL, 'd' },
-		{ "raw", no_argument, NULL, 'a' },
-        { "trigger", no_argument, NULL, 't' },
-        { "low", required_argument, NULL, 'l' },
-		{ "high", required_argument, NULL, 'g' },
-		{ "rrd", required_argument, NULL, 'r'},
-		{ "kwh", required_argument, NULL, 'k'},
+		{ "raw", no_argument, NULL, 'R' },
+        { "trigger", no_argument, NULL, 'T' },
+        { "low", required_argument, NULL, 'L' },
+		{ "high", required_argument, NULL, 'H' },
+		{ "address", required_argument, NULL, 'l'},
+		{ "rev", required_argument, NULL, 'r'},
+		{ "meter", required_argument, NULL, 'm'},
         { NULL, 0, NULL, 0 }
     };
 
-    const char * optString = "hDd:tal:g:r:k:";
+    const char * optString = "hDd:RTL:H:l:r:m:";
     int opt = 0;
     int longIndex = 0;
 	char mode = '\0'; // raw: R, trigger: T
 	bool debug = false;
 	bool help = false;
+	double meter_reading = 0;
 
-	// set default RRD database filename
+	// set default rrd filename
 	const char * rrd_file = "pulse.rrd";
+
+	// set default address of rrdcached daemon 
+	const char * rrd_address = "unix:/run/rrdcached/rrdcached.sock";
 
 	// set default serial device
 	const char * serial_device = "/dev/ttyACM0";
 
 	// set default trigger levels
-	int trigger_level_low = 75, trigger_level_high = 90;
+	int trigger_level_low = 70, trigger_level_high = 90;
 
 	// set revolutions per kWh of ferraris energy meter
 	int rev_per_kWh = 75;
@@ -56,28 +61,32 @@ int main(int argc, char* argv[])
 			serial_device = optarg;
 			break;
 
-        case 'a':
+        case 'R':
             mode = 'R';
             break;
 
-	    case 't':
+	    case 'T':
             mode = 'T';
             break;
 
-		case 'l':
+		case 'L':
 			trigger_level_low = atoi(optarg);
 			break;
 		
-		case 'g':
+		case 'H':
 			trigger_level_high = atoi(optarg);
 			break;
 
-		case 'r':
-			rrd_file = optarg;
+		case 'l':
+			rrd_address = optarg;
 			break;
 
-		case 'k':
+		case 'r':
 			rev_per_kWh = atoi(optarg);
+			break;
+
+		case 'm':
+			meter_reading = atof(optarg);
 			break;
 
 		default:
@@ -92,15 +101,16 @@ int main(int argc, char* argv[])
 		cout << "Energy Pulsemeter Version <insert version>" << endl;
     	cout << endl << "Usage: " << argv[0] << " [options]" << endl << endl;
     	cout << "\
-  -h --help            Show help message\n\
-  -D --debug           Show debug messages\n\
-  -d --device [dev]    Set serial device\n\
-  -r --raw             Select raw mode\n\
-  -t --trigger         Select trigger mode\n\
-  -l --low [int]       Set trigger level low\n\
-  -g --high [int]      Set trigger level high\n\
-  -r --rrd [fd]        Set round robin database\n\
-  -k --kwh [int]       Set revolutions per kWh\n"
+  -h --help             Show help message\n\
+  -D --debug            Show debug messages\n\
+  -d --device [fd]      Serial device\n\
+  -R --raw              Select raw mode\n\
+  -T --trigger          Select trigger mode\n\
+  -L --low [int]        Set trigger level low\n\
+  -H --high [int]       Set trigger level high\n\
+  -l --address [fd]     Set address of rrdcached daemon\n\
+  -r --rev [int]        Set revolutions per kWh\n\
+  -m --meter [float]    Set initial meter reading [kWh]"
 		<< endl;
 		return 0;
 	}
@@ -123,7 +133,8 @@ int main(int argc, char* argv[])
 
     // create pulsemeter object
     Pulse meter(serial_device,
-			    rrd_file,
+				rrd_file,
+				meter_reading,
 				rev_per_kWh);
 
 	// set debug flag
@@ -151,6 +162,9 @@ int main(int argc, char* argv[])
 	// read trigger data
 	else if (mode == 'T')
 	{
+		// connect to rrdcached daemon
+		meter.RRDConnect(rrd_address);
+
 		// create RRD file if not exist
     	meter.RRDCreate();		
 

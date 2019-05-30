@@ -1,17 +1,24 @@
 #ifndef PULSE_H
 #define PULSE_H
 
+#include <rrd.h>
+#include <rrd_client.h>
+
 class Pulse
 {
 private:
 	int SerialPort;
 	bool Debug;
 	int RevPerKiloWattHour;
-	const char * RRDFile;
 	int SensorValue;
+	double MeterReading;
+    rrd_client_t * RRDClient;
+	const char * RRDAddress;
+    const char * RRDFile;
 
 public:
-	Pulse(const char * device, const char * rrd_file, int rev_per_kWh);
+	Pulse(const char * serial_device, const char * rrd_file, 
+		double meter_reading, int rev_per_kWh);
 	~Pulse(void);
 	void SetDebug(void);
 
