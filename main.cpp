@@ -133,7 +133,7 @@ int main(int argc, char* argv[])
     }
 
 	// create RRD file if not exist
-	meter.CreateRRD();
+	meter.RRDCreate();
 
 	// sync communication with sensor
 	meter.SyncSerial();	

@@ -26,8 +26,12 @@ public:
 	int ReadSensorValue(void);
 
 	// RRD data methods
-	void CreateRRD(void);
-	void UpdateRRD(int trigger_state);
+	void RRDConnect(const char * daemon_address);
+	void RRDCreate(void);
+	void RRDUpdateCounter(int trigger_state);
+	double RRDGetCounter(void);
+	void RRDGetEnergyMeterN(char * energy_string, int length);
+	void RRDGetPowerMeterN(char * power_string, int length);
 };
 
 #endif // PULSE_H
