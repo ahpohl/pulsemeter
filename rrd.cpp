@@ -18,12 +18,12 @@ void Pulse::RRDConnect(const char * daemon_address)
 void Pulse::RRDCreate(void)
 {
 	int ret = 0;
-	time_t timestamp_start = time(nullptr);
-	const int num_ds_rrd = 8;
+	time_t timestamp_start = time(nullptr) - 120;
+	const int ds_count = 8;
 	const int step_size = 60;
-	const char * rrd_argv[] = {
-		"DS:energy:GAUGE:86400:0:1000000",
-    	"DS:power:DCOUNTER:86400:0:1000000",
+	const char * ds_schema[] = {
+		"DS:energy:GAUGE:3600:0:U",
+    	"DS:power:COUNTER:3600:0:40000",
 		"RRA:LAST:0.5:1:4320",
 		"RRA:AVERAGE:0.5:1:4320",
 		"RRA:LAST:0.5:1440:30",
@@ -32,35 +32,54 @@ void Pulse::RRDCreate(void)
 		"RRA:AVERAGE:0.5:10080:520"};
 
 	ret = rrd_create_r(RRDFile, step_size, timestamp_start, 
-		num_ds_rrd, rrd_argv);
+		ds_count, ds_schema);
 	if (ret)
 	{
-		throw runtime_error(string("Unable to create RRD file '") 
-			+ RRDFile + "': " + rrd_get_error());
+		throw runtime_error(rrd_get_error());
 	}
+
+	if (Debug)
+		cout << "RRD: file created (" << RRDFile << ")" << endl;
 	
+    // set initial meter reading
+    const int RRD_DS_LEN = 1;
+    const int RRD_BUF_SIZE = 64;
+    char * argv[RRD_BUF_SIZE];
+	timestamp_start += 60;
+    
+	*argv = (char *) malloc(RRD_BUF_SIZE * sizeof(char));
+    memset(*argv, '\0', RRD_BUF_SIZE);
+    snprintf(*argv, RRD_BUF_SIZE, "%ld:%ld:%d", timestamp_start, InitialEnergyCounter, 0);
+
+    ret = rrd_update_r(RRDFile, "energy:power", RRD_DS_LEN, (const char **) argv);
+    if (ret)
+    {
+    	throw runtime_error(rrd_get_error());
+    }
+
 	if (Debug)
     {
-        cout << "RRD file created (" << RRDFile << ")" << endl;
-		cout << "Revolutions per kWh (" << RevPerKiloWattHour << ")" << endl;
-    }
+		cout.precision(1);
+        cout << "RRD: intial energy counter (" << fixed 
+		     << InitialEnergyCounter << ")" << endl;
+		cout << "RRD: revolutions per kWh (" << dec << RevPerKiloWattHour << ")" << endl;
+	}
+
+	free(*argv);
 }
 
 // update meter reading in the rrd file (in kWh)
-void Pulse::RRDUpdateCounter(void)
+void Pulse::RRDUpdateEnergyCounter(void)
 {
 	int ret = 0;
 	time_t timestamp = time(nullptr);
 
-	// counter_step_size in kWh
-	double counter_step_size = 1.0 / RevPerKiloWattHour;
+	// counter resolution, energy per ferraris disk revolution (Wh)
+	unsigned long counter_resolution = 1000 / RevPerKiloWattHour;
 
-	// total meter reading in kWh
-	static double meter_reading = 0;
+	// total energy counter (Wh)
+	static unsigned long energy_counter = 0;
 
-	// energy per revolution in Ws
-	int energy_per_rev = static_cast<int>(counter_step_size * 3600 * 1000);
-		
 	// rrd update string to write into rrd file
 	//ostringstream rrd_update;
 	const int RRD_DS_LEN = 1;
@@ -71,7 +90,7 @@ void Pulse::RRDUpdateCounter(void)
     // output for rrd update
     if (SensorValue == 1)
     {
-        meter_reading += counter_step_size;
+        energy_counter += counter_resolution;
         
 		/*
 		rrd_update << timestamp << ":" << scientific << meter_reading << ":" 
@@ -81,10 +100,10 @@ void Pulse::RRDUpdateCounter(void)
 			cout << rrd_update.str();
 		*/
 	
-		// format char arrays
+		// rrd format N : energy (Wh) : power (Ws)
 		memset(*argv, '\0', RRD_BUF_SIZE);
-		snprintf(*argv, RRD_BUF_SIZE, "%ld:%e:%d", timestamp, meter_reading, 
-			energy_per_rev);
+		snprintf(*argv, RRD_BUF_SIZE, "%ld:%ld:%ld", timestamp, energy_counter, 
+			counter_resolution * 3600);
 	
 		// output sensor value in rrd format	
 		if (Debug)
@@ -115,14 +134,24 @@ void Pulse::RRDUpdateCounter(void)
     	const char * const *values);
 */
 
-// get meter reading from rrd file (in kWh)
-double Pulse::RRDGetCounter(void)
+// get meter reading from rrd file (in Wh)
+unsigned long Pulse::RRDGetLastEnergyCounter(void)
 {
-	double energy_counter = 0;
+	int ret = 0;
+    char **ds_names = 0;
+    char **ds_data = 0;
+    time_t last_update;
+    unsigned long ds_count = 0;
 
-	//rrd_lastupdate_r(
+	// get energy value from rrd file
+	ret = rrd_lastupdate_r(RRDFile, &last_update, &ds_count, &ds_names, &ds_data);
 
-	return energy_counter;
+	if (ret)
+    {
+    	throw runtime_error(rrd_get_error());
+    }
+
+	return LastEnergyCounter;
 }
 
 /*
@@ -131,9 +160,6 @@ int rrd_lastupdate_r (const char *filename,
             unsigned long *ret_ds_count,
             char ***ret_ds_names,
             char ***ret_last_ds);
-    		time_t    rrd_first_r(
-    		const char *filename,
-    		const int rraindex);
 */
 
 // get total energy (in Wh) from rrd file in meterN format

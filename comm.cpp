@@ -25,7 +25,7 @@ Pulse::Pulse(const char * serial_device, const char * rrd_file,
 {
 	this -> RRDFile = rrd_file;
 	this -> RevPerKiloWattHour = rev_per_kWh;
-	this -> MeterReading = meter_reading;
+	this -> InitialEnergyCounter = meter_reading;
 
     // open serial port 
     SerialPort = open(serial_device, O_RDWR | O_NOCTTY);

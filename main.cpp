@@ -166,11 +166,14 @@ int main(int argc, char* argv[])
 		meter.RRDConnect(rrd_address);
 
 		// create RRD file if not exist
-    	meter.RRDCreate();		
+    	meter.RRDCreate();
+		
+		// get current meter reading from RRD file
+        meter.RRDGetLastEnergyCounter();		
 
 		// set trigger mode
 		meter.SetTriggerMode(trigger_level_low, trigger_level_high);
-		
+	
 		// read sensor values
 		while (1)
 		{
@@ -178,7 +181,7 @@ int main(int argc, char* argv[])
 			meter.ReadSensorValue();
 			
 			// update rrd file
-    		meter.RRDUpdateCounter();
+    		meter.RRDUpdateEnergyCounter();
 		}
 	}
 

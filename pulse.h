@@ -11,7 +11,8 @@ private:
 	bool Debug;
 	int RevPerKiloWattHour;
 	int SensorValue;
-	double MeterReading;
+	unsigned long InitialEnergyCounter;
+	unsigned long  LastEnergyCounter;
     rrd_client_t * RRDClient;
 	const char * RRDAddress;
     const char * RRDFile;
@@ -36,8 +37,8 @@ public:
 	// RRD data methods
 	void RRDConnect(const char * daemon_address);
 	void RRDCreate(void);
-	void RRDUpdateCounter(void);
-	double RRDGetCounter(void);
+	void RRDUpdateEnergyCounter(void);
+	unsigned long RRDGetLastEnergyCounter(void);
 	void RRDGetEnergyMeterN(char * energy_string, int length);
 	void RRDGetPowerMeterN(char * power_string, int length);
 };
