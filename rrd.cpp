@@ -114,9 +114,8 @@ void Pulse::RRDUpdateEnergyCounter(void)
 		ret = rrd_update_r(RRDFile, "energy:power", RRD_DS_LEN, (const char **) argv);
 		if (ret)
     	{
-        	//throw runtime_error(string("Unable to update ")
- 			//	+ rrd_get_error());
-			cerr << "Unable to update " << rrd_get_error() << endl;
+        	//throw runtime_error(rrd_get_error());
+			cerr << rrd_get_error() << endl;
 			rrd_clear_error();
     	}
 	}
@@ -151,15 +150,24 @@ unsigned long Pulse::RRDGetLastEnergyCounter(void)
     {
     	throw runtime_error(rrd_get_error());
     }
-	
-	// ds_data[0]: energy, ds_data[1]: power
-	LastEnergyCounter = atol(ds_data[0]);
 
+	// ds_data[0]: energy, ds_data[1]: power
+    for (unsigned long i = 0; i < ds_count; i++)
+	{
+    	if (strcmp(ds_names[i], "energy") == 0)
+		{
+        	LastEnergyCounter = atol(ds_data[i]);
+    	}
+      	rrd_freemem(ds_names[i]);
+      	rrd_freemem(ds_data[i]);
+    }
+    rrd_freemem(ds_names);
+	rrd_freemem(ds_data);
+	
     if (Debug)
     {
-        cout.precision(1);
-        cout << "RRD: last energy counter (" << fixed   
-             << LastEnergyCounter << ")" << endl;
+        cout << "RRD: last energy counter ("
+             << dec << LastEnergyCounter << ")" << endl;
     }
 
 	return LastEnergyCounter;
@@ -175,15 +183,26 @@ int rrd_lastupdate_r (const char *filename,
 
 // get total energy (in Wh) from rrd file in meterN format
 // e.g. pulse(1234.5*Wh) 
-void Pulse::RRDGetEnergyMeterN(char * energy_string, int length)
+double Pulse::RRDGetEnergy(void)
 {
+	double energy = static_cast<double>(RRDGetLastEnergyCounter()) / 
+		RevPerKiloWattHour * 1000;
 
+	if (Debug)
+		cout << "RRD: energy (" << energy << ")" << endl;	
+
+	cout.precision(1);
+	cout << "pulse(" << fixed << energy << "*Wh)" << endl;
+
+	return energy;
 }
 
 // get total power (in W) from rrd file in meterN format
 // e.g. pulse(1234.5*W) 
-void Pulse::RRDGetPowerMeterN(char * power_string, int length)
+double Pulse::RRDGetPower(void)
 {
+	double power = 0;
 
+    return power;
 }
 

@@ -17,18 +17,23 @@ int main(int argc, char* argv[])
         { "trigger", no_argument, NULL, 'T' },
         { "low", required_argument, NULL, 'L' },
 		{ "high", required_argument, NULL, 'H' },
+		{ "create", no_argument, NULL, 'c' },
 		{ "address", required_argument, NULL, 'l'},
 		{ "rev", required_argument, NULL, 'r'},
 		{ "meter", required_argument, NULL, 'm'},
+		{ "energy", no_argument, NULL, 'e' },
+		{ "power", no_argument, NULL, 'p' },
         { NULL, 0, NULL, 0 }
     };
 
-    const char * optString = "hDd:RTL:H:l:r:m:";
+    const char * optString = "hDd:RTL:H:cl:r:m:";
     int opt = 0;
     int longIndex = 0;
 	char mode = '\0'; // raw: R, trigger: T
 	bool debug = false;
 	bool help = false;
+	bool create_rrd_file = false;
+	bool energy = false, power = false;
 	double meter_reading = 0;
 
 	// set default rrd filename
@@ -77,6 +82,10 @@ int main(int argc, char* argv[])
 			trigger_level_high = atoi(optarg);
 			break;
 
+		case 'c':
+			create_rrd_file = true;
+			break;
+
 		case 'l':
 			rrd_address = optarg;
 			break;
@@ -87,6 +96,14 @@ int main(int argc, char* argv[])
 
 		case 'm':
 			meter_reading = atof(optarg);
+			break;
+
+		case 'e':
+			energy = true;
+			break;
+
+		case 'p':
+			power = true;
 			break;
 
 		default:
@@ -108,9 +125,12 @@ int main(int argc, char* argv[])
   -T --trigger          Select trigger mode\n\
   -L --low [int]        Set trigger level low\n\
   -H --high [int]       Set trigger level high\n\
+  -c --create           Create new round robin database\n\
   -l --address [fd]     Set address of rrdcached daemon\n\
   -r --rev [int]        Set revolutions per kWh\n\
-  -m --meter [float]    Set initial meter reading [kWh]"
+  -m --meter [float]    Set initial meter reading [kWh]\n\
+  -e --energy           Get last energy [Wh]\n\
+  -p --power            Get last power [W]"
 		<< endl;
 		return 0;
 	}
@@ -118,8 +138,8 @@ int main(int argc, char* argv[])
 	// print message if no mode was selected
     if (mode == '\0')
     {
-        cout << "Please select raw or trigger mode for normal operation." << endl;
-        return 0;
+        cerr << "Please select raw or trigger mode for normal operation." << endl;
+        return 1;
     }
 
 	// check trigger levels	
@@ -143,6 +163,20 @@ int main(int argc, char* argv[])
         meter.SetDebug();
     }
 
+	// get energy in meterN format
+	if (energy)
+	{
+		meter.RRDGetEnergy();
+		return 0;
+	}
+	
+	// get power in meterN format
+	if (power)
+	{
+		meter.RRDGetPower();
+		return 0;
+	}
+
 	// sync communication with sensor
 	meter.SyncSerial();	
 
@@ -165,8 +199,9 @@ int main(int argc, char* argv[])
 		// connect to rrdcached daemon
 		meter.RRDConnect(rrd_address);
 
-		// create RRD file if not exist
-    	meter.RRDCreate();
+		// create RRD file
+		if (create_rrd_file)
+    		meter.RRDCreate();
 		
 		// get current meter reading from RRD file
         meter.RRDGetLastEnergyCounter();		

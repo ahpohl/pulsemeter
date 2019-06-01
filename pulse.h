@@ -39,8 +39,8 @@ public:
 	void RRDCreate(void);
 	void RRDUpdateEnergyCounter(void);
 	unsigned long RRDGetLastEnergyCounter(void);
-	void RRDGetEnergyMeterN(char * energy_string, int length);
-	void RRDGetPowerMeterN(char * power_string, int length);
+	double RRDGetEnergy(void);
+	double RRDGetPower(void);
 };
 
 #endif // PULSE_H

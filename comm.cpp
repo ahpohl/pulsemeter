@@ -27,6 +27,7 @@ Pulse::Pulse(const char * serial_device, const char * rrd_file,
 	this -> RRDFile = rrd_file;
 	this -> RevPerKiloWattHour = rev_per_kWh;
 	this -> LastEnergyCounter = lround(meter_reading * rev_per_kWh);
+	this -> Debug = false;
 
     // open serial port 
     SerialPort = open(serial_device, O_RDWR | O_NOCTTY);
@@ -35,9 +36,9 @@ Pulse::Pulse(const char * serial_device, const char * rrd_file,
         throw runtime_error(string("Error opening device ") + serial_device + ": "
              + strerror(errno) + " (" + to_string(errno) + ")");
     }
-    
-    if (Debug)
-        cout << "Opened serial device " << serial_device << endl;
+	
+	if (Debug)    
+    	cout << "Opened serial device " << serial_device << endl;
 }
 
 // destructor
@@ -48,9 +49,10 @@ Pulse::~Pulse(void)
     {
         close(SerialPort);
     }
+
 }
 
-void Pulse::SetDebug(void)
+void Pulse::SetDebug()
 {
 	this -> Debug = true;
 }
