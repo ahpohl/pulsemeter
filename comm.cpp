@@ -104,7 +104,6 @@ void Pulse::OpenSyncSerialPort(const char * serial_device)
              + strerror(errno) + " (" + to_string(errno) + ")");
     }
 
-	/*
     // lock serial port
     ret = ioctl(SerialPort, TIOCEXCL);
 	if (ret < 0)
@@ -112,7 +111,6 @@ void Pulse::OpenSyncSerialPort(const char * serial_device)
         throw runtime_error(string("Error getting device lock on") + serial_device + ": "
              + strerror(errno) + " (" + to_string(errno) + ")");
     }
-	*/
 
     if (Debug)
 		cout << "Opened serial device " << serial_device << endl;
