@@ -11,8 +11,8 @@ private:
 	bool Debug;
 	int RevPerKiloWattHour;
 	int SensorValue;
-	unsigned long InitialEnergyCounter;
-	unsigned long  LastEnergyCounter;
+	unsigned long LastEnergyCounter;
+	unsigned long EnergyCounter;
     rrd_client_t * RRDClient;
 	const char * RRDAddress;
     const char * RRDFile;

@@ -21,9 +21,16 @@ void Pulse::RRDCreate(void)
 	time_t timestamp_start = time(nullptr) - 120;
 	const int ds_count = 8;
 	const int step_size = 60;
+
+	// energy is stored in counts (GAUGE)
+	// energy = counts * revolutions per kWh [kWh]
+	// power is stored in counts per second (COUNTER)
+	// power = counts per second * 48000 [W]
+	// 48000 = 1000 * 3600 / 75 revolutions per kWh
+		
 	const char * ds_schema[] = {
-		"DS:energy:GAUGE:3600:0:U",
-    	"DS:power:COUNTER:3600:0:40000",
+		"DS:energy:GAUGE:120:0:U",
+    	"DS:power:COUNTER:120:0:48000",
 		"RRA:LAST:0.5:1:4320",
 		"RRA:AVERAGE:0.5:1:4320",
 		"RRA:LAST:0.5:1440:30",
@@ -41,7 +48,7 @@ void Pulse::RRDCreate(void)
 	if (Debug)
 		cout << "RRD: file created (" << RRDFile << ")" << endl;
 	
-    // set initial meter reading
+    // set last meter reading
     const int RRD_DS_LEN = 1;
     const int RRD_BUF_SIZE = 64;
     char * argv[RRD_BUF_SIZE];
@@ -49,7 +56,7 @@ void Pulse::RRDCreate(void)
     
 	*argv = (char *) malloc(RRD_BUF_SIZE * sizeof(char));
     memset(*argv, '\0', RRD_BUF_SIZE);
-    snprintf(*argv, RRD_BUF_SIZE, "%ld:%ld:%d", timestamp_start, InitialEnergyCounter, 0);
+    snprintf(*argv, RRD_BUF_SIZE, "%ld:%ld:%ld", timestamp_start, LastEnergyCounter, LastEnergyCounter);
 
     ret = rrd_update_r(RRDFile, "energy:power", RRD_DS_LEN, (const char **) argv);
     if (ret)
@@ -59,9 +66,6 @@ void Pulse::RRDCreate(void)
 
 	if (Debug)
     {
-		cout.precision(1);
-        cout << "RRD: intial energy counter (" << fixed 
-		     << InitialEnergyCounter << ")" << endl;
 		cout << "RRD: revolutions per kWh (" << dec << RevPerKiloWattHour << ")" << endl;
 	}
 
@@ -74,11 +78,8 @@ void Pulse::RRDUpdateEnergyCounter(void)
 	int ret = 0;
 	time_t timestamp = time(nullptr);
 
-	// counter resolution, energy per ferraris disk revolution (Wh)
-	unsigned long counter_resolution = 1000 / RevPerKiloWattHour;
-
-	// total energy counter (Wh)
-	static unsigned long energy_counter = 0;
+	// total energy counter
+	static unsigned long energy_counter = LastEnergyCounter;
 
 	// rrd update string to write into rrd file
 	//ostringstream rrd_update;
@@ -90,7 +91,7 @@ void Pulse::RRDUpdateEnergyCounter(void)
     // output for rrd update
     if (SensorValue == 1)
     {
-        energy_counter += counter_resolution;
+        energy_counter++;
         
 		/*
 		rrd_update << timestamp << ":" << scientific << meter_reading << ":" 
@@ -103,7 +104,7 @@ void Pulse::RRDUpdateEnergyCounter(void)
 		// rrd format N : energy (Wh) : power (Ws)
 		memset(*argv, '\0', RRD_BUF_SIZE);
 		snprintf(*argv, RRD_BUF_SIZE, "%ld:%ld:%ld", timestamp, energy_counter, 
-			counter_resolution * 3600);
+			energy_counter);
 	
 		// output sensor value in rrd format	
 		if (Debug)
@@ -137,8 +138,8 @@ void Pulse::RRDUpdateEnergyCounter(void)
 // get meter reading from rrd file (in Wh)
 unsigned long Pulse::RRDGetLastEnergyCounter(void)
 {
-	int ret = 0;
-    char **ds_names = 0;
+    int ret = 0;
+	char **ds_names = 0;
     char **ds_data = 0;
     time_t last_update;
     unsigned long ds_count = 0;
@@ -149,6 +150,16 @@ unsigned long Pulse::RRDGetLastEnergyCounter(void)
 	if (ret)
     {
     	throw runtime_error(rrd_get_error());
+    }
+	
+	// ds_data[0]: energy, ds_data[1]: power
+	LastEnergyCounter = atol(ds_data[0]);
+
+    if (Debug)
+    {
+        cout.precision(1);
+        cout << "RRD: last energy counter (" << fixed   
+             << LastEnergyCounter << ")" << endl;
     }
 
 	return LastEnergyCounter;

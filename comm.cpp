@@ -11,6 +11,7 @@
 #include <fcntl.h> // contains file controls like 0_RDWR
 #include <unistd.h> // write(), read(), close()
 #include <errno.h> // error integer and strerror() function
+#include <math.h>
 
 // program headers
 #include "pulse.h"
@@ -25,7 +26,7 @@ Pulse::Pulse(const char * serial_device, const char * rrd_file,
 {
 	this -> RRDFile = rrd_file;
 	this -> RevPerKiloWattHour = rev_per_kWh;
-	this -> InitialEnergyCounter = meter_reading;
+	this -> LastEnergyCounter = lround(meter_reading * rev_per_kWh);
 
     // open serial port 
     SerialPort = open(serial_device, O_RDWR | O_NOCTTY);
