@@ -11,7 +11,8 @@
 #include <fcntl.h> // contains file controls like 0_RDWR
 #include <unistd.h> // write(), read(), close()
 #include <errno.h> // error integer and strerror() function
-#include <math.h>
+#include <math.h> 
+#include <sys/ioctl.h> // contains ioctl_tty
 
 // program headers
 #include "pulse.h"
@@ -21,35 +22,25 @@
 using namespace std;
 
 // constructor
-Pulse::Pulse(const char * serial_device, const char * rrd_file, 
-	double meter_reading, int rev_per_kWh)
+Pulse::Pulse(const char * rrd_file, double meter_reading, int rev_per_kWh)
 {
 	this -> RRDFile = rrd_file;
 	this -> RevPerKiloWattHour = rev_per_kWh;
 	this -> LastEnergyCounter = lround(meter_reading * rev_per_kWh);
 	this -> Debug = false;
-
-    // open serial port 
-    SerialPort = open(serial_device, O_RDWR | O_NOCTTY);
-    if (SerialPort < 0)
-    {
-        throw runtime_error(string("Error opening device ") + serial_device + ": "
-             + strerror(errno) + " (" + to_string(errno) + ")");
-    }
-	
-	if (Debug)    
-    	cout << "Opened serial device " << serial_device << endl;
 }
 
 // destructor
 Pulse::~Pulse(void)
-{
+{	
 	// close serial port
 	if (SerialPort > 0)
     {
         close(SerialPort);
     }
 
+	if (Debug)
+		cout << "Pulse destructor called" << endl;
 }
 
 void Pulse::SetDebug()
@@ -92,48 +83,9 @@ unsigned short Pulse::Crc16(unsigned char * data_p, int length)
     return (crc);
 }
 
-void Pulse::ConfigureSerialPort(unsigned char vmin, unsigned char vtime)
+void Pulse::OpenSyncSerialPort(const char * serial_device)
 {
-	struct termios tty;
 	int ret = 0;
-
-	// init termios struct
-    memset(&tty, 0, sizeof(tty));
-
-    // read in existing settings
-    ret = tcgetattr(SerialPort, &tty);
-	if (ret != 0)
-    {
-        throw runtime_error(string("Error getting serial port attributes: ") 
-			+ strerror(errno) + " (" + to_string(errno) + ")");
-    }
-
-	// set raw mode
-    cfmakeraw(&tty);
-
-    // set vmin and vtime
-    tty.c_cc[VMIN] = vmin;
-    tty.c_cc[VTIME] = vtime;
-
-    // set in/out baud rate
-    cfsetispeed(&tty, B9600);
-    cfsetospeed(&tty, B9600);
-
-    // save tty settings
-    ret = tcsetattr(SerialPort, TCSANOW, &tty);
-	if (ret != 0)
-    {
-		throw runtime_error(string("Error setting serial port attributes: ") 
-			+ strerror(errno) + " (" + to_string(errno) + ")");
-    }
-
-	// flush serial buffer
-    //tcflush(SerialPort,TCIOFLUSH);
-}
-
-
-void Pulse::SyncSerial(void)
-{
 	bool is_synced = true;
 	unsigned char command[COMMAND_PACKET_SIZE] = {0};
 	unsigned short crc = 0xFFFF;
@@ -142,17 +94,30 @@ void Pulse::SyncSerial(void)
 	int byte_received = 0;
 	int count = 0;
 	int garbage = 0;
+
+    // open serial port 
+    SerialPort = open(serial_device, O_RDWR | O_NOCTTY);
+    if (SerialPort < 0)
+    {
+        throw runtime_error(string("Error opening device ") + serial_device + ": "
+             + strerror(errno) + " (" + to_string(errno) + ")");
+    }
+
+    // lock serial port
+    ret = ioctl(SerialPort, TIOCEXCL);
+	if (ret < 0)
+    {
+        throw runtime_error(string("Error getting device lock on") + serial_device + ": "
+             + strerror(errno) + " (" + to_string(errno) + ")");
+    }
+
+    if (Debug)
+		cout << "Opened serial device " << serial_device << endl;
 	
 	// configure serial port for non-blocking read
 	// vmin: return immediately if characters are available
 	// vtime: or wait for max 0.1 sec
 	ConfigureSerialPort(0, 1);
-
-    // sync packet
-	command[0] = 0x30; // sync mode
-    crc = Crc16(command, 5);
-    command[5] = crc >> 8; // crc, high byte
-    command[6] = crc & 0xFF; // crc, low byte 
 
 	// empty serial buffer
 	do
@@ -171,6 +136,12 @@ void Pulse::SyncSerial(void)
 
 	if (Debug)
 		cout << "Serial buffer (" << dec << garbage << ")" << endl;
+
+	// sync packet
+	command[0] = 0x30; // sync mode
+    crc = Crc16(command, 5);
+    command[5] = crc >> 8; // crc, high byte
+    command[6] = crc & 0xFF; // crc, low byte 
 
 	// send sync packet until sensor responds with the first byte
 	do
@@ -225,6 +196,42 @@ void Pulse::SyncSerial(void)
 	
 	if (Debug)
 		cout << "Communication ok" << endl;
+}
+
+void Pulse::ConfigureSerialPort(unsigned char vmin, unsigned char vtime)
+{
+	struct termios tty;
+	int ret = 0;
+
+	// init termios struct
+    memset(&tty, 0, sizeof(tty));
+
+    // read in existing settings
+    ret = tcgetattr(SerialPort, &tty);
+	if (ret != 0)
+    {
+        throw runtime_error(string("Error getting serial port attributes: ") 
+			+ strerror(errno) + " (" + to_string(errno) + ")");
+    }
+
+	// set raw mode
+    cfmakeraw(&tty);
+
+    // set vmin and vtime
+    tty.c_cc[VMIN] = vmin;
+    tty.c_cc[VTIME] = vtime;
+
+    // set in/out baud rate
+    cfsetispeed(&tty, B9600);
+    cfsetospeed(&tty, B9600);
+
+    // save tty settings
+    ret = tcsetattr(SerialPort, TCSANOW, &tty);
+	if (ret != 0)
+    {
+		throw runtime_error(string("Error setting serial port attributes: ") 
+			+ strerror(errno) + " (" + to_string(errno) + ")");
+    }
 }
 
 bool Pulse::SyncPacket(void)

@@ -25,13 +25,12 @@ private:
     void ReceivePacket(unsigned char * packet, int buffer_size);
 
 public:
-	Pulse(const char * serial_device, const char * rrd_file, 
-		double meter_reading, int rev_per_kWh);
+	Pulse(const char * rrd_file, double meter_reading, int rev_per_kWh);
 	~Pulse(void);
 	void SetDebug(void);
 
 	// sensor methods
-	void SyncSerial(void);
+	void OpenSyncSerialPort(const char * serial_device);
 	void SetRawMode(void);
 	void SetTriggerMode(short int trigger_level_low, short int trigger_level_high);
 	int ReadSensorValue(void);

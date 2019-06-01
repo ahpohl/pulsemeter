@@ -135,27 +135,8 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 
-	// print message if no mode was selected
-    if (mode == '\0')
-    {
-        cerr << "Please select raw or trigger mode for normal operation." << endl;
-        return 1;
-    }
-
-	// check trigger levels	
-	if (trigger_level_low > trigger_level_high)
-	{
-		cerr << "Trigger level low larger than level high (" 
-			 << trigger_level_low << " < " << trigger_level_high << ")"
-			 << endl;
-		return 1;
-	}
-
     // create pulsemeter object
-    Pulse meter(serial_device,
-				rrd_file,
-				meter_reading,
-				rev_per_kWh);
+    Pulse meter(rrd_file, meter_reading, rev_per_kWh);
 
 	// set debug flag
     if (debug)
@@ -177,8 +158,24 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 
-	// sync communication with sensor
-	meter.SyncSerial();	
+	// print message if no mode was selected
+    if (mode == '\0')
+    {
+        cerr << "Please select raw or trigger mode for sensor operation." << endl;
+        return 1;
+    }
+
+	// check trigger levels	
+	if (trigger_level_low > trigger_level_high)
+	{
+		cerr << "Trigger level low larger than level high (" 
+			 << trigger_level_low << " < " << trigger_level_high << ")"
+			 << endl;
+		return 1;
+	}
+
+	// open serial port
+	meter.OpenSyncSerialPort(serial_device);
 
 	// read raw sensor data
 	if (mode == 'R')
