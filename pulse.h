@@ -7,8 +7,8 @@
 class Pulse
 {
 private:
-	int SerialPort;
 	bool Debug;
+	int SerialPort;
 	int RevPerKiloWattHour;
 	int SensorValue;
 	unsigned long LastEnergyCounter;
