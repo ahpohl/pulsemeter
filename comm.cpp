@@ -350,23 +350,15 @@ void Pulse::ReceivePacket(unsigned char * packet, int buffer_size)
     }
 	else if (bytes_received != COBS_DATA_PACKET_SIZE)
 	{
-		//throw runtime_error(string("Error: wrong encoded packet length (") 
-		//	+ to_string(bytes_received) + ")");
-		if (Debug)
-		{
-			cerr << "Wrong encoded packet length (" 
-			 	 << bytes_received << ")" << endl;
-		}
-		return;
+		throw runtime_error(string("Wrong encoded packet length (") 
+			+ to_string(bytes_received) + ")");
 	}
 	else if (cobs_packet[bytes_received-1] != 0x00)
 	{
 		if (is_synced != SyncPacket())
 		{
-			//throw runtime_error("Packet framing error: out of sync");
-			cerr << "Packet framing error: out of sync" << endl;
+			throw runtime_error("Packet framing error: out of sync");
 		}
-		return;
 	}
 
 	// reset packet buffer
@@ -378,21 +370,12 @@ void Pulse::ReceivePacket(unsigned char * packet, int buffer_size)
 	// error handling
 	if (packet_length == 0)
 	{
-		//throw runtime_error("Error decoding serial packet");
-		if (Debug)
-			cerr << "Error decoding serial packet" << endl;
-		return;
+		throw runtime_error("Error decoding serial packet");
 	}
     else if (packet_length != DATA_PACKET_SIZE)
     {
-        //throw runtime_error(string("Error: wrong decoded packet length (")
-        //    + to_string(packet_length) + ")");
-		if (Debug)
-		{
-			cerr << "Wrong decoded packet length (" 
-			     << packet_length << ")" << endl;
-		}
-		return;
+        throw runtime_error(string("Wrong decoded packet length (")
+            + to_string(packet_length) + ")");
     }	
 
 	// get crc from decoded packet
@@ -404,13 +387,8 @@ void Pulse::ReceivePacket(unsigned char * packet, int buffer_size)
 	// check crc
 	if (crc_after != crc_before)
 	{
-		if (Debug)
-		{
-			cerr << "CRC checksum mismatch (0x" << setfill('0') << setw(4) 
-			     << hex << crc_before << " 0x" << crc_after << ")" << endl;
-		}
-		//throw runtime_error("Error: CRC checksum mismatch");
-		return;
+		throw runtime_error(string("CRC checksum mismatch (") 
+			+ to_string(crc_before) + " " + to_string(crc_after) + ")");
 	}
 
 	if (Debug)
