@@ -88,7 +88,6 @@ unsigned short Pulse::Crc16(unsigned char * data_p, int length)
 void Pulse::OpenSyncSerialPort(const char * serial_device)
 {
 	int ret = 0;
-	//bool is_synced = true;
 	unsigned char sync_command[COMMAND_PACKET_SIZE] = {0};
 	unsigned short crc = 0xFFFF;
 	unsigned char sync_buffer[BUF_SIZE];
@@ -150,10 +149,11 @@ void Pulse::OpenSyncSerialPort(const char * serial_device)
 	}
 	while (byte_received == 0);
 
+	// output number of sync packets sent
 	if (Debug)
 		cout << "Sync packets sent (" << dec << count << ")" << endl;
 
-	// empty serial buffer
+	// empty serial input buffer
 	do
 	{
 		byte_received = read(SerialPort, &header, 1);
@@ -169,26 +169,15 @@ void Pulse::OpenSyncSerialPort(const char * serial_device)
     while (byte_received > 0);
 
 	if (Debug)
-		cout << "Serial buffer empty (" << dec << garbage << ")" << endl;
+		cout << "Serial input buffer empty (" << dec << garbage << ")" << endl;
 
-	// flush serial buffer
-	//tcflush(SerialPort, TCIOFLUSH);
+	// wait until all remaining bytes are transmitted
+	sleep(2);
 
     // set vmin and vtime for blocking read
 	// vmin: returning when max 16 bytes are available
 	// vtime: wait for up to 1 second
 	ConfigureSerialPort(BUF_SIZE, 10);
-
-	/*
-	// send sync packet
-	SendCommand(sync_command, COMMAND_PACKET_SIZE);
-
-	// find header byte
-	if (is_synced != SyncPacket())
-    {
-    	throw runtime_error("Packet framing error: out of sync");
-    }
-	*/
 
 	// send sync packet
     SendCommand(sync_command, COMMAND_PACKET_SIZE);
