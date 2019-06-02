@@ -1,13 +1,36 @@
 #include <iostream>
 #include <string>
 #include <iomanip>
+#include <csignal>
 #include <getopt.h> // for getopt_long
 #include "pulse.h"
 
 using namespace std;
 
+
+static volatile sig_atomic_t is_done = 0;
+
+static void signal_handler(int sig, siginfo_t *siginfo, void *context)
+{
+    is_done = siginfo->si_signo;
+}
+
+
 int main(int argc, char* argv[])
 {
+	// setup signal handler
+	struct sigaction act;
+	memset (&act, '\0', sizeof(act));
+	act.sa_sigaction = &signal_handler;
+	act.sa_flags = SA_SIGINFO;
+	act.sa_flags = SA_RESTART;
+
+	if (sigaction(SIGINT, &act, nullptr) < 0)
+	{
+		cerr << "sigaction";
+		return 1;
+  	}
+
 	// parse command line
 	const struct option longOpts[] = {
         { "help", no_argument, NULL, 'h' },
@@ -184,7 +207,7 @@ int main(int argc, char* argv[])
 		meter.SetRawMode();
 
 		// read sensor values
-		while (1)
+		while (!is_done)
 		{
 			meter.ReadSensorValue();
 		}
@@ -207,7 +230,7 @@ int main(int argc, char* argv[])
 		meter.SetTriggerMode(trigger_level_low, trigger_level_high);
 	
 		// read sensor values
-		while (1)
+		while (!is_done)
 		{
 			// read sensor value
 			meter.ReadSensorValue();
@@ -216,6 +239,10 @@ int main(int argc, char* argv[])
     		meter.RRDUpdateEnergyCounter();
 		}
 	}
+
+	// program terminated
+	if ((is_done == SIGHUP) && debug)
+		cout << "SIGHUP signal received (" << is_done << ")" << endl;
 
 	return 0;
 }

@@ -7,6 +7,7 @@
 
 // c headers
 #include <cstring>
+#include <csignal>
 #include <termios.h> // contains POSIX terminal control definition
 #include <fcntl.h> // contains file controls like 0_RDWR
 #include <unistd.h> // write(), read(), close()
@@ -201,6 +202,8 @@ void Pulse::OpenSyncSerialPort(const char * serial_device)
 	if (sync_buffer[0] != SYNC_OK)
 	{
 		throw runtime_error("Communication failed: packets not in sync");
+		//cerr << "Communication failed: packets not in sync" << endl;
+		//return;
 	}
 	
 	if (Debug)
@@ -347,14 +350,21 @@ void Pulse::ReceivePacket(unsigned char * packet, int buffer_size)
     }
 	else if (bytes_received != COBS_DATA_PACKET_SIZE)
 	{
-		throw runtime_error(string("Error: wrong encoded packet length (") 
-			+ to_string(bytes_received) + ")");
+		//throw runtime_error(string("Error: wrong encoded packet length (") 
+		//	+ to_string(bytes_received) + ")");
+		if (Debug)
+		{
+			cerr << "Wrong encoded packet length (" 
+			 	 << bytes_received << ")" << endl;
+		}
+		return;
 	}
 	else if (cobs_packet[bytes_received-1] != 0x00)
 	{
 		if (is_synced != SyncPacket())
 		{
-			throw runtime_error("Packet framing error: out of sync");
+			//throw runtime_error("Packet framing error: out of sync");
+			cerr << "Packet framing error: out of sync" << endl;
 		}
 		return;
 	}
@@ -368,12 +378,21 @@ void Pulse::ReceivePacket(unsigned char * packet, int buffer_size)
 	// error handling
 	if (packet_length == 0)
 	{
-		throw runtime_error("Error: decoding serial packet failed");
+		//throw runtime_error("Error decoding serial packet");
+		if (Debug)
+			cerr << "Error decoding serial packet" << endl;
+		return;
 	}
     else if (packet_length != DATA_PACKET_SIZE)
     {
-        throw runtime_error(string("Error: wrong decoded packet length (")
-            + to_string(packet_length) + ")");
+        //throw runtime_error(string("Error: wrong decoded packet length (")
+        //    + to_string(packet_length) + ")");
+		if (Debug)
+		{
+			cerr << "Wrong decoded packet length (" 
+			     << packet_length << ")" << endl;
+		}
+		return;
     }	
 
 	// get crc from decoded packet
@@ -385,9 +404,13 @@ void Pulse::ReceivePacket(unsigned char * packet, int buffer_size)
 	// check crc
 	if (crc_after != crc_before)
 	{
-		cout << "crc: 0x" << setfill('0') << setw(4) << hex << crc_before
-             << " 0x" << setfill('0') << setw(4) << hex << crc_after << endl;;
-		throw runtime_error("Error: CRC checksum mismatch");
+		if (Debug)
+		{
+			cerr << "CRC checksum mismatch (0x" << setfill('0') << setw(4) 
+			     << hex << crc_before << " 0x" << crc_after << ")" << endl;
+		}
+		//throw runtime_error("Error: CRC checksum mismatch");
+		return;
 	}
 
 	if (Debug)
