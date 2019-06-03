@@ -11,7 +11,7 @@ using namespace std;
 // connect to rrd cached daemon
 void Pulse::RRDConnect(const char * daemon_address)
 {
-
+	//RRDClient = rrd_client_new(RRDAddress);
 }
 
 // create rrd database

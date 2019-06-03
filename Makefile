@@ -26,7 +26,7 @@ LFLAGS =
 LIBS = -lrrd
 
 # define the C source files
-SRCS = main.cpp comm.cpp cobs.cpp rrd.cpp
+SRCS = main.cpp pulse.cpp comm.cpp cobs.cpp rrd.cpp
 
 # define the C object files 
 #

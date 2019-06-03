@@ -19,6 +19,7 @@ int main(int argc, char* argv[])
         { "low", required_argument, NULL, 'L' },
 		{ "high", required_argument, NULL, 'H' },
 		{ "create", no_argument, NULL, 'c' },
+		{ "rrdfile", required_argument, NULL, 'f' },
 		{ "address", required_argument, NULL, 'l'},
 		{ "rev", required_argument, NULL, 'r'},
 		{ "meter", required_argument, NULL, 'm'},
@@ -27,7 +28,7 @@ int main(int argc, char* argv[])
         { NULL, 0, NULL, 0 }
     };
 
-    const char * optString = "hDd:RTL:H:cl:r:m:";
+    const char * optString = "hDd:RTL:H:cf:a:r:m:";
     int opt = 0;
     int longIndex = 0;
 	char mode = '\0'; // raw: R, trigger: T
@@ -37,11 +38,11 @@ int main(int argc, char* argv[])
 	bool energy = false, power = false;
 	double meter_reading = 0;
 
-	// set default rrd filename
-	const char * rrd_file = "pulse.rrd";
+	// set default path to rrd file
+	const char * rrd_file = "/var/lib/rrdcached/pulse.rrd";
 
 	// set default address of rrdcached daemon 
-	const char * rrd_address = "unix:/run/rrdcached/rrdcached.sock";
+	const char * rrdcached_address = "unix:/run/rrdcached/rrdcached.sock";
 
 	// set default serial device
 	const char * serial_device = "/dev/ttyACM0";
@@ -87,8 +88,12 @@ int main(int argc, char* argv[])
 			create_rrd_file = true;
 			break;
 
-		case 'l':
-			rrd_address = optarg;
+		case 'f':
+			rrd_file = optarg;
+			break;
+
+		case 'a':
+			rrdcached_address = optarg;
 			break;
 
 		case 'r':
@@ -121,13 +126,14 @@ int main(int argc, char* argv[])
     	cout << "\
   -h --help             Show help message\n\
   -D --debug            Show debug messages\n\
-  -d --device [fd]      Serial device\n\
+  -d --device [dev]     Serial device\n\
   -R --raw              Select raw mode\n\
   -T --trigger          Select trigger mode\n\
   -L --low [int]        Set trigger level low\n\
   -H --high [int]       Set trigger level high\n\
   -c --create           Create new round robin database\n\
-  -l --address [fd]     Set address of rrdcached daemon\n\
+  -f --file [path]      Full path to rrd file\n\
+  -a --address [sock]   Set address of rrdcached daemon\n\
   -r --rev [int]        Set revolutions per kWh\n\
   -m --meter [float]    Set initial meter reading [kWh]\n\
   -e --energy           Get last energy [Wh]\n\
@@ -195,7 +201,7 @@ int main(int argc, char* argv[])
 	else if (mode == 'T')
 	{
 		// connect to rrdcached daemon
-		meter.RRDConnect(rrd_address);
+		meter.RRDConnect(rrdcached_address);
 
 		// create RRD file
 		if (create_rrd_file)

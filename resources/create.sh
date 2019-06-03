@@ -2,7 +2,8 @@
 # energy is stored as counts
 # power is stored as counts/s
 
-rrdtool create pulse.rrd \
+rrdtool create --daemon unix:/run/rrdcached/rrdcached.sock \
+		/var/lib/rrdcached/pulse.rrd \
 		--start 1559333640 \
 		--step 60 \
         "DS:energy:GAUGE:120:0:U" \
@@ -14,7 +15,8 @@ rrdtool create pulse.rrd \
         "RRA:LAST:0.5:10080:520" \
         "RRA:AVERAGE:0.5:10080:520"
 
-rrdtool update pulse.rrd \
+rrdtool update --daemon unix:/run/rrdcached/rrdcached.sock \
+		/var/lib/rrdcached/pulse.rrd \
 		"1559333660:1:1" \
 		"1559333720:2:2" \
 		"1559333750:3:3" \
@@ -29,13 +31,16 @@ rrdtool update pulse.rrd \
 		"1559334020:120:120" \
 		"1559334080:130:130"
 
+#rrdtool fetch /var/lib/rrdcached/pulse.rrd AVERAGE \
+#	--daemon unix:/run/rrdcached/rrdcached.sock
+
 # revolutions per kWh of ferraris disk
 rev_per_kwh=75
 
 # convert counts to energy in kWh
-rrdtool graph energy.png \
+rrdtool graph energy.png --daemon unix:/run/rrdcached/rrdcached.sock \
   --start 1559333640 --end 1559334080 \
-  "DEF:counts=pulse.rrd:energy:LAST" \
+  "DEF:counts=/var/lib/rrdcached/pulse.rrd:energy:LAST" \
   "CDEF:energy=counts,$rev_per_kwh,/" \
   LINE2:energy#000000:"Meter reading [kWh]"
 
@@ -44,6 +49,6 @@ factor=48000
 # convert counts/s to power in W
 rrdtool graph power.png \
   --start 1559333640 --end 1559334080 \
-  "DEF:counts_per_sec=pulse.rrd:power:AVERAGE" \
+  "DEF:counts_per_sec=/var/lib/rrdcached/pulse.rrd:power:AVERAGE" \
   "CDEF:power=counts_per_sec,$factor,*" \
   LINE2:power#00FF00:"Power [W]"
