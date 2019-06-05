@@ -19,8 +19,8 @@ void Pulse::RRDCreate(void)
 {
 	int ret = 0;
 	time_t timestamp_start = time(nullptr) - 120;
-	const int ds_count = 8;
-	const int step_size = 60;
+	const int ds_count = 7;
+	const int step_size = 300;
 
 	// energy is stored in counts (GAUGE)
 	// energy = counts * revolutions per kWh [kWh]
@@ -29,14 +29,25 @@ void Pulse::RRDCreate(void)
 	// 48000 = 1000 * 3600 / 75 revolutions per kWh
 		
 	const char * ds_schema[] = {
-		"DS:energy:GAUGE:3600:0:U",
-    	"DS:power:COUNTER:3600:0:48000",
-		"RRA:LAST:0.5:1:4320",
-		"RRA:AVERAGE:0.5:1:4320",
-		"RRA:LAST:0.5:1440:30",
-		"RRA:AVERAGE:0.5:1440:30",
-		"RRA:LAST:0.5:10080:520",
-		"RRA:AVERAGE:0.5:10080:520"};
+		"DS:energy:GAUGE:600:0:U",
+    	"DS:power:COUNTER:600:0:48000",
+		"RRA:LAST:0.5:1:288",
+		"RRA:AVERAGE:0.5:1:288",
+		"RRA:LAST:0.5:288:30",
+		"RRA:LAST:0.5:8640:12",
+		"RRA:LAST:0.5:103680:10"};
+/*
+	--step 60
+    const char * ds_schema[] = {
+        "DS:energy:GAUGE:3600:0:U",
+        "DS:power:COUNTER:3600:0:48000",
+        "RRA:LAST:0.5:1:4320",
+        "RRA:AVERAGE:0.5:1:4320",
+        "RRA:LAST:0.5:1440:30",
+        "RRA:AVERAGE:0.5:1440:30",
+        "RRA:LAST:0.5:10080:520",
+        "RRA:AVERAGE:0.5:10080:520"};
+*/
 
 	ret = rrd_create_r(RRDFile, step_size, timestamp_start, 
 		ds_count, ds_schema);
