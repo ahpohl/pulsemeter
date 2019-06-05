@@ -19,7 +19,7 @@ int main(int argc, char* argv[])
         { "low", required_argument, NULL, 'L' },
 		{ "high", required_argument, NULL, 'H' },
 		{ "create", no_argument, NULL, 'c' },
-		{ "rrdfile", required_argument, NULL, 'f' },
+		{ "file", required_argument, NULL, 'f' },
 		{ "address", required_argument, NULL, 'l'},
 		{ "rev", required_argument, NULL, 'r'},
 		{ "meter", required_argument, NULL, 'm'},

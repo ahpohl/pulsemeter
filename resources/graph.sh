@@ -6,11 +6,12 @@
 rev_per_kwh=75
 
 # parameters
-rrd=/var/lib/rrdcached/pulse.rrd
+rrd=/scratch/git/pulse/pulse.rrd
 
 # convert counts to energy in kWh
-rrdtool graph energy.png --daemon unix:/run/rrdcached/rrdcached.sock \
-  --start 'now -30m' --end now \
+rrdtool graph energy.png \
+  --start 'now -10 hours' --end now \
+  -Y -X 0 -A \
   "DEF:counts=$rrd:energy:LAST" \
   "CDEF:energy=counts,$rev_per_kwh,/" \
   LINE2:energy#000000:"Meter reading [kWh]"
@@ -19,7 +20,8 @@ rrdtool graph energy.png --daemon unix:/run/rrdcached/rrdcached.sock \
 factor=48000
 # convert counts/s to power in W
 rrdtool graph power.png \
-  --start 'now -30m' --end now \
+  -Y -X 0 -A \
+  --start 'now -10 hours' --end now \
   "DEF:counts_per_sec=$rrd:power:AVERAGE" \
   "CDEF:power=counts_per_sec,$factor,*" \
   LINE2:power#00FF00:"Power [W]"

@@ -1,5 +1,5 @@
 #include <iostream>
-#include <sstream>
+#include <fstream>
 #include <ctime>
 #include <rrd.h>
 #include <rrd_client.h>
@@ -29,8 +29,8 @@ void Pulse::RRDCreate(void)
 	// 48000 = 1000 * 3600 / 75 revolutions per kWh
 		
 	const char * ds_schema[] = {
-		"DS:energy:GAUGE:120:0:U",
-    	"DS:power:COUNTER:120:0:48000",
+		"DS:energy:GAUGE:3600:0:U",
+    	"DS:power:COUNTER:3600:0:48000",
 		"RRA:LAST:0.5:1:4320",
 		"RRA:AVERAGE:0.5:1:4320",
 		"RRA:LAST:0.5:1440:30",
@@ -93,13 +93,13 @@ void Pulse::RRDUpdateEnergyCounter(void)
     {
         energy_counter++;
         
-		/*
-		rrd_update << timestamp << ":" << scientific << meter_reading << ":" 
-				   << energy_per_rev << endl;
-
 		if (Debug)
-			cout << rrd_update.str();
-		*/
+		{
+			ofstream logfile;
+			logfile.open("sensor.log", ios::app);
+			logfile << timestamp << " " << energy_counter << endl;
+			logfile.close();
+		}
 	
 		// rrd format N : energy (Wh) : power (Ws)
 		memset(*argv, '\0', RRD_BUF_SIZE);
