@@ -241,18 +241,21 @@ void setup() {
  * Main loop.
  */
 void loop() {
-  
-  // perform measurement
-  // turn LED on
-  digitalWrite(irOutPin, HIGH);
-  delay(10);
-  // read the analog in value:
-  sensorValueOn = analogRead(analogInPin);           
-  // turn LED off
-  digitalWrite(irOutPin, LOW);
-  delay(10);
-  // read the analog in value:
-  sensorValueOff = analogRead(analogInPin);
+
+  if ((mode == 'R') || (mode == 'T'))
+  {
+    // perform measurement
+    // turn LED on
+    digitalWrite(irOutPin, HIGH);
+    delay(10);
+    // read the analog in value:
+    sensorValueOn = analogRead(analogInPin);           
+    // turn LED off
+    digitalWrite(irOutPin, LOW);
+    delay(10);
+    // read the analog in value:
+    sensorValueOff = analogRead(analogInPin);
+  }
 
   // raw mode
   if (mode == 'R')

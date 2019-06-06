@@ -1,8 +1,11 @@
 #include <iostream>
 #include <fstream>
 #include <ctime>
+
+extern "C" {
 #include <rrd.h>
 #include <rrd_client.h>
+}
 
 #include "pulse.h"
 
@@ -11,7 +14,13 @@ using namespace std;
 // connect to rrd cached daemon
 void Pulse::RRDConnect(const char * daemon_address)
 {
-	//RRDClient = rrd_client_new(RRDAddress);
+	int ret = 0;
+
+	ret = rrdc_connect(RRDAddress);
+	if (ret)
+    {
+        throw runtime_error(rrd_get_error());
+    }
 }
 
 // create rrd database
