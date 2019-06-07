@@ -11,18 +11,6 @@ extern "C" {
 
 using namespace std;
 
-// connect to rrd cached daemon
-void Pulse::RRDClientConnect(void)
-{
-	int ret = 0;
-
-	ret = rrdc_connect(RRDCachedAddress);
-	if (ret)
-    {
-        throw runtime_error(rrd_get_error());
-    }
-}
-
 // create rrd database (use rrdcached)
 void Pulse::RRDClientCreate(void)
 {
@@ -30,7 +18,14 @@ void Pulse::RRDClientCreate(void)
 	time_t timestamp_start = time(nullptr) - 120;
 	const int ds_count = 9;
 	const int step_size = 60;
-	const int no_overwrite = 1;
+	const int no_overwrite = 0;
+
+	// connect to daemon
+    ret = rrdc_connect(RRDCachedAddress);
+    if (ret)
+    {
+        throw runtime_error(rrd_get_error());
+    }
 
 	// energy is stored in counts (GAUGE)
 	// energy = counts * revolutions per kWh [kWh]
@@ -86,70 +81,12 @@ void Pulse::RRDClientCreate(void)
 		cout << "RRD: revolutions per kWh (" << dec << RevPerKiloWattHour << ")" << endl;
 	}
 
-	free(*argv);
-}
-
-// create rrd database
-void Pulse::RRDCreate(void)
-{
-	int ret = 0;
-	time_t timestamp_start = time(nullptr) - 120;
-	const int ds_count = 9;
-	const int step_size = 60;
-
-	// energy is stored in counts (GAUGE)
-	// energy = counts * revolutions per kWh [kWh]
-	// power is stored in counts per second (COUNTER)
-	// power = counts per second * 48000 [W]
-	// 48000 = 1000 * 3600 / 75 revolutions per kWh
-		
-	const char * ds_schema[] = {
-		"DS:energy:GAUGE:3600:0:U",
-    	"DS:power:COUNTER:3600:0:48000",
-		"RRA:LAST:0.5:1:1500",
-		"RRA:LAST:0.5:60:750",
-		"RRA:LAST:0.5:1440:375",
-		"RRA:AVERAGE:0.5:1:1500",
-		"RRA:AVERAGE:0.5:60:750",
-        "RRA:AVERAGE:0.5:1440:375",
-		NULL};
-
-	// RRAs
-	// keep 1 day in 1 min resolution
-	// keep 1 month in 1 hour resolution
-	// keep 1 year in 1 day resolution
-	// consolidate LAST (energy) and AVERAGE (power)
-
-	ret = rrd_create_r(RRDFile, step_size, timestamp_start, 
-		ds_count, ds_schema);
-	if (ret)
-	{
-		throw runtime_error(rrd_get_error());
-	}
-
-	if (Debug)
-		cout << "RRD: file created (" << RRDFile << ")" << endl;
-	
-    // set last meter reading
-    const int RRD_DS_LEN = 1;
-    const int RRD_BUF_SIZE = 64;
-    char * argv[RRD_BUF_SIZE];
-	timestamp_start += 60;
-    
-	*argv = (char *) malloc(RRD_BUF_SIZE * sizeof(char));
-    memset(*argv, '\0', RRD_BUF_SIZE);
-    snprintf(*argv, RRD_BUF_SIZE, "%ld:%ld:%ld", timestamp_start, LastEnergyCounter, LastEnergyCounter);
-
-    ret = rrd_update_r(RRDFile, "energy:power", RRD_DS_LEN, (const char **) argv);
+	// disconnect daemon
+    ret = rrdc_disconnect();
     if (ret)
     {
-    	throw runtime_error(rrd_get_error());
+        throw runtime_error(rrd_get_error());
     }
-
-	if (Debug)
-    {
-		cout << "RRD: revolutions per kWh (" << dec << RevPerKiloWattHour << ")" << endl;
-	}
 
 	free(*argv);
 }
@@ -169,6 +106,13 @@ void Pulse::RRDClientUpdateEnergyCounter(void)
     const int RRD_BUF_SIZE = 64;
     char * argv[RRD_BUF_SIZE];
 	*argv = (char *) malloc(RRD_BUF_SIZE * sizeof(char));
+
+    // connect to daemon
+    ret = rrdc_connect(RRDCachedAddress);
+    if (ret)
+    {
+        throw runtime_error(rrd_get_error());
+    }	
 
     // output for rrd update
     if (SensorValue == 1)
@@ -202,56 +146,12 @@ void Pulse::RRDClientUpdateEnergyCounter(void)
     	}
 	}
 
-	free(*argv);
-}
-
-// update meter reading in the rrd file (in kWh)
-void Pulse::RRDUpdateEnergyCounter(void)
-{
-	int ret = 0;
-	time_t timestamp = time(nullptr);
-
-	// total energy counter
-	static unsigned long energy_counter = LastEnergyCounter;
-
-	// rrd update string to write into rrd file
-	//ostringstream rrd_update;
-	const int RRD_DS_LEN = 1;
-    const int RRD_BUF_SIZE = 64;
-    char * argv[RRD_BUF_SIZE];
-	*argv = (char *) malloc(RRD_BUF_SIZE * sizeof(char));
-
-    // output for rrd update
-    if (SensorValue == 1)
+	// disconnect daemon
+    ret = rrdc_disconnect();
+    if (ret)
     {
-        energy_counter++;
-        
-		if (Debug)
-		{
-			ofstream logfile;
-			logfile.open("sensor.log", ios::app);
-			logfile << timestamp << " " << energy_counter << endl;
-			logfile.close();
-		}
-	
-		// rrd format N : energy (Wh) : power (Ws)
-		memset(*argv, '\0', RRD_BUF_SIZE);
-		snprintf(*argv, RRD_BUF_SIZE, "%ld:%ld:%ld", timestamp, energy_counter, 
-			energy_counter);
-	
-		// output sensor value in rrd format	
-		if (Debug)
-			cout << argv[0] << endl;
-
-		// update rrd file
-		ret = rrd_update_r(RRDFile, "energy:power", RRD_DS_LEN, (const char **) argv);
-		if (ret)
-    	{
-        	//throw runtime_error(rrd_get_error());
-			cerr << rrd_get_error() << endl;
-			rrd_clear_error();
-    	}
-	}
+        throw runtime_error(rrd_get_error());
+    }
 
 	free(*argv);
 }
@@ -304,7 +204,8 @@ unsigned long Pulse::RRDGetLastEnergyCounter(void)
 }
 
 // get total energy (in Wh) from rrd file in meterN format
-// e.g. pulse(1234.5*Wh) 
+// e.g. pulse(1234.5*Wh)
+// don't need rrdcached connected 
 double Pulse::RRDGetEnergy(void)
 {
 	double energy = static_cast<double>(RRDGetLastEnergyCounter()) / 

@@ -36,15 +36,10 @@ public:
 	int ReadSensorValue(void);
 
 	// rrd methods
-	void RRDCreate(void);
-	void RRDUpdateEnergyCounter(void);
-	unsigned long RRDGetLastEnergyCounter(void);
-	double RRDGetEnergy(void);
-
-	// rrdcached methods
-	void RRDClientConnect(void);
     void RRDClientCreate(void);
     void RRDClientUpdateEnergyCounter(void);
+	unsigned long RRDGetLastEnergyCounter(void);
+    double RRDGetEnergy(void);
 };
 
 #endif // PULSE_H

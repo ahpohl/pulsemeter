@@ -24,11 +24,10 @@ int main(int argc, char* argv[])
 		{ "rev", required_argument, NULL, 'r'},
 		{ "meter", required_argument, NULL, 'm'},
 		{ "energy", no_argument, NULL, 'e' },
-		{ "cache", no_argument, NULL, 'C' },
         { NULL, 0, NULL, 0 }
     };
 
-    const char * optString = "hDd:RTL:H:cf:a:r:m:eC";
+    const char * optString = "hDd:RTL:H:cf:a:r:m:e";
     int opt = 0;
     int longIndex = 0;
 	char mode = '\0'; // raw: R, trigger: T
@@ -36,7 +35,6 @@ int main(int argc, char* argv[])
 	bool help = false;
 	bool create_rrd_file = false;
 	bool energy = false;
-	bool rrdcached = false;
 	double meter_reading = 0;
 	
 
@@ -110,9 +108,6 @@ int main(int argc, char* argv[])
 			energy = true;
 			break;
 
-		case 'C':
-			rrdcached = true;
-
 		default:
             break;
         }
@@ -137,8 +132,7 @@ int main(int argc, char* argv[])
   -a --address [sock]   Set address of rrdcached daemon\n\
   -r --rev [int]        Set revolutions per kWh\n\
   -m --meter [float]    Set initial meter reading [kWh]\n\
-  -e --energy           Get last energy [Wh]\n\
-  -C --cache            Use rrdcached"
+  -e --energy           Get last energy [Wh]"
 		<< endl;
 		return 0;
 	}
@@ -195,21 +189,14 @@ int main(int argc, char* argv[])
 	// read trigger data
 	else if (mode == 'T')
 	{
-		// connect to rrdcached daemon
-		if (rrdcached)
-			meter.RRDClientConnect();
-
 		// create RRD file
 		if (create_rrd_file)
 		{
-			if (rrdcached)
-    			meter.RRDClientCreate();
-			else
-				meter.RRDCreate();
+    		meter.RRDClientCreate();
 		}
 		
 		// get current meter reading from RRD file
-        meter.RRDGetLastEnergyCounter();		
+        meter.RRDGetLastEnergyCounter();	
 
 		// set trigger mode
 		meter.SetTriggerMode(trigger_level_low, trigger_level_high);
@@ -221,10 +208,7 @@ int main(int argc, char* argv[])
 			meter.ReadSensorValue();
 			
 			// update rrd file
-			if (rrdcached)
-    			meter.RRDClientUpdateEnergyCounter();
-			else
-				meter.RRDUpdateEnergyCounter();
+    		meter.RRDClientUpdateEnergyCounter();
 		}
 	}
 
