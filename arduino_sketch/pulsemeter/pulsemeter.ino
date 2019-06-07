@@ -19,14 +19,9 @@ const int analogInPin = A0;  // Analog input pin that the photo transistor is at
 const int irOutPin = 9; // Digital output pin that the LED is attached to
 const int ledOutPin = 8; // Signal LED output pin
 
-// sensor values
-volatile int sensorValueOff = 0;  // value read from the photo transistor when ir LED is off
-volatile int sensorValueOn = 0;  // value read from the photo transistor when ir LED is on
-
-// trigger state and level
-volatile int triggerLevelLow;
-volatile int triggerLevelHigh;
-volatile boolean triggerState = false;
+// trigger level (set via serial command)
+volatile int triggerLevelLow = 0;
+volatile int triggerLevelHigh = 0;
 
 // By default, PacketSerial uses COBS encoding and has a 256 byte receive
 // buffer. This can be adjusted by the user by replacing `PacketSerial` with
@@ -84,72 +79,6 @@ unsigned int crc16(byte *data_p, unsigned int length)
       crc = ~crc;
 
       return (crc);
-}
-
-/**
- * Detect and print a trigger event
- */
-void detectTrigger(int val)
-{
-  boolean nextState = triggerState;
-  if (val > triggerLevelHigh) {
-    nextState = true;
-  } else if (val < triggerLevelLow) {
-    nextState = false;
-  }
-  if (nextState != triggerState) {
-    triggerState = nextState;
-    // control internal LED
-    digitalWrite(ledOutPin, triggerState);
-
-    // output trigger count on LCD
-    if (triggerState == 0) {
-      static unsigned long triggerCount;
-      triggerCount++;
-      lcd.clear();
-      lcd.print("Trigger mode");
-      lcd.setCursor(0,1);
-      lcd.print(triggerCount);
-    }
-
-    // send triggerState value via serial
-    sendSensorValue(triggerState? 1 : 0, SENSOR_VALUE);
-  }
-}
-
-void lcdPrintRaw(int val)
-{
-  unsigned long currentMillis = millis();
-  static unsigned long previousMillis;
-
-  if (currentMillis - previousMillis > 1000) {
-    previousMillis = currentMillis;
-    lcd.clear();
-    lcd.print("Raw mode");
-    lcd.setCursor(0,1);
-    lcd.print(val);
-  }
-}
-
-// send packet via serial line
-void sendSensorValue(int val, int state) 
-{
-  byte buf[DATA_PACKET_SIZE] = {0};
-  unsigned int crc = 0xFFFF;
-
-  // transmission state
-  buf[0] = state;
-
-  // sensor value
-  buf[1] = val >> 8; // sensor value high byte
-  buf[2] = val & 0xFF; // sensor value low byte
-
-  // cyclic redundancy check
-  crc = crc16(buf, 3);
-  buf[3] = crc >> 8; // crc high byte
-  buf[4] = crc & 0xFF; // crc low byte
-
-  myPacketSerial.send(buf, DATA_PACKET_SIZE);
 }
 
 // This is our handler callback function.
@@ -215,6 +144,120 @@ void onPacketReceived(const uint8_t* decoded_buffer, size_t decoded_length)
   }
 }
 
+// send packet via serial line
+void sendSensorValue(int val, int state) 
+{
+  byte buf[DATA_PACKET_SIZE] = {0};
+  unsigned int crc = 0xFFFF;
+
+  // transmission state
+  buf[0] = state;
+
+  // sensor value
+  buf[1] = val >> 8; // sensor value high byte
+  buf[2] = val & 0xFF; // sensor value low byte
+
+  // cyclic redundancy check
+  crc = crc16(buf, 3);
+  buf[3] = crc >> 8; // crc high byte
+  buf[4] = crc & 0xFF; // crc low byte
+
+  myPacketSerial.send(buf, DATA_PACKET_SIZE);
+}
+
+/**
+ * Detect and print a trigger event
+ */
+void detectTrigger(int val)
+{
+  static boolean triggerState = false;
+  
+  boolean nextState = triggerState;
+  if (val > triggerLevelHigh) {
+    nextState = true;
+  } else if (val < triggerLevelLow) {
+    nextState = false;
+  }
+  if (nextState != triggerState) {
+    triggerState = nextState;
+    // control internal LED
+    digitalWrite(ledOutPin, triggerState);
+
+    // output trigger count on LCD
+    if (triggerState == 0) {
+      static unsigned long triggerCount;
+      triggerCount++;
+      lcd.clear();
+      lcd.print("Trigger mode");
+      lcd.setCursor(0,1);
+      lcd.print(triggerCount);
+    }
+
+    // send triggerState value via serial
+    sendSensorValue(triggerState? 1 : 0, SENSOR_VALUE);
+  }
+}
+
+void lcdPrintRaw(int val)
+{
+  unsigned long currentMillis = millis();
+  static unsigned long previousMillis;
+
+  if (currentMillis - previousMillis > 1000) {
+    previousMillis = currentMillis;
+    lcd.clear();
+    lcd.print("Raw mode");
+    lcd.setCursor(0,1);
+    lcd.print(val);
+  }
+}
+
+void getSensorValue(int sensor_delay)
+{
+  // sensor values
+  int sensorValueOn = 0;
+  int sensorValueOff = 0;
+
+  // save ledstate
+  static boolean ledState = LOW;
+
+  static unsigned long previousMillis = 0;
+  unsigned long currentMillis = millis();
+
+  if (currentMillis - previousMillis >= sensor_delay)
+  {
+    // save the last time you blinked the LED
+    previousMillis = currentMillis;
+
+    // if the LED is off turn it on and vice-versa:
+    if (ledState == LOW) {
+      sensorValueOff = analogRead(analogInPin);
+      ledState = HIGH;
+    } else {
+      sensorValueOn = analogRead(analogInPin);
+      ledState = LOW;
+
+      // raw mode
+      if (mode == 'R')
+      {
+        // send raw sensor value over serial
+        sendSensorValue(sensorValueOn - sensorValueOff, 0);
+
+        // output raw value on LCD
+        lcdPrintRaw(sensorValueOn - sensorValueOff);
+      }
+
+      // detect trigger
+      else if (mode == 'T')
+      {
+        detectTrigger(sensorValueOn - sensorValueOff);
+      }          
+    }
+
+    // set the LED with the ledState of the variable:
+    digitalWrite(irOutPin, ledState);
+  }
+}
 
 /**
  * Setup.
@@ -244,33 +287,8 @@ void loop() {
 
   if ((mode == 'R') || (mode == 'T'))
   {
-    // perform measurement
-    // turn LED on
-    digitalWrite(irOutPin, HIGH);
-    delay(10);
-    // read the analog in value:
-    sensorValueOn = analogRead(analogInPin);           
-    // turn LED off
-    digitalWrite(irOutPin, LOW);
-    delay(10);
-    // read the analog in value:
-    sensorValueOff = analogRead(analogInPin);
-  }
-
-  // raw mode
-  if (mode == 'R')
-  {
-    // send raw sensor value over serial
-    sendSensorValue(sensorValueOn - sensorValueOff, 0);
-
-    // output raw value on LCD
-    lcdPrintRaw(sensorValueOn - sensorValueOff);  
-  }
-
-  // detect trigger
-  else if (mode == 'T')
-  {
-    detectTrigger(sensorValueOn - sensorValueOff);
+    // get sensor value   
+    getSensorValue(20);
   }
 
   // The PacketSerial::update() method attempts to read in any incoming serial

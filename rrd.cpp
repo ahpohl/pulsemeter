@@ -38,8 +38,8 @@ void Pulse::RRDCreate(void)
 	// 48000 = 1000 * 3600 / 75 revolutions per kWh
 		
 	const char * ds_schema[] = {
-		"DS:energy:GAUGE:120:0:U",
-    	"DS:power:COUNTER:120:0:48000",
+		"DS:energy:GAUGE:3600:0:U",
+    	"DS:power:COUNTER:3600:0:48000",
 		"RRA:LAST:0.5:1:1500",
 		"RRA:LAST:0.5:60:750",
 		"RRA:LAST:0.5:1440:375",

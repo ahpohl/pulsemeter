@@ -201,7 +201,7 @@ int main(int argc, char* argv[])
 	else if (mode == 'T')
 	{
 		// connect to rrdcached daemon
-		meter.RRDConnect(rrdcached_address);
+		//meter.RRDConnect(rrdcached_address);
 
 		// create RRD file
 		if (create_rrd_file)
