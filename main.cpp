@@ -25,10 +25,11 @@ int main(int argc, char* argv[])
 		{ "meter", required_argument, NULL, 'm'},
 		{ "energy", no_argument, NULL, 'e' },
 		{ "power", no_argument, NULL, 'p' },
+		{ "cache", no_argument, NULL, 'C' },
         { NULL, 0, NULL, 0 }
     };
 
-    const char * optString = "hDd:RTL:H:cf:a:r:m:";
+    const char * optString = "hDd:RTL:H:cf:a:r:m:C";
     int opt = 0;
     int longIndex = 0;
 	char mode = '\0'; // raw: R, trigger: T
@@ -36,7 +37,9 @@ int main(int argc, char* argv[])
 	bool help = false;
 	bool create_rrd_file = false;
 	bool energy = false, power = false;
+	bool rrdcached = false;
 	double meter_reading = 0;
+	
 
 	// set default path to rrd file
 	const char * rrd_file = "/var/lib/rrdcached/pulse.rrd";
@@ -48,7 +51,7 @@ int main(int argc, char* argv[])
 	const char * serial_device = "/dev/ttyACM0";
 
 	// set default trigger levels
-	int trigger_level_low = 70, trigger_level_high = 90;
+	int trigger_level_low = 85, trigger_level_high = 100;
 
 	// set revolutions per kWh of ferraris energy meter
 	int rev_per_kWh = 75;
@@ -112,6 +115,9 @@ int main(int argc, char* argv[])
 			power = true;
 			break;
 
+		case 'C':
+			rrdcached = true;
+
 		default:
             break;
         }
@@ -137,7 +143,8 @@ int main(int argc, char* argv[])
   -r --rev [int]        Set revolutions per kWh\n\
   -m --meter [float]    Set initial meter reading [kWh]\n\
   -e --energy           Get last energy [Wh]\n\
-  -p --power            Get last power [W]"
+  -p --power            Get last power [W]\n\
+  -C --cache            Use rrdcached"
 		<< endl;
 		return 0;
 	}
@@ -201,7 +208,8 @@ int main(int argc, char* argv[])
 	else if (mode == 'T')
 	{
 		// connect to rrdcached daemon
-		//meter.RRDConnect(rrdcached_address);
+		if (rrdcached)
+			meter.RRDConnect(rrdcached_address);
 
 		// create RRD file
 		if (create_rrd_file)

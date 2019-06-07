@@ -16,7 +16,7 @@ void Pulse::RRDConnect(const char * daemon_address)
 {
 	int ret = 0;
 
-	ret = rrdc_connect(RRDAddress);
+	ret = rrdc_connect(daemon_address);
 	if (ret)
     {
         throw runtime_error(rrd_get_error());
@@ -45,7 +45,8 @@ void Pulse::RRDCreate(void)
 		"RRA:LAST:0.5:1440:375",
 		"RRA:AVERAGE:0.5:1:1500",
 		"RRA:AVERAGE:0.5:60:750",
-        "RRA:AVERAGE:0.5:1440:375"};
+        "RRA:AVERAGE:0.5:1440:375",
+		NULL};
 
 	// RRAs
 	// keep 1 day in 1 min resolution
