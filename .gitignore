@@ -3,3 +3,4 @@ sensor.log
 pulse.rrd
 *.o
 *.png
+*.hex
