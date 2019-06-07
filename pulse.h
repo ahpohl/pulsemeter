@@ -32,7 +32,8 @@ public:
 	// sensor methods
 	void OpenSyncSerialPort(const char * serial_device);
 	void SetRawMode(void);
-	void SetTriggerMode(short int trigger_level_low, short int trigger_level_high);
+	void SetTriggerMode(short int trigger_level_low, 
+		short int trigger_level_high);
 	int ReadSensorValue(void);
 
 	// rrd methods
