@@ -8,13 +8,14 @@
 using namespace std;
 
 // constructor
-Pulse::Pulse(const char * rrd_file, double meter_reading, int rev_per_kWh)
+Pulse::Pulse(const char * rrd_file, const char * rrdcached_address,
+	double meter_reading, int rev_per_kWh)
 {
     this -> RRDFile = rrd_file;
+	this -> RRDCachedAddress = rrdcached_address;
     this -> RevPerKiloWattHour = rev_per_kWh;
     this -> LastEnergyCounter = lround(meter_reading * rev_per_kWh);
     this -> Debug = false;
-    this -> RRDClient = nullptr;
 }
 
 // destructor

@@ -20,23 +20,22 @@ int main(int argc, char* argv[])
 		{ "high", required_argument, NULL, 'H' },
 		{ "create", no_argument, NULL, 'c' },
 		{ "file", required_argument, NULL, 'f' },
-		{ "address", required_argument, NULL, 'l'},
+		{ "address", required_argument, NULL, 'a'},
 		{ "rev", required_argument, NULL, 'r'},
 		{ "meter", required_argument, NULL, 'm'},
 		{ "energy", no_argument, NULL, 'e' },
-		{ "power", no_argument, NULL, 'p' },
 		{ "cache", no_argument, NULL, 'C' },
         { NULL, 0, NULL, 0 }
     };
 
-    const char * optString = "hDd:RTL:H:cf:a:r:m:C";
+    const char * optString = "hDd:RTL:H:cf:a:r:m:eC";
     int opt = 0;
     int longIndex = 0;
 	char mode = '\0'; // raw: R, trigger: T
 	bool debug = false;
 	bool help = false;
 	bool create_rrd_file = false;
-	bool energy = false, power = false;
+	bool energy = false;
 	bool rrdcached = false;
 	double meter_reading = 0;
 	
@@ -111,10 +110,6 @@ int main(int argc, char* argv[])
 			energy = true;
 			break;
 
-		case 'p':
-			power = true;
-			break;
-
 		case 'C':
 			rrdcached = true;
 
@@ -143,14 +138,14 @@ int main(int argc, char* argv[])
   -r --rev [int]        Set revolutions per kWh\n\
   -m --meter [float]    Set initial meter reading [kWh]\n\
   -e --energy           Get last energy [Wh]\n\
-  -p --power            Get last power [W]\n\
   -C --cache            Use rrdcached"
 		<< endl;
 		return 0;
 	}
 
     // create pulsemeter object
-    Pulse meter(rrd_file, meter_reading, rev_per_kWh);
+    Pulse meter(rrd_file, rrdcached_address, 
+		meter_reading, rev_per_kWh);
 
 	// set debug flag
     if (debug)
@@ -165,13 +160,6 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 	
-	// get power in meterN format
-	if (power)
-	{
-		meter.RRDGetPower();
-		return 0;
-	}
-
 	// print message if no mode was selected
     if (mode == '\0')
     {
@@ -209,11 +197,16 @@ int main(int argc, char* argv[])
 	{
 		// connect to rrdcached daemon
 		if (rrdcached)
-			meter.RRDConnect(rrdcached_address);
+			meter.RRDClientConnect();
 
 		// create RRD file
 		if (create_rrd_file)
-    		meter.RRDCreate();
+		{
+			if (rrdcached)
+    			meter.RRDClientCreate();
+			else
+				meter.RRDCreate();
+		}
 		
 		// get current meter reading from RRD file
         meter.RRDGetLastEnergyCounter();		
@@ -228,7 +221,10 @@ int main(int argc, char* argv[])
 			meter.ReadSensorValue();
 			
 			// update rrd file
-    		meter.RRDUpdateEnergyCounter();
+			if (rrdcached)
+    			meter.RRDClientUpdateEnergyCounter();
+			else
+				meter.RRDUpdateEnergyCounter();
 		}
 	}
 

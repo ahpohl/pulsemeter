@@ -13,8 +13,7 @@ private:
 	int SensorValue;
 	unsigned long LastEnergyCounter;
 	unsigned long EnergyCounter;
-    rrd_client_t * RRDClient;
-	const char * RRDAddress;
+	const char * RRDCachedAddress;
     const char * RRDFile;
 
 	// sensor methods
@@ -25,7 +24,8 @@ private:
     void ReceivePacket(unsigned char * packet, int buffer_size);
 
 public:
-	Pulse(const char * rrd_file, double meter_reading, int rev_per_kWh);
+	Pulse(const char * rrd_file, const char * rrdcached_address,
+		double meter_reading, int rev_per_kWh);
 	~Pulse(void);
 	void SetDebug(void);
 
@@ -36,12 +36,15 @@ public:
 	int ReadSensorValue(void);
 
 	// rrd methods
-	void RRDConnect(const char * daemon_address);
 	void RRDCreate(void);
 	void RRDUpdateEnergyCounter(void);
 	unsigned long RRDGetLastEnergyCounter(void);
 	double RRDGetEnergy(void);
-	double RRDGetPower(void);
+
+	// rrdcached methods
+	void RRDClientConnect(void);
+    void RRDClientCreate(void);
+    void RRDClientUpdateEnergyCounter(void);
 };
 
 #endif // PULSE_H
