@@ -1,5 +1,4 @@
 #include <iostream>
-#include <fstream>
 #include <ctime>
 
 extern "C" {
@@ -119,15 +118,7 @@ void Pulse::RRDClientUpdateEnergyCounter(void)
     {
         energy_counter++;
         
-		if (Debug)
-		{
-			ofstream logfile;
-			logfile.open("sensor.log", ios::app);
-			logfile << timestamp << " " << energy_counter << endl;
-			logfile.close();
-		}
-	
-		// rrd format N : energy (Wh) : power (Ws)
+		// rrd format, timestamp : energy (Wh) : power (Ws)
 		memset(*argv, '\0', RRD_BUF_SIZE);
 		snprintf(*argv, RRD_BUF_SIZE, "%ld:%ld:%ld", timestamp, energy_counter, 
 			energy_counter);

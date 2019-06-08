@@ -1,8 +1,5 @@
 #include <iostream>
-#include <iomanip>
 #include <math.h>
-#include <rrd.h>
-#include <rrd_client.h>
 #include "pulse.h"
 
 using namespace std;

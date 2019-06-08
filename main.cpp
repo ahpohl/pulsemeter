@@ -1,8 +1,13 @@
+// c++ headers
 #include <iostream>
 #include <string>
-#include <iomanip>
+#include <thread>
+
+// c headers
 #include <csignal>
 #include <getopt.h> // for getopt_long
+
+// program headers
 #include "pulse.h"
 
 using namespace std;
