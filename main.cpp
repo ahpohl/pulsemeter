@@ -177,12 +177,12 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-	// open serial port
-	meter.OpenSyncSerialPort(serial_device);
-
 	// read raw sensor data
 	if (mode == 'R')
 	{
+		// open serial port
+    	meter.OpenSyncSerialPort(serial_device);
+
 		// set raw mode
 		meter.SetRawMode();
 
@@ -196,6 +196,9 @@ int main(int argc, char* argv[])
 	// read trigger data
 	else if (mode == 'T')
 	{
+		// open serial port
+        meter.OpenSyncSerialPort(serial_device);
+
 		// create RRD file
 		if (create_rrd_file)
 		{

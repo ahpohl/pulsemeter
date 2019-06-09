@@ -36,6 +36,9 @@ void Pulse::SetDebug()
 
 void Pulse::RunTriggerThread(void)
 {
+	if (Debug)
+		cout << "Trigger thread function" << endl;	
+
 	// read sensor values
 	while (1)
     {
