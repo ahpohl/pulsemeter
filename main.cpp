@@ -2,6 +2,8 @@
 #include <iostream>
 #include <string>
 #include <thread>
+#include <mutex>
+#include <condition_variable>
 
 // c headers
 #include <csignal>
@@ -205,16 +207,12 @@ int main(int argc, char* argv[])
 
 		// set trigger mode
 		meter.SetTriggerMode(trigger_level_low, trigger_level_high);
+
+		// start a new thread
+		thread trigger(&Pulse::RunTriggerThread, &meter);
 	
-		// read sensor values
-		while (1)
-		{
-			// read sensor value
-			meter.ReadSensorValue();
-			
-			// update rrd file
-    		meter.RRDClientUpdateEnergyCounter();
-		}
+		// detach thread
+		trigger.detach();
 	}
 
 	return 0;

@@ -33,3 +33,16 @@ void Pulse::SetDebug()
 {
     this -> Debug = true;
 }
+
+void Pulse::RunTriggerThread(void)
+{
+	// read sensor values
+	while (1)
+    {
+    	// read sensor value
+    	ReadSensorValue();
+
+		// update rrd file
+		RRDClientUpdateEnergyCounter();
+   	}
+}

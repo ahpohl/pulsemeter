@@ -26,6 +26,7 @@ private:
 public:
 	Pulse(const char * rrd_file, const char * rrdcached_address,
 		double meter_reading, int rev_per_kWh);
+	Pulse(const Pulse & obj);
 	~Pulse(void);
 	void SetDebug(void);
 
@@ -41,6 +42,9 @@ public:
     void RRDClientUpdateEnergyCounter(void);
 	unsigned long RRDGetLastEnergyCounter(void);
     double RRDGetEnergy(void);
+
+	// thread functions
+	void RunTriggerThread(void);
 };
 
 #endif // PULSE_H
