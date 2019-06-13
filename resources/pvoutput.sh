@@ -14,7 +14,7 @@ rev_per_kwh=75
 
 # fetch data at current time minus 6 minutes
 fetch_time=$(date +%H:%M --date '-6 min')
-fetch=$(rrdtool fetch /var/lib/rrdcached/pulse.rrd LAST --daemon unix:/run/rrdcached/rrdcached.sock --start $fetch_time --end $fetch_time)
+fetch=$(rrdtool fetch /var/lib/rrdcached/pulse.rrd LAST --daemon unix:/run/rrdcached/rrdcached.sock --resolution 300 --start $fetch_time --end $fetch_time)
 
 # pulse date and time
 epoch=$(echo $fetch | cut -f1 -d ":" | cut -f3 -d " ")
@@ -30,6 +30,6 @@ counts_power=$(echo $fetch | cut -f5 -d " ")
 power=$(awk 'BEGIN { printf "%.3f", '$counts_power' * 48000 }')
 
 # upload
-curl -d "d=$date" -d "t=$time" -d "v3=$energy" -d "v4=$power" -d "c1=1" -H "X-Pvoutput-Apikey: $api" -H "X-Pvoutput-SystemId: $sys_id" $url
+#curl -d "d=$date" -d "t=$time" -d "v3=$energy" -d "c1=1" -H "X-Pvoutput-Apikey: $api" -H "X-Pvoutput-SystemId: $sys_id" $url
 echo
-echo "Date: $date, Time: $time, Energy: $energy, Power: $power, Sys Id: $sys_id"
+echo "Date: $date $time, Energy: $energy Wh, Power: $power W, Sys Id: $sys_id"
