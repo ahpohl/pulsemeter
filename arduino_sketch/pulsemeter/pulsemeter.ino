@@ -130,6 +130,7 @@ void onPacketReceived(const uint8_t* decoded_buffer, size_t decoded_length)
     sendSensorValue(0, TRIGGER_MODE);
     triggerLevelLow = ((decoded_buffer[1] & 0xFF) << 8) | (decoded_buffer[2] & 0xFF);
     triggerLevelHigh = ((decoded_buffer[3] & 0xFF) << 8) | (decoded_buffer[4] & 0xFF);
+    lcdPrintTrigger(0);
     break;
   case 0x30:
     sendSensorValue(0, SYNC_OK);
@@ -187,10 +188,7 @@ void detectTrigger(int val)
     if (triggerState == 0) {
       static unsigned long triggerCount;
       triggerCount++;
-      lcd.clear();
-      lcd.print("Trigger mode");
-      lcd.setCursor(0,1);
-      lcd.print(triggerCount);
+      lcdPrintTrigger(triggerCount);
     }
 
     // send triggerState value via serial
@@ -210,6 +208,14 @@ void lcdPrintRaw(int val)
     lcd.setCursor(0,1);
     lcd.print(val);
   }
+}
+
+void lcdPrintTrigger(int val)
+{
+  lcd.clear();
+  lcd.print("Trigger mode");
+  lcd.setCursor(0,1);
+  lcd.print(val);
 }
 
 void getSensorValue(int sensor_delay)
