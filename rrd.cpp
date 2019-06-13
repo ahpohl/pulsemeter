@@ -16,7 +16,7 @@ void Pulse::RRDClientCreate(void)
 {
 	int ret = 0;
 	time_t timestamp_start = time(nullptr) - 120;
-	const int ds_count = 9;
+	const int ds_count = 11;
 	const int step_size = 60;
 	const int no_overwrite = 0;
 
@@ -37,9 +37,11 @@ void Pulse::RRDClientCreate(void)
 		"DS:energy:GAUGE:3600:0:U",
     	"DS:power:COUNTER:3600:0:48000",
 		"RRA:LAST:0.5:1:1500",
+		"RRA:LAST:0.5:5:900",
 		"RRA:LAST:0.5:60:750",
 		"RRA:LAST:0.5:1440:375",
 		"RRA:AVERAGE:0.5:1:1500",
+		"RRA:AVERAGE:0.5:5:900",
 		"RRA:AVERAGE:0.5:60:750",
         "RRA:AVERAGE:0.5:1440:375",
 		NULL};
