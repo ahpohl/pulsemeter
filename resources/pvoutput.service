@@ -1,5 +1,5 @@
 [Unit]
-Description=Pulsemeter energy consumption
+Description=Pulsemeter upload to PVOutput
 
 [Service]
 ExecStart=/scratch/git/pulse/resources/pvoutput.sh

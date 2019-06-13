@@ -1,5 +1,5 @@
 [Unit]
-Description=Upload timer for PVoutput
+Description=Pulsemeter upload to PVoutput
 
 [Timer]
 OnCalendar=*:0/5
