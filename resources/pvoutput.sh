@@ -27,9 +27,9 @@ energy=$(echo $fetch | awk 'BEGIN { printf "%.3f", '$counts_energy' / '$rev_per_
 
 # calculate power
 counts_power=$(echo $fetch | cut -f5 -d " ")
-power=$(awk 'BEGIN { printf "%.3f", '$counts_power' * 48000 }')
+power=$(awk 'BEGIN { printf "%.3f", '$counts_power' * 3600 * 1000 / '$rev_per_kwh' }')
 
 # upload
-#curl -d "d=$date" -d "t=$time" -d "v3=$energy" -d "c1=1" -H "X-Pvoutput-Apikey: $api" -H "X-Pvoutput-SystemId: $sys_id" $url
+curl -d "d=$date" -d "t=$time" -d "v3=$energy" -d "c1=1" -H "X-Pvoutput-Apikey: $api" -H "X-Pvoutput-SystemId: $sys_id" $url
 echo
 echo "Date: $date $time, Energy: $energy Wh, Power: $power W, Sys Id: $sys_id"
