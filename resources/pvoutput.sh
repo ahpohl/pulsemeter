@@ -2,7 +2,7 @@
 
 # PV output
 api=212dc3361019148fdb63eb0ba53b8d2dfcc4e2ec
-sys_id=67956 # Ilvesheim: 66419, Ilvesheim_test: 67956
+sys_id=66419 # Ilvesheim: 66419, Ilvesheim_test: 67956
 url=https://pvoutput.org/service/r2/addstatus.jsp
 
 # rrdtool
