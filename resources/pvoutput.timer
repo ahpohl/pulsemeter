@@ -1,0 +1,8 @@
+[Unit]
+Description=Pulsemeter upload to PVoutput
+
+[Timer]
+OnCalendar=*:0/5
+ 
+[Install]
+WantedBy=timers.target

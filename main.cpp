@@ -1,8 +1,15 @@
+// c++ headers
 #include <iostream>
 #include <string>
-#include <iomanip>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+
+// c headers
 #include <csignal>
 #include <getopt.h> // for getopt_long
+
+// program headers
 #include "pulse.h"
 
 using namespace std;
@@ -170,12 +177,12 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-	// open serial port
-	meter.OpenSyncSerialPort(serial_device);
-
 	// read raw sensor data
 	if (mode == 'R')
 	{
+		// open serial port
+    	meter.OpenSyncSerialPort(serial_device);
+
 		// set raw mode
 		meter.SetRawMode();
 
@@ -189,6 +196,9 @@ int main(int argc, char* argv[])
 	// read trigger data
 	else if (mode == 'T')
 	{
+		// open serial port
+        meter.OpenSyncSerialPort(serial_device);
+
 		// create RRD file
 		if (create_rrd_file)
 		{
@@ -200,16 +210,16 @@ int main(int argc, char* argv[])
 
 		// set trigger mode
 		meter.SetTriggerMode(trigger_level_low, trigger_level_high);
-	
+
 		// read sensor values
-		while (1)
-		{
-			// read sensor value
-			meter.ReadSensorValue();
-			
-			// update rrd file
-    		meter.RRDClientUpdateEnergyCounter();
-		}
+    	while (1)
+    	{
+        	// read sensor value
+        	meter.ReadSensorValue();
+
+        	// update rrd file
+        	meter.RRDClientUpdateEnergyCounter();
+    	}
 	}
 
 	return 0;

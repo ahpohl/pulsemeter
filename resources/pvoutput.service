@@ -1,0 +1,10 @@
+[Unit]
+Description=Pulsemeter upload to PVOutput
+
+[Service]
+ExecStart=/scratch/git/pulse/resources/pvoutput.sh
+User=rrdcached
+Group=rrdcached
+
+[Install]
+WantedBy=multi-user.target
