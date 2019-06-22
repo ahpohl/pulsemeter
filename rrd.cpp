@@ -1,5 +1,6 @@
 #include <iostream>
 #include <ctime>
+#include <iomanip>
 
 extern "C" {
 #include <rrd.h>
@@ -190,7 +191,10 @@ unsigned long Pulse::RRDGetLastEnergyCounter(void)
     if (Debug)
     {
         cout << "RRD: last energy counter ("
-             << dec << LastEnergyCounter << ")" << endl;
+             << dec << LastEnergyCounter << ", "
+			 << fixed << setprecision(1) 
+			 << static_cast<double>(LastEnergyCounter) / RevPerKiloWattHour
+			 << " kWh)" << endl;
     }
 
 	return LastEnergyCounter;
