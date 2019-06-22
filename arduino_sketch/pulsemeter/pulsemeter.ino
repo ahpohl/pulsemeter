@@ -191,8 +191,8 @@ void detectTrigger(int val)
       lcdPrintTrigger(triggerCount);
     }
 
-    // send triggerState value via serial
-    sendSensorValue(triggerState? 1 : 0, SENSOR_VALUE);
+    // send triggerState value via serial (inverted)
+    sendSensorValue(triggerState? 0 : 1, SENSOR_VALUE);
   }
 }
 
