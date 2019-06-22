@@ -42,9 +42,6 @@ public:
     void RRDClientUpdateEnergyCounter(void);
 	unsigned long RRDGetLastEnergyCounter(void);
     double RRDGetEnergy(void);
-
-	// thread functions
-	void RunTriggerThread(void);
 };
 
 #endif // PULSE_H

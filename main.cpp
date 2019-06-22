@@ -211,11 +211,15 @@ int main(int argc, char* argv[])
 		// set trigger mode
 		meter.SetTriggerMode(trigger_level_low, trigger_level_high);
 
-		// start a new thread
-		thread trigger(&Pulse::RunTriggerThread, &meter);
-	
-		// detach thread
-		trigger.detach();
+		// read sensor values
+    	while (1)
+    	{
+        	// read sensor value
+        	meter.ReadSensorValue();
+
+        	// update rrd file
+        	meter.RRDClientUpdateEnergyCounter();
+    	}
 	}
 
 	return 0;

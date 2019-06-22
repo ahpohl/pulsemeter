@@ -33,19 +33,3 @@ void Pulse::SetDebug()
 {
     this -> Debug = true;
 }
-
-void Pulse::RunTriggerThread(void)
-{
-	if (Debug)
-		cout << "Trigger thread function" << endl;	
-
-	// read sensor values
-	while (1)
-    {
-    	// read sensor value
-    	ReadSensorValue();
-
-		// update rrd file
-		RRDClientUpdateEnergyCounter();
-   	}
-}
