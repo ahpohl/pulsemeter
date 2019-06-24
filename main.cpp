@@ -31,17 +31,18 @@ int main(int argc, char* argv[])
 		{ "rev", required_argument, NULL, 'r'},
 		{ "meter", required_argument, NULL, 'm'},
 		{ "energy", no_argument, NULL, 'e' },
+		{ "power", no_argument, NULL, 'p' },
         { NULL, 0, NULL, 0 }
     };
 
-    const char * optString = "hDd:RTL:H:cf:a:r:m:e";
+    const char * optString = "hDd:RTL:H:cf:a:r:m:ep";
     int opt = 0;
     int longIndex = 0;
 	char mode = '\0'; // raw: R, trigger: T
 	bool debug = false;
 	bool help = false;
 	bool create_rrd_file = false;
-	bool energy = false;
+	bool energy = false, power = false;
 	double meter_reading = 0;
 	
 
@@ -115,6 +116,10 @@ int main(int argc, char* argv[])
 			energy = true;
 			break;
 
+		case 'p':
+			power = true;
+			break;
+
 		default:
             break;
         }
@@ -139,7 +144,8 @@ int main(int argc, char* argv[])
   -a --address [sock]   Set address of rrdcached daemon\n\
   -r --rev [int]        Set revolutions per kWh\n\
   -m --meter [float]    Set initial meter reading [kWh]\n\
-  -e --energy           Get last energy [Wh]"
+  -e --energy           Get energy [Wh]\n\
+  -p --power			Get power [W]"
 		<< endl;
 		return 0;
 	}
@@ -154,10 +160,17 @@ int main(int argc, char* argv[])
         meter.SetDebug();
     }
 
-	// get energy in meterN format
+	// get energy in Wh
 	if (energy)
 	{
 		meter.RRDGetEnergy();
+		return 0;
+	}
+
+	// get power in W
+	if (power)
+	{
+		meter.RRDGetPower();
 		return 0;
 	}
 	
@@ -202,7 +215,7 @@ int main(int argc, char* argv[])
 		// create RRD file
 		if (create_rrd_file)
 		{
-    		meter.RRDClientCreate();
+    		meter.RRDCreate();
 		}
 		
 		// get current meter reading from RRD file
@@ -218,7 +231,7 @@ int main(int argc, char* argv[])
         	meter.ReadSensorValue();
 
         	// update rrd file
-        	meter.RRDClientUpdateEnergyCounter();
+        	meter.RRDUpdateEnergyCounter();
     	}
 	}
 

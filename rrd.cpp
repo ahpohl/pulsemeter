@@ -12,13 +12,13 @@ extern "C" {
 using namespace std;
 
 // create rrd database (use rrdcached)
-void Pulse::RRDClientCreate(void)
+void Pulse::RRDCreate(void)
 {
 	int ret = 0;
 	time_t timestamp_start = time(nullptr) - 120;
-	const int ds_count = 11;
+	const int ds_count = 10;
 	const int step_size = 60;
-	const int no_overwrite = 0;
+	const int no_overwrite = 1;
 
 	// connect to daemon
     ret = rrdc_connect(RRDCachedAddress);
@@ -94,7 +94,7 @@ void Pulse::RRDClientCreate(void)
 }
 
 // update meter reading in the rrd file (in kWh)
-void Pulse::RRDClientUpdateEnergyCounter(void)
+void Pulse::RRDUpdateEnergyCounter(void)
 {
 	int ret = 0;
 	time_t timestamp = time(nullptr);
@@ -191,7 +191,7 @@ unsigned long Pulse::RRDGetLastEnergyCounter(void)
     if (Debug)
     {
         cout << "RRD: last energy counter ("
-             << dec << LastEnergyCounter << ", "
+             << dec << LastEnergyCounter << " counts, "
 			 << fixed << setprecision(1) 
 			 << static_cast<double>(LastEnergyCounter) / RevPerKiloWattHour
 			 << " kWh)" << endl;
@@ -203,7 +203,7 @@ unsigned long Pulse::RRDGetLastEnergyCounter(void)
 // get total energy (in Wh) from rrd file in meterN format
 // e.g. pulse(1234.5*Wh)
 // don't need rrdcached connected 
-double Pulse::RRDGetEnergy(void)
+double Pulse::RRDGetEnergyMeterN(void)
 {
 	double energy = static_cast<double>(RRDGetLastEnergyCounter()) / 
 		RevPerKiloWattHour * 1000;
@@ -215,4 +215,100 @@ double Pulse::RRDGetEnergy(void)
 	cout << "pulse(" << fixed << energy << "*Wh)" << endl;
 
 	return energy;
+}
+
+double Pulse::RRDGetEnergy(void)
+{
+	double energy = 0;
+	unsigned long step_size = 300;
+	time_t start_time = 1561200300;
+	time_t end_time = start_time + step_size - 1;
+	const char cf[] = "LAST";
+
+    int ret = 0;
+    char **ds_names = 0;
+    rrd_value_t * ds_data = 0;
+    unsigned long ds_count = 0;
+
+    // flush if connected to rrdcached daemon
+    ret = rrdc_flush_if_daemon(RRDCachedAddress, RRDFile);
+    if (ret)
+    {
+        throw runtime_error(rrd_get_error());
+    }
+
+    // get energy value from rrd file
+    ret = rrdc_fetch(RRDFile, cf, &start_time, 
+		&end_time, &step_size, &ds_count, &ds_names, &ds_data);
+
+    if (ret)
+    {
+        throw runtime_error(rrd_get_error());
+    }
+
+	// ds_data[0]: energy, ds_data[1]: power
+    for (unsigned long i = 0; i < ds_count; i++)
+    {
+        if (strcmp(ds_names[i], "energy") == 0)
+        {
+			// calculate energy in Wh
+			energy = ds_data[i] / RevPerKiloWattHour * 1000;
+
+			if (Debug)
+				cout << fixed << setprecision(3) << energy << " Wh" << endl;
+        }
+        rrd_freemem(ds_names[i]);
+    }
+    rrd_freemem(ds_names);
+	rrd_freemem(ds_data);
+
+	return energy;
+}
+
+double Pulse::RRDGetPower(void)
+{
+	double power = 0;
+	unsigned long step_size = 300;
+	time_t start_time = 1561200300;
+	time_t end_time = start_time + step_size - 1;
+	const char cf[] = "AVERAGE";
+
+    int ret = 0;
+    char **ds_names = 0;
+    rrd_value_t * ds_data = 0;
+    unsigned long ds_count = 0;
+
+    // flush if connected to rrdcached daemon
+    ret = rrdc_flush_if_daemon(RRDCachedAddress, RRDFile);
+    if (ret)
+    {
+        throw runtime_error(rrd_get_error());
+    }
+
+    // get energy value from rrd file
+    ret = rrdc_fetch(RRDFile, cf, &start_time, 
+		&end_time, &step_size, &ds_count, &ds_names, &ds_data);
+
+    if (ret)
+    {
+        throw runtime_error(rrd_get_error());
+    }
+
+	// ds_data[0]: energy, ds_data[1]: power
+    for (unsigned long i = 0; i < ds_count; i++)
+    {
+        if (strcmp(ds_names[i], "power") == 0)
+        {
+			// calculate energy in Wh
+			power = ds_data[i] * 3600 * 1000 / RevPerKiloWattHour;
+
+			if (Debug)
+				cout << fixed << setprecision(8) << power << " W" << endl;
+        }
+        rrd_freemem(ds_names[i]);
+    }
+    rrd_freemem(ds_names);
+	rrd_freemem(ds_data);
+
+	return power;
 }

@@ -14,7 +14,8 @@ rev_per_kwh=75
 step_size=300
 
 # fetch data at current time minus 6 minutes
-fetch_time=$(date +%H:%M --date '-6 min')
+#fetch_time=$(date +%H:%M --date '-6 min')
+fetch_time=$(date +%H:%M --date '@1561200300')
 
 # calculate energy in Wh
 energy_json=$(rrdtool xport --daemon $rrdcached --step $step_size --start e-$step_size --end $fetch_time --json  "DEF:counts=$rrd:energy:LAST" "CDEF:energy_kwh=counts,$rev_per_kwh,/" "CDEF:energy=energy_kwh,1000,*" XPORT:energy)
@@ -30,6 +31,6 @@ date=$(date -d @$epoch +%Y%m%d)
 time=$(date -d @$epoch +%H:%M)
 
 # upload
-curl -d "d=$date" -d "t=$time" -d "v3=$energy" -d "v4=$power" -d "c1=1" -H "X-Pvoutput-Apikey: $api" -H "X-Pvoutput-SystemId: $sys_id" $url
+#curl -d "d=$date" -d "t=$time" -d "v3=$energy" -d "v4=$power" -d "c1=1" -H "X-Pvoutput-Apikey: $api" -H "X-Pvoutput-SystemId: $sys_id" $url
 echo
 echo "Date: $date $time, Energy: $energy Wh, Power: $power W, Sys Id: $sys_id"
