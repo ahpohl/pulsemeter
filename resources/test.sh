@@ -15,7 +15,7 @@ step_size=300
 
 # fetch data at current time minus 6 minutes
 #fetch_time=$(date +%H:%M --date '-6 min')
-fetch_time=$(date +%H:%M --date '@1561200300')
+fetch_time=$(date +%H:%M --date '@1561495500')
 
 # calculate energy in Wh
 energy_json=$(rrdtool xport --daemon $rrdcached --step $step_size --start e-$step_size --end $fetch_time --json  "DEF:counts=$rrd:energy:LAST" "CDEF:energy_kwh=counts,$rev_per_kwh,/" "CDEF:energy=energy_kwh,1000,*" XPORT:energy)

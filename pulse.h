@@ -15,6 +15,8 @@ private:
 	unsigned long EnergyCounter;
 	const char * RRDCachedAddress;
     const char * RRDFile;
+	double Energy;
+	double Power;
 
 	// sensor methods
 	unsigned short Crc16(unsigned char * data_p, int length);
@@ -42,8 +44,7 @@ public:
     void RRDUpdateEnergyCounter(void);
 	unsigned long RRDGetLastEnergyCounter(void);
     double RRDGetEnergyMeterN(void);
-	double RRDGetEnergy(void);
-	double RRDGetPower(void);
+	void RRDGetEnergyAndPower(time_t end_time);
 };
 
 #endif // PULSE_H

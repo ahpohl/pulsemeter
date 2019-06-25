@@ -202,7 +202,6 @@ unsigned long Pulse::RRDGetLastEnergyCounter(void)
 
 // get total energy (in Wh) from rrd file in meterN format
 // e.g. pulse(1234.5*Wh)
-// don't need rrdcached connected 
 double Pulse::RRDGetEnergyMeterN(void)
 {
 	double energy = static_cast<double>(RRDGetLastEnergyCounter()) / 
@@ -217,18 +216,17 @@ double Pulse::RRDGetEnergyMeterN(void)
 	return energy;
 }
 
-double Pulse::RRDGetEnergy(void)
+// get energy and power from rrd file
+void Pulse::RRDGetEnergyAndPower(time_t end_time)
 {
-	double energy = 0;
+	int ret = 0;
+	int args_size = 8;
+	int no_output = 1;
 	unsigned long step_size = 300;
-	time_t start_time = 1561200300;
-	time_t end_time = start_time + step_size - 1;
-	const char cf[] = "LAST";
-
-    int ret = 0;
-    char **ds_names = 0;
-    rrd_value_t * ds_data = 0;
+	time_t start_time = end_time - static_cast<time_t>(step_size);
     unsigned long ds_count = 0;
+	char ** ds_names = 0;
+	rrd_value_t * ds_data = 0;
 
     // flush if connected to rrdcached daemon
     ret = rrdc_flush_if_daemon(RRDCachedAddress, RRDFile);
@@ -237,78 +235,48 @@ double Pulse::RRDGetEnergy(void)
         throw runtime_error(rrd_get_error());
     }
 
-    // get energy value from rrd file
-    ret = rrdc_fetch(RRDFile, cf, &start_time, 
+    const char * args[] = {
+		"--daemon unix:/run/rrdcached/rrdcached.sock",
+		"DEF:counts=/var/lib/rrdcached/pulse.rrd:energy:LAST",
+		"DEF:value=/var/lib/rrdcached/pulse.rrd:power:AVERAGE",
+		"CDEF:energy_kwh=counts,75,/",
+		"CDEF:energy=energy_kwh,1000,*",
+		"CDEF:power=value,48000,*",
+		"XPORT:energy",
+		"XPORT:power"};
+
+	// export power from rrd file
+	ret = rrd_xport(args_size, (char **)args, &no_output, &start_time,
 		&end_time, &step_size, &ds_count, &ds_names, &ds_data);
-
-    if (ret)
+    
+	if (ret)
     {
         throw runtime_error(rrd_get_error());
     }
 
-	// ds_data[0]: energy, ds_data[1]: power
-    for (unsigned long i = 0; i < ds_count; i++)
+	// ds_data[0]: energy in Wh, ds_data[1]: power in W
+	for (unsigned long i = 0; i < ds_count; i++)
     {
-        if (strcmp(ds_names[i], "energy") == 0)
+    	if (strcmp(ds_names[i], "energy") == 0)
         {
-			// calculate energy in Wh
-			energy = ds_data[i] / RevPerKiloWattHour * 1000;
-
-			if (Debug)
-				cout << fixed << setprecision(3) << energy << " Wh" << endl;
+            memcpy(&Energy, ds_data, sizeof(double));
         }
-        rrd_freemem(ds_names[i]);
-    }
-    rrd_freemem(ds_names);
-	rrd_freemem(ds_data);
-
-	return energy;
-}
-
-double Pulse::RRDGetPower(void)
-{
-	double power = 0;
-	unsigned long step_size = 300;
-	time_t start_time = 1561200300;
-	time_t end_time = start_time + step_size - 1;
-	const char cf[] = "AVERAGE";
-
-    int ret = 0;
-    char **ds_names = 0;
-    rrd_value_t * ds_data = 0;
-    unsigned long ds_count = 0;
-
-    // flush if connected to rrdcached daemon
-    ret = rrdc_flush_if_daemon(RRDCachedAddress, RRDFile);
-    if (ret)
-    {
-        throw runtime_error(rrd_get_error());
-    }
-
-    // get energy value from rrd file
-    ret = rrdc_fetch(RRDFile, cf, &start_time, 
-		&end_time, &step_size, &ds_count, &ds_names, &ds_data);
-
-    if (ret)
-    {
-        throw runtime_error(rrd_get_error());
-    }
-
-	// ds_data[0]: energy, ds_data[1]: power
-    for (unsigned long i = 0; i < ds_count; i++)
-    {
-        if (strcmp(ds_names[i], "power") == 0)
-        {
-			// calculate energy in Wh
-			power = ds_data[i] * 3600 * 1000 / RevPerKiloWattHour;
-
-			if (Debug)
-				cout << fixed << setprecision(8) << power << " W" << endl;
+		else if (strcmp(ds_names[i], "power") == 0)
+		{
+            memcpy(&Power, ++ds_data, sizeof(double));
         }
-        rrd_freemem(ds_names[i]);
-    }
-    rrd_freemem(ds_names);
-	rrd_freemem(ds_data);
 
-	return power;
+		rrd_freemem(ds_names[i]);
+	}
+
+	if (Debug)
+	{
+		cout << "Date: " << end_time 
+			<< ", Energy: " << fixed << setprecision(3) << Energy << " Wh" 
+			<< ", Power: " << setprecision(8) << Power << " W" << endl;
+	}
+
+	// free dynamic memory
+    rrd_freemem(ds_names);
+    rrd_freemem(ds_data);
 }

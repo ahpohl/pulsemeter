@@ -8,11 +8,17 @@ using namespace std;
 Pulse::Pulse(const char * rrd_file, const char * rrdcached_address,
 	double meter_reading, int rev_per_kWh)
 {
-    this -> RRDFile = rrd_file;
+    // set arguments
+	this -> RRDFile = rrd_file;
 	this -> RRDCachedAddress = rrdcached_address;
     this -> RevPerKiloWattHour = rev_per_kWh;
     this -> LastEnergyCounter = lround(meter_reading * rev_per_kWh);
-    this -> Debug = false;
+    
+	// init private variables
+	this -> Debug = false;
+	this -> SerialPort = 0;
+	this -> Energy = 0;
+	this -> Power = 0;
 }
 
 // destructor

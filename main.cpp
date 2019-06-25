@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
 	bool debug = false;
 	bool help = false;
 	bool create_rrd_file = false;
-	bool energy = false, power = false;
+	bool get_energy = false, get_power = false;
 	double meter_reading = 0;
 	
 
@@ -113,11 +113,11 @@ int main(int argc, char* argv[])
 			break;
 
 		case 'e':
-			energy = true;
+			get_energy = true;
 			break;
 
 		case 'p':
-			power = true;
+			get_power = true;
 			break;
 
 		default:
@@ -160,20 +160,13 @@ int main(int argc, char* argv[])
         meter.SetDebug();
     }
 
-	// get energy in Wh
-	if (energy)
+	// get energy in Wh and power in W
+	if (get_energy || get_power)
 	{
-		meter.RRDGetEnergy();
+		meter.RRDGetEnergyAndPower(1561200300);
 		return 0;
 	}
 
-	// get power in W
-	if (power)
-	{
-		meter.RRDGetPower();
-		return 0;
-	}
-	
 	// print message if no mode was selected
     if (mode == '\0')
     {
