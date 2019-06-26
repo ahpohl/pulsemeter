@@ -1,6 +1,7 @@
 #include <iostream>
 #include <ctime>
 #include <iomanip>
+#include <vector>
 
 extern "C" {
 #include <rrd.h>
@@ -221,27 +222,36 @@ void Pulse::RRDGetEnergyAndPower(time_t time_stamp)
 {
 	int ret = 0;
 	int no_output = 0;
-	unsigned long step_size = 0;
+	unsigned long step_size = 300;
 	time_t start_time = 0;
 	time_t end_time = 0;
     unsigned long ds_count = 0;
 	char ** ds_legend = 0;
 	rrd_value_t * ds_data = 0;
+	string buffer;
 
-	int argc = 16;
-	const char * argv[] = {
-		"xport",
-		"--daemon", "unix:/run/rrdcached/rrdcached.sock",
-		"--step", "300",
-		"--start", "1561565100",
-		"--end", "1561565400",
-		"DEF:counts=/var/lib/rrdcached/pulse.rrd:energy:LAST",
-		"DEF:value=/var/lib/rrdcached/pulse.rrd:power:AVERAGE",
-		"CDEF:energy_kwh=counts,75,/",
-		"CDEF:energy=energy_kwh,1000,*",
-		"CDEF:power=value,48000,*",
-		"XPORT:energy",
-		"XPORT:power"};
+	vector<const char*> args;
+	args.push_back("xport");
+	
+	args.push_back("--daemon");
+	args.push_back(RRDCachedAddress); 
+	
+	args.push_back("--step");
+	args.push_back("300");
+
+	args.push_back("--start");
+	args.push_back("1561565100");
+
+	args.push_back("--end");
+	args.push_back("1561565400");
+
+	args.push_back("DEF:counts=/var/lib/rrdcached/pulse.rrd:energy:LAST");
+	args.push_back("DEF:value=/var/lib/rrdcached/pulse.rrd:power:AVERAGE");
+	args.push_back("CDEF:energy_kwh=counts,75,/");
+	args.push_back("CDEF:energy=energy_kwh,1000,*");
+	args.push_back("CDEF:power=value,48000,*");
+	args.push_back("XPORT:energy");
+	args.push_back("XPORT:power");
 
     // flush if connected to rrdcached daemon
     ret = rrdc_flush_if_daemon(RRDCachedAddress, RRDFile);
@@ -252,7 +262,7 @@ void Pulse::RRDGetEnergyAndPower(time_t time_stamp)
 
 
 	// export power from rrd file
-	ret = rrd_xport(argc, (char**)argv, &no_output, &start_time,
+	ret = rrd_xport(args.size(), (char**)args.data(), &no_output, &start_time,
 		&end_time, &step_size, &ds_count, &ds_legend, &ds_data);
     
 	if (ret)
