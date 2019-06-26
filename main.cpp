@@ -163,7 +163,7 @@ int main(int argc, char* argv[])
 	// get energy in Wh and power in W
 	if (get_energy || get_power)
 	{
-		time_t current_time = time(nullptr);
+		time_t current_time = time(nullptr) - 6000;
 		meter.RRDGetEnergyAndPower(current_time);
 		return 0;
 	}

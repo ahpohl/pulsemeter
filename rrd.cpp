@@ -218,18 +218,17 @@ double Pulse::RRDGetEnergyMeterN(void)
 }
 
 // get energy and power from rrd file
-void Pulse::RRDGetEnergyAndPower(time_t time_stamp)
+void Pulse::RRDGetEnergyAndPower(time_t end_time)
 {
 	int ret = 0;
 	int no_output = 0;
 	unsigned long step_size = 300;
 	time_t start_time = 0;
-	time_t end_time = 0;
     unsigned long ds_count = 0;
 	char ** ds_legend = 0;
 	rrd_value_t * ds_data = 0;
-	string buffer;
 
+	// construct vector of <const char *> for rrd_xport
 	vector<const char*> args;
 	args.push_back("xport");
 	
@@ -237,19 +236,31 @@ void Pulse::RRDGetEnergyAndPower(time_t time_stamp)
 	args.push_back(RRDCachedAddress); 
 	
 	args.push_back("--step");
-	args.push_back("300");
+	string step = to_string(step_size);
+	args.push_back(step.c_str());
 
 	args.push_back("--start");
-	args.push_back("1561565100");
+	string start = to_string(end_time - step_size);
+	args.push_back(start.c_str());
 
 	args.push_back("--end");
-	args.push_back("1561565400");
+	string end = to_string(end_time);
+	args.push_back(end.c_str());
 
-	args.push_back("DEF:counts=/var/lib/rrdcached/pulse.rrd:energy:LAST");
-	args.push_back("DEF:value=/var/lib/rrdcached/pulse.rrd:power:AVERAGE");
-	args.push_back("CDEF:energy_kwh=counts,75,/");
+	string def_counts = string("DEF:counts=") + RRDFile + ":energy:LAST";
+	args.push_back(def_counts.c_str());
+
+	string def_value = string("DEF:value=") + RRDFile + ":power:AVERAGE";
+    args.push_back(def_value.c_str());
+
+	string cdef_energy_kwh = string("CDEF:energy_kwh=counts,") + to_string(RevPerKiloWattHour) + ",/";
+	args.push_back(cdef_energy_kwh.c_str());
+
 	args.push_back("CDEF:energy=energy_kwh,1000,*");
-	args.push_back("CDEF:power=value,48000,*");
+
+	string cdef_power = string("CDEF:power=value,") + to_string(3600 * 1000 / RevPerKiloWattHour) + ",*";
+	args.push_back(cdef_power.c_str());	
+
 	args.push_back("XPORT:energy");
 	args.push_back("XPORT:power");
 
@@ -259,7 +270,6 @@ void Pulse::RRDGetEnergyAndPower(time_t time_stamp)
     {
         throw runtime_error(rrd_get_error());
     }
-
 
 	// export power from rrd file
 	ret = rrd_xport(args.size(), (char**)args.data(), &no_output, &start_time,

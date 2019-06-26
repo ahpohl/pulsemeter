@@ -44,7 +44,7 @@ public:
     void RRDUpdateEnergyCounter(void);
 	unsigned long RRDGetLastEnergyCounter(void);
     double RRDGetEnergyMeterN(void);
-	void RRDGetEnergyAndPower(time_t time_stamp);
+	void RRDGetEnergyAndPower(time_t end_time);
 };
 
 #endif // PULSE_H
