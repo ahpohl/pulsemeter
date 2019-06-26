@@ -217,26 +217,24 @@ double Pulse::RRDGetEnergyMeterN(void)
 }
 
 // get energy and power from rrd file
-void Pulse::RRDGetEnergyAndPower(time_t end_time)
+void Pulse::RRDGetEnergyAndPower(time_t time_stamp)
 {
 	int ret = 0;
-	int args_size = 8;
-	int no_output = 1;
-	unsigned long step_size = 300;
-	time_t start_time = end_time - static_cast<time_t>(step_size);
+	int no_output = 0;
+	unsigned long step_size = 0;
+	time_t start_time = 0;
+	time_t end_time = 0;
     unsigned long ds_count = 0;
-	char ** ds_names = 0;
+	char ** ds_legend = 0;
 	rrd_value_t * ds_data = 0;
 
-    // flush if connected to rrdcached daemon
-    ret = rrdc_flush_if_daemon(RRDCachedAddress, RRDFile);
-    if (ret)
-    {
-        throw runtime_error(rrd_get_error());
-    }
-
-    const char * args[] = {
-		"--daemon unix:/run/rrdcached/rrdcached.sock",
+	int argc = 16;
+	const char * argv[] = {
+		"xport",
+		"--daemon", "unix:/run/rrdcached/rrdcached.sock",
+		"--step", "300",
+		"--start", "1561565100",
+		"--end", "1561565400",
 		"DEF:counts=/var/lib/rrdcached/pulse.rrd:energy:LAST",
 		"DEF:value=/var/lib/rrdcached/pulse.rrd:power:AVERAGE",
 		"CDEF:energy_kwh=counts,75,/",
@@ -245,9 +243,17 @@ void Pulse::RRDGetEnergyAndPower(time_t end_time)
 		"XPORT:energy",
 		"XPORT:power"};
 
+    // flush if connected to rrdcached daemon
+    ret = rrdc_flush_if_daemon(RRDCachedAddress, RRDFile);
+    if (ret)
+    {
+        throw runtime_error(rrd_get_error());
+    }
+
+
 	// export power from rrd file
-	ret = rrd_xport(args_size, (char **)args, &no_output, &start_time,
-		&end_time, &step_size, &ds_count, &ds_names, &ds_data);
+	ret = rrd_xport(argc, (char**)argv, &no_output, &start_time,
+		&end_time, &step_size, &ds_count, &ds_legend, &ds_data);
     
 	if (ret)
     {
@@ -255,28 +261,15 @@ void Pulse::RRDGetEnergyAndPower(time_t end_time)
     }
 
 	// ds_data[0]: energy in Wh, ds_data[1]: power in W
-	for (unsigned long i = 0; i < ds_count; i++)
-    {
-    	if (strcmp(ds_names[i], "energy") == 0)
-        {
-            memcpy(&Energy, ds_data, sizeof(double));
-        }
-		else if (strcmp(ds_names[i], "power") == 0)
-		{
-            memcpy(&Power, ++ds_data, sizeof(double));
-        }
-
-		rrd_freemem(ds_names[i]);
-	}
+    memcpy(&Energy, ds_data++, sizeof(double));
+    memcpy(&Power, ds_data, sizeof(double));
 
 	if (Debug)
 	{
-		cout << "Date: " << end_time 
-			<< ", Energy: " << fixed << setprecision(3) << Energy << " Wh" 
-			<< ", Power: " << setprecision(8) << Power << " W" << endl;
+		cout << "Start: " << start_time << ", end: " 
+			<< end_time << ", step: " << step_size << endl;
+		
+		cout << "Energy: " << fixed << setprecision(3) << Energy << " Wh" 
+			<< ", power: " << setprecision(8) << Power << " W" << endl;
 	}
-
-	// free dynamic memory
-    rrd_freemem(ds_names);
-    rrd_freemem(ds_data);
 }
