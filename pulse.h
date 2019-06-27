@@ -12,7 +12,6 @@ private:
 	int RevPerKiloWattHour;
 	int SensorValue;
 	unsigned long LastEnergyCounter;
-	unsigned long EnergyCounter;
 	const char * RRDCachedAddress;
     const char * RRDFile;
 	double Energy;
