@@ -22,6 +22,8 @@ const int ledOutPin = 8; // Signal LED output pin
 // trigger level (set via serial command)
 volatile int triggerLevelLow = 0;
 volatile int triggerLevelHigh = 0;
+volatile int sensorMax = 0;
+volatile int sensorMin = 1000;
 
 // By default, PacketSerial uses COBS encoding and has a 256 byte receive
 // buffer. This can be adjusted by the user by replacing `PacketSerial` with
@@ -171,6 +173,17 @@ void sendSensorValue(int val, int state)
  */
 void detectTrigger(int val)
 {
+  // adjust low and high marks
+  if (val > sensorMax)
+  {
+    sensorMax = val;  
+  } 
+  else if (val < sensorMin)
+  {
+    sensorMin = val;
+  }
+
+  // detect trigger
   static boolean triggerState = false;
   
   boolean nextState = triggerState;
@@ -189,6 +202,9 @@ void detectTrigger(int val)
       static unsigned long triggerCount;
       triggerCount++;
       lcdPrintTrigger(triggerCount);
+      // reset min max sensor values
+      sensorMax = 0;
+      sensorMin = 1000;
     }
 
     // send triggerState value via serial (inverted)
@@ -213,7 +229,11 @@ void lcdPrintRaw(int val)
 void lcdPrintTrigger(int val)
 {
   lcd.clear();
-  lcd.print("Trigger mode");
+  lcd.print(sensorMin);
+  lcd.print(" ");
+  lcd.print(sensorMax);
+  lcd.print(" ");
+  lcd.print(sensorMax - sensorMin);
   lcd.setCursor(0,1);
   lcd.print(val);
 }
