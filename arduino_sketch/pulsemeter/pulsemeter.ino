@@ -31,13 +31,15 @@ const int irOutPin = 9; // Digital output pin that the LED is attached to
 const int ledOutPin = 8; // Signal LED output pin
 
 // trigger level (set via serial command)
-volatile unsigned int triggerCount = 0;
 volatile int triggerLevelLow = 0;
 volatile int triggerLevelHigh = 0;
-volatile int sensorValue = 0;
-volatile int sensorMax = 0;
-volatile int sensorMin = 500;
+
+// sensor parameters
 const int signalToNoise = 50;
+volatile unsigned int triggerCount = 0;
+volatile int sensorValue = 0;
+volatile int sensorMin = 500;
+volatile int sensorMax = 0;
 
 // By default, PacketSerial uses COBS encoding and has a 256 byte receive
 // buffer. This can be adjusted by the user by replacing `PacketSerial` with
@@ -97,10 +99,12 @@ unsigned int crc16(byte *data_p, unsigned int length)
       return (crc);
 }
 
-// This is our handler callback function.
-// When an encoded packet is received and decoded, it will be delivered here.
-// The `buffer` is a pointer to the decoded byte array. `size` is the number of
-// bytes in the `buffer`.
+/** 
+ *  This is our handler callback function.
+ *  When an encoded packet is received and decoded, it will be delivered here.
+ *  The buffer is a pointer to the decoded byte array. size is the number of
+ *  bytes in the buffer.
+ */
 void onPacketReceived(const uint8_t* decoded_buffer, size_t decoded_length)
 {
   unsigned int crc_before = 0, crc_after = 0;
@@ -160,7 +164,9 @@ void onPacketReceived(const uint8_t* decoded_buffer, size_t decoded_length)
   }
 }
 
-// send packet via serial line
+/**
+ * Send data packet via serial line
+ */
 void sendSensorValue(int val, int state) 
 {
   byte buf[DATA_PACKET_SIZE] = {0};
@@ -179,6 +185,75 @@ void sendSensorValue(int val, int state)
   buf[4] = crc & 0xFF; // crc low byte
 
   myPacketSerial.send(buf, DATA_PACKET_SIZE);
+}
+
+/**
+ * Read sensor
+ */
+void getSensorValue(int sensor_delay)
+{
+  // init sensor values
+  int sensorValueOn = 0;
+  int sensorValueOff = 0;
+
+  // save ledstate
+  static boolean ledState = LOW;
+
+  static unsigned long previousMillis = 0;
+  unsigned long currentMillis = millis();
+
+  if (currentMillis - previousMillis >= sensor_delay)
+  {
+    // save the last time you blinked the LED
+    previousMillis = currentMillis;
+
+    // if the LED is off turn it on and vice-versa:
+    if (ledState == LOW) {
+      sensorValueOff = analogRead(analogInPin);
+      ledState = HIGH;
+    } else {
+      sensorValueOn = analogRead(analogInPin);
+      ledState = LOW;
+
+      // calculate sensor reading
+      sensorValue = sensorValueOn - sensorValueOff;
+
+      // update min and max sensor values
+      if (sensorValue > sensorMax)
+      {
+        sensorMax = sensorValue;  
+      }
+       
+      if (sensorValue < sensorMin)
+      {
+        sensorMin = sensorValue;
+      }
+      
+      // raw mode
+      if (mode == 'R')
+      {
+        // send raw sensor value over serial
+        sendSensorValue(sensorValue, 0);
+      }
+  
+      // trigger mode
+      else if (mode == 'T')
+      {
+        // update trigger levels if a sufficiently large 
+        // signal to noise level is reached
+        if ( (sensorMax - sensorMin) >= signalToNoise)
+        {
+          triggerLevelLow = sensorMin + 15;
+          triggerLevelHigh = sensorMin + 30;
+        }
+        
+        detectTrigger();
+      }
+    }
+
+    // set the LED with the ledState
+    digitalWrite(irOutPin, ledState);
+  }
 }
 
 /**
@@ -215,6 +290,9 @@ void detectTrigger(void)
   }
 }
 
+/**
+ * Update LCD display
+ */
 void lcdPrint(void)
 {
   unsigned long currentMillis = millis();
@@ -232,96 +310,34 @@ void lcdPrint(void)
     if (mode == 'R')
     {
       lcd.setCursor(0,0);
-      snprintf(line1, 16, "lo %-4d hi %-4d ", sensorMin, sensorMax);
+      snprintf(line1, 16, "lo %-4d hi %-4d  ", sensorMin, sensorMax);
       lcd.print(line1);
       lcd.setCursor(0,1);
-      snprintf(line2, 16, "%-5ud s/n %-4d  ", sensorValue, sensorMax-sensorMin);
+      snprintf(line2, 16, "%-5ud s/n %-4d   ", sensorValue, (sensorMax - sensorMin));
       lcd.print(line2);
     }
 
     else if (mode == 'T')
     {
+      // update line 1
       lcd.setCursor(0,0);
-      snprintf(line1, 16, "%-5d %-4d %-4d ", sensorValue, 
+      snprintf(line1, 16, "%-5d %-4d %-4d  ", sensorValue, 
         sensorMin, sensorMax);
       lcd.print(line1);
-      
-      if (sensorMax - sensorMin >= signalToNoise)
+
+      // output the lock symbol if signal-to-noise level is reached
+      if ( (sensorMax - sensorMin) >= signalToNoise)
       { 
         lcd.setCursor(15,0);
         lcd.write(byte(0));        
       }
 
-      snprintf(line2, 16, "%-5d %-4d %-4d ", triggerCount, 
+      // update line 2
+      snprintf(line2, 16, "%-5ud %-4d %-4d  ", triggerCount, 
         triggerLevelLow, triggerLevelHigh);      
       lcd.setCursor(0,1);
       lcd.print(line2);
     }
-  }
-}
-
-void getSensorValue(int sensor_delay)
-{
-  // init sensor values
-  int sensorValueOn = 0;
-  int sensorValueOff = 0;
-
-  // save ledstate
-  static boolean ledState = LOW;
-
-  static unsigned long previousMillis = 0;
-  unsigned long currentMillis = millis();
-
-  if (currentMillis - previousMillis >= sensor_delay)
-  {
-    // save the last time you blinked the LED
-    previousMillis = currentMillis;
-
-    // if the LED is off turn it on and vice-versa:
-    if (ledState == LOW) {
-      sensorValueOff = analogRead(analogInPin);
-      ledState = HIGH;
-    } else {
-      sensorValueOn = analogRead(analogInPin);
-      ledState = LOW;
-
-      // calculate sensor reading
-      sensorValue = sensorValueOn - sensorValueOff;
-
-      // get min and max sensor values
-      if (sensorValue > sensorMax)
-      {
-        sensorMax = sensorValue;  
-      }
-       
-      if (sensorValue < sensorMin)
-      {
-        sensorMin = sensorValue;
-      }
-      
-      // adjust trigger levels
-      if (sensorMax - sensorMin >= signalToNoise)
-      {
-        triggerLevelLow = sensorMin + 15;
-        triggerLevelHigh = sensorMin + 30;
-      }
-      
-      // raw mode
-      if (mode == 'R')
-      {
-        // send raw sensor value over serial
-        sendSensorValue(sensorValue, 0);
-      }
-  
-      // detect trigger
-      else if (mode == 'T')
-      {
-        detectTrigger();
-      }
-    }
-
-    // set the LED with the ledState of the variable:
-    digitalWrite(irOutPin, ledState);
   }
 }
 
