@@ -20,10 +20,12 @@ const int irOutPin = 9; // Digital output pin that the LED is attached to
 const int ledOutPin = 8; // Signal LED output pin
 
 // trigger level (set via serial command)
+volatile unsigned int triggerCount = 0;
 volatile int triggerLevelLow = 0;
 volatile int triggerLevelHigh = 0;
+volatile int sensorValue = 0;
 volatile int sensorMax = 0;
-volatile int sensorMin = 1000;
+volatile int sensorMin = 500;
 
 // By default, PacketSerial uses COBS encoding and has a 256 byte receive
 // buffer. This can be adjusted by the user by replacing `PacketSerial` with
@@ -132,7 +134,6 @@ void onPacketReceived(const uint8_t* decoded_buffer, size_t decoded_length)
     sendSensorValue(0, TRIGGER_MODE);
     triggerLevelLow = ((decoded_buffer[1] & 0xFF) << 8) | (decoded_buffer[2] & 0xFF);
     triggerLevelHigh = ((decoded_buffer[3] & 0xFF) << 8) | (decoded_buffer[4] & 0xFF);
-    lcdPrintTrigger(0);
     break;
   case 0x30:
     sendSensorValue(0, SYNC_OK);
@@ -171,25 +172,15 @@ void sendSensorValue(int val, int state)
 /**
  * Detect and print a trigger event
  */
-void detectTrigger(int val)
-{
-  // adjust low and high marks
-  if (val > sensorMax)
-  {
-    sensorMax = val;  
-  } 
-  else if (val < sensorMin)
-  {
-    sensorMin = val;
-  }
-
+void detectTrigger(void)
+{ 
   // detect trigger
   static boolean triggerState = false;
   
   boolean nextState = triggerState;
-  if (val > triggerLevelHigh) {
+  if (sensorValue > triggerLevelHigh) {
     nextState = true;
-  } else if (val < triggerLevelLow) {
+  } else if (sensorValue < triggerLevelLow) {
     nextState = false;
   }
   if (nextState != triggerState) {
@@ -197,14 +188,14 @@ void detectTrigger(int val)
     // control internal LED
     digitalWrite(ledOutPin, triggerState);
 
-    // output trigger count on LCD
-    if (triggerState == 0) {
-      static unsigned long triggerCount;
+    // count revolutions 
+    if (triggerState == 0)
+    {
       triggerCount++;
-      lcdPrintTrigger(triggerCount);
-      // reset min max sensor values
-      sensorMax = 0;
-      sensorMin = 1000;
+
+      // reset min and max
+      sensorMin = sensorValue;
+      sensorMax = sensorValue;
     }
 
     // send triggerState value via serial (inverted)
@@ -212,35 +203,47 @@ void detectTrigger(int val)
   }
 }
 
-void lcdPrintRaw(int val)
+void lcdPrint(void)
 {
   unsigned long currentMillis = millis();
   static unsigned long previousMillis;
 
-  if (currentMillis - previousMillis > 1000) {
+  if (currentMillis - previousMillis > 1000)
+  {
     previousMillis = currentMillis;
-    lcd.clear();
-    lcd.print("Raw mode");
-    lcd.setCursor(0,1);
-    lcd.print(val);
-  }
-}
 
-void lcdPrintTrigger(int val)
-{
-  lcd.clear();
-  lcd.print(sensorMin);
-  lcd.print(" ");
-  lcd.print(sensorMax);
-  lcd.print(" ");
-  lcd.print(sensorMax - sensorMin);
-  lcd.setCursor(0,1);
-  lcd.print(val);
+    // buffer for 16x2 LCD display
+    char line1[17] = {0};
+    char line2[17] = {0};
+
+    // raw mode
+    if (mode == 'R')
+    {
+      lcd.setCursor(0,0);
+      snprintf(line1, 16, "lo %-4d hi %-4d ", sensorMin, sensorMax);
+      lcd.print(line1);
+      lcd.setCursor(0,1);
+      snprintf(line2, 16, "%-5ud s/n %-4d  ", sensorValue, sensorMax-sensorMin);
+      lcd.print(line2);
+    }
+
+    else if (mode == 'T')
+    {
+      snprintf(line1, 16, "%-5d %-4d %-4d ", sensorValue, 
+        sensorMin, sensorMax - sensorMin);
+      snprintf(line2, 16, "%-5d %-4d %-4d ", triggerCount, 
+        triggerLevelLow, triggerLevelHigh);
+      lcd.setCursor(0,0);
+      lcd.print(line1);
+      lcd.setCursor(0,1);
+      lcd.print(line2);
+    }
+  }
 }
 
 void getSensorValue(int sensor_delay)
 {
-  // sensor values
+  // init sensor values
   int sensorValueOn = 0;
   int sensorValueOff = 0;
 
@@ -263,21 +266,39 @@ void getSensorValue(int sensor_delay)
       sensorValueOn = analogRead(analogInPin);
       ledState = LOW;
 
+      // calculate sensor reading
+      sensorValue = sensorValueOn - sensorValueOff;
+
+      // get min and max sensor values
+      if (sensorValue > sensorMax)
+      {
+        sensorMax = sensorValue;  
+      }
+       
+      if (sensorValue < sensorMin)
+      {
+        sensorMin = sensorValue;
+      }
+      
+      // adjust trigger levels
+      if (sensorMax - sensorMin > 50)
+      {
+        triggerLevelLow = sensorMin + 15;
+        triggerLevelHigh = sensorMin + 30;
+      }
+      
       // raw mode
       if (mode == 'R')
       {
         // send raw sensor value over serial
-        sendSensorValue(sensorValueOn - sensorValueOff, 0);
-
-        // output raw value on LCD
-        lcdPrintRaw(sensorValueOn - sensorValueOff);
+        sendSensorValue(sensorValue, 0);
       }
-
+  
       // detect trigger
       else if (mode == 'T')
       {
-        detectTrigger(sensorValueOn - sensorValueOff);
-      }          
+        detectTrigger();
+      }
     }
 
     // set the LED with the ledState of the variable:
@@ -315,6 +336,9 @@ void loop() {
   {
     // get sensor value   
     getSensorValue(20);
+
+    // output on lcd
+    lcdPrint();
   }
 
   // The PacketSerial::update() method attempts to read in any incoming serial
