@@ -14,6 +14,17 @@
 const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
+const byte Lock[8] = {
+  0b01110,
+  0b10001,
+  0b10001,
+  0b11111,
+  0b11011,
+  0b11011,
+  0b11111,
+  0b00000
+};
+
 // pin definitions
 const int analogInPin = A0;  // Analog input pin that the photo transistor is attached to
 const int irOutPin = 9; // Digital output pin that the LED is attached to
@@ -26,6 +37,7 @@ volatile int triggerLevelHigh = 0;
 volatile int sensorValue = 0;
 volatile int sensorMax = 0;
 volatile int sensorMin = 500;
+const int signalToNoise = 50;
 
 // By default, PacketSerial uses COBS encoding and has a 256 byte receive
 // buffer. This can be adjusted by the user by replacing `PacketSerial` with
@@ -229,12 +241,19 @@ void lcdPrint(void)
 
     else if (mode == 'T')
     {
-      snprintf(line1, 16, "%-5d %-4d %-4d ", sensorValue, 
-        sensorMin, sensorMax - sensorMin);
-      snprintf(line2, 16, "%-5d %-4d %-4d ", triggerCount, 
-        triggerLevelLow, triggerLevelHigh);
       lcd.setCursor(0,0);
+      snprintf(line1, 16, "%-5d %-4d %-4d ", sensorValue, 
+        sensorMin, sensorMax);
       lcd.print(line1);
+      
+      if (sensorMax - sensorMin >= signalToNoise)
+      { 
+        lcd.setCursor(15,0);
+        lcd.write(byte(0));        
+      }
+
+      snprintf(line2, 16, "%-5d %-4d %-4d ", triggerCount, 
+        triggerLevelLow, triggerLevelHigh);      
       lcd.setCursor(0,1);
       lcd.print(line2);
     }
@@ -281,7 +300,7 @@ void getSensorValue(int sensor_delay)
       }
       
       // adjust trigger levels
-      if (sensorMax - sensorMin > 50)
+      if (sensorMax - sensorMin >= signalToNoise)
       {
         triggerLevelLow = sensorMin + 15;
         triggerLevelHigh = sensorMin + 30;
@@ -325,6 +344,7 @@ void setup() {
   
   // set up the LCD's number of columns and rows:
   lcd.begin(16, 2);
+  lcd.createChar(0, Lock);
 }
 
 /**
