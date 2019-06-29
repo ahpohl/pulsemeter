@@ -303,6 +303,7 @@ void lcdPrint(void)
     previousMillis = currentMillis;
 
     // buffer for 16x2 LCD display
+    // include terminating null byte char 
     char line1[17] = {0};
     char line2[17] = {0};
 
@@ -310,10 +311,10 @@ void lcdPrint(void)
     if (mode == 'R')
     {
       lcd.setCursor(0,0);
-      snprintf(line1, 16, "lo %-4d hi %-4d  ", sensorMin, sensorMax);
+      snprintf(line1, 17, "lo %-4d hi %-4d ", sensorMin, sensorMax);
       lcd.print(line1);
       lcd.setCursor(0,1);
-      snprintf(line2, 16, "%-5ud s/n %-4d   ", sensorValue, (sensorMax - sensorMin));
+      snprintf(line2, 17, "%-5d s/n %-4d  ", sensorValue, (sensorMax - sensorMin));
       lcd.print(line2);
     }
 
@@ -321,7 +322,7 @@ void lcdPrint(void)
     {
       // update line 1
       lcd.setCursor(0,0);
-      snprintf(line1, 16, "%-5d %-4d %-4d  ", sensorValue, 
+      snprintf(line1, 17, "%-5d %-4d %-4d ", sensorValue, 
         sensorMin, sensorMax);
       lcd.print(line1);
 
@@ -333,7 +334,7 @@ void lcdPrint(void)
       }
 
       // update line 2
-      snprintf(line2, 16, "%-5ud %-4d %-4d  ", triggerCount, 
+      snprintf(line2, 17, "%-5u %-4d %-4d ", triggerCount, 
         triggerLevelLow, triggerLevelHigh);      
       lcd.setCursor(0,1);
       lcd.print(line2);
