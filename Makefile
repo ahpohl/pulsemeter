@@ -9,7 +9,7 @@
 CPP = g++
 
 # define any compile-time flags
-CPPFLAGS = -Wall -g -std=c++11
+CPPFLAGS = -Wall -g -std=c++11 -pthread
 
 # define any directories containing header files other than /usr/include
 #
@@ -23,10 +23,10 @@ LFLAGS =
 # define any libraries to link into executable:
 #   if I want to link in libraries (libx.so or libx.a) I use the -llibname 
 #   option, something like (this will link in libmylib.so and libm.so:
-LIBS = -lrrd -lpthread
+LIBS = -lrrd -lcurl
 
 # define the C source files
-SRCS = main.cpp pulse.cpp comm.cpp cobs.cpp rrd.cpp
+SRCS = main.cpp pulse.cpp comm.cpp cobs.cpp rrd.cpp pvoutput.cpp
 
 # define the C object files 
 #

@@ -32,10 +32,13 @@ int main(int argc, char* argv[])
 		{ "meter", required_argument, NULL, 'm'},
 		{ "energy", no_argument, NULL, 'e' },
 		{ "power", no_argument, NULL, 'p' },
+		{ "pvoutput", no_argument, NULL, 'P' },
+		{ "api-key", required_argument, NULL, 'A' },
+		{ "sys-id", required_argument, NULL, 's' },
         { NULL, 0, NULL, 0 }
     };
 
-    const char * optString = "hDd:RTL:H:cf:a:r:m:ep";
+    const char * optString = "hDd:RTL:H:cf:a:r:m:epPA:s:";
     int opt = 0;
     int longIndex = 0;
 	char mode = '\0'; // raw: R, trigger: T
@@ -44,7 +47,7 @@ int main(int argc, char* argv[])
 	bool create_rrd_file = false;
 	bool get_energy = false, get_power = false;
 	double meter_reading = 0;
-	
+	bool pvoutput = false;
 
 	// set default path to rrd file
 	const char * rrd_file = "/var/lib/rrdcached/pulse.rrd";
@@ -60,6 +63,12 @@ int main(int argc, char* argv[])
 
 	// set revolutions per kWh of ferraris energy meter
 	int rev_per_kWh = 75;
+
+	// set default PVOutput.org api key
+	const char * pvoutput_api_key = "212dc3361019148fdb63eb0ba53b8d2dfcc4e2ec";
+
+	// set default PVOutput.org system id
+	const char * pvoutput_system_id = "66419";
 
     do {
         opt = getopt_long(argc, argv, optString, longOpts, &longIndex);
@@ -120,6 +129,18 @@ int main(int argc, char* argv[])
 			get_power = true;
 			break;
 
+		case 'P':
+			pvoutput = true;
+			break;
+
+		case 'A':
+			pvoutput_api_key = optarg;
+			break;
+
+		case 's':
+			pvoutput_system_id = optarg;
+			break;
+
 		default:
             break;
         }
@@ -145,14 +166,18 @@ int main(int argc, char* argv[])
   -r --rev [int]        Set revolutions per kWh\n\
   -m --meter [float]    Set initial meter reading [kWh]\n\
   -e --energy           Get energy [Wh]\n\
-  -p --power			Get power [W]"
+  -p --power            Get power [W]\n\
+  -P --pvoutput         Upload to PVOutput.org\n\
+  -A --api-key [key]    PVOutput.org api key\n\
+  -s --sys-id [id]      PVOutput.org system id"
 		<< endl;
 		return 0;
 	}
 
     // create pulsemeter object
     Pulse meter(rrd_file, rrdcached_address, 
-		meter_reading, rev_per_kWh);
+		meter_reading, rev_per_kWh, 
+		pvoutput_api_key, pvoutput_system_id);
 
 	// set debug flag
     if (debug)
@@ -165,6 +190,13 @@ int main(int argc, char* argv[])
 	{
 		time_t current_time = time(nullptr) - 6000;
 		meter.RRDGetEnergyAndPower(current_time);
+
+		// upload energy and power to PVOutput.org
+    	if (pvoutput)
+    	{
+        	meter.RRDUploadToPVOutput(current_time);
+		}
+		
 		return 0;
 	}
 

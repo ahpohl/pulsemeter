@@ -16,6 +16,8 @@ private:
     const char * RRDFile;
 	double Energy;
 	double Power;
+	const char * PVOutputApiKey;
+	const char * PVOutputSysId;
 
 	// sensor methods
 	unsigned short Crc16(unsigned char * data_p, int length);
@@ -26,8 +28,8 @@ private:
 
 public:
 	Pulse(const char * rrd_file, const char * rrdcached_address,
-		double meter_reading, int rev_per_kWh);
-	Pulse(const Pulse & obj);
+		double meter_reading, int rev_per_kWh,
+		const char * pvoutput_api_key, const char * pvoutput_system_id);
 	~Pulse(void);
 	void SetDebug(void);
 
@@ -44,6 +46,7 @@ public:
 	unsigned long RRDGetLastEnergyCounter(void);
     double RRDGetEnergyMeterN(void);
 	void RRDGetEnergyAndPower(time_t end_time);
+	void RRDUploadToPVOutput(time_t end_time);
 };
 
 #endif // PULSE_H

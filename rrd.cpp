@@ -6,6 +6,7 @@
 extern "C" {
 #include <rrd.h>
 #include <rrd_client.h>
+#include <curl/curl.h>
 }
 
 #include "pulse.h"
@@ -253,12 +254,14 @@ void Pulse::RRDGetEnergyAndPower(time_t end_time)
 	string def_value = string("DEF:value=") + RRDFile + ":power:AVERAGE";
     args.push_back(def_value.c_str());
 
-	string cdef_energy_kwh = string("CDEF:energy_kwh=counts,") + to_string(RevPerKiloWattHour) + ",/";
+	string cdef_energy_kwh = string("CDEF:energy_kwh=counts,") 
+		+ to_string(RevPerKiloWattHour) + ",/";
 	args.push_back(cdef_energy_kwh.c_str());
 
 	args.push_back("CDEF:energy=energy_kwh,1000,*");
 
-	string cdef_power = string("CDEF:power=value,") + to_string(3600 * 1000 / RevPerKiloWattHour) + ",*";
+	string cdef_power = string("CDEF:power=value,") 
+		+ to_string(3600 * 1000 / RevPerKiloWattHour) + ",*";
 	args.push_back(cdef_power.c_str());	
 
 	args.push_back("XPORT:energy");
