@@ -67,8 +67,8 @@ int main(int argc, char* argv[])
 	// set default PVOutput.org api key
 	const char * pvoutput_api_key = "212dc3361019148fdb63eb0ba53b8d2dfcc4e2ec";
 
-	// set default PVOutput.org system id
-	const char * pvoutput_system_id = "66419";
+	// set default PVOutput.org system id (Ilvesheim_test)
+	const char * pvoutput_system_id = "67956";
 
     do {
         opt = getopt_long(argc, argv, optString, longOpts, &longIndex);
