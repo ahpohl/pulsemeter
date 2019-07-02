@@ -287,12 +287,15 @@ void Pulse::RRDGetEnergyAndPower(time_t end_time)
     memcpy(&Energy, ds_data++, sizeof(double));
     memcpy(&Power, ds_data, sizeof(double));
 
-	if (Debug)
-	{
-		cout << "Start: " << start_time << ", end: " 
-			<< end_time << ", step: " << step_size << endl;
-		
-		cout << "Energy: " << fixed << setprecision(3) << Energy << " Wh" 
-			<< ", power: " << setprecision(8) << Power << " W" << endl;
-	}
+    // format end_time
+	memcpy(&RRDTime, &end_time, sizeof(time_t));
+    struct tm * tm = localtime(&RRDTime);
+    char time_buffer[20] = {0};
+    strftime(time_buffer, 19, "%F %R", tm);
+
+    // output time, energy and power values, system id
+    cout << "Date: " << time_buffer
+        << ", energy: " << fixed << setprecision(3) << Energy
+        << " Wh, power: " << setprecision(8) << Power << " W, sys id: "
+        << PVOutputSysId << endl;
 }

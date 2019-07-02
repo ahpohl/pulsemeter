@@ -30,6 +30,8 @@ void Pulse::RRDUploadToPVOutput(time_t end_time)
 	string api_key_header = string("X-Pvoutput-Apikey: ") + PVOutputApiKey;
 	string sys_id_header = string("X-Pvoutput-SystemId: ") + PVOutputSysId;
 	string readBuffer;
+    char date_buffer[12] = {0};
+    char time_buffer[12] = {0};
 
 	// create curl easyhandle
 	CURL * easyhandle = curl_easy_init();
@@ -47,8 +49,14 @@ void Pulse::RRDUploadToPVOutput(time_t end_time)
 	// pass list of custom headers
 	curl_easy_setopt(easyhandle, CURLOPT_HTTPHEADER, headers);
 
+	// format date and time
+	struct tm * tm = localtime(&RRDTime);
+    strftime(date_buffer, 11, "%Y%m%d", tm);
+	strftime(time_buffer, 11, "%R", tm);
+
 	// append data
-	string data = "d=" + to_string(end_time) 
+	string data = string("d=") + date_buffer
+		+ "&t=" + time_buffer 
 		+ "&v3=" + to_string(Energy)
 		+ "&v4=" + to_string(Power)
 		+ "&c1=1";
@@ -78,8 +86,8 @@ void Pulse::RRDUploadToPVOutput(time_t end_time)
 
 	// free the custom headers
     curl_slist_free_all(headers);
-	
-	// output the CURL answer on screen
+
+	// output the CURL answer on screen	
 	cout << "PVOutput response: " << readBuffer << endl;
 }
 

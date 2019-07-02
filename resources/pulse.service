@@ -1,0 +1,10 @@
+[Unit]
+Description=Pulse daemon
+
+[Service]
+ExecStart=/scratch/git/pulse/pulse --energy --pvoutput
+User=rrdcached
+Group=rrdcached
+
+[Install]
+WantedBy=multi-user.target

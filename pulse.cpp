@@ -22,6 +22,7 @@ Pulse::Pulse(const char * rrd_file, const char * rrdcached_address,
 	this -> SerialPort = 0;
 	this -> Energy = 0;
 	this -> Power = 0;
+	this -> RRDTime = 0;
 }
 
 // destructor

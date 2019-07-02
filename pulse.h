@@ -3,6 +3,7 @@
 
 #include <rrd.h>
 #include <rrd_client.h>
+#include <ctime>
 
 class Pulse
 {
@@ -14,6 +15,7 @@ private:
 	unsigned long LastEnergyCounter;
 	const char * RRDCachedAddress;
     const char * RRDFile;
+	time_t RRDTime;
 	double Energy;
 	double Power;
 	const char * PVOutputApiKey;
