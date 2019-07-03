@@ -185,7 +185,7 @@ void Pulse::configureSerialPort(unsigned char t_vmin, unsigned char t_vtime)
   memset(&tty, 0, sizeof(tty));
 
   // read in existing settings
-  ret = tcgetattr(SerialPort, &tty);
+  ret = tcgetattr(m_serialport, &tty);
   if (ret != 0)
   {
     throw runtime_error(string("Error getting serial port attributes: ") 
@@ -204,7 +204,7 @@ void Pulse::configureSerialPort(unsigned char t_vmin, unsigned char t_vtime)
   cfsetospeed(&tty, B9600);
 
   // save tty settings
-  ret = tcsetattr(SerialPort, TCSANOW, &tty);
+  ret = tcsetattr(m_serialport, TCSANOW, &tty);
   if (ret != 0)
   {
     throw runtime_error(string("Error setting serial port attributes: ") 
@@ -222,7 +222,7 @@ bool Pulse::syncPacket(void)
   do
   {
     // Read byte
-    byte_received = read(SerialPort, &header, 1);
+    byte_received = read(m_serialport, &header, 1);
 
     // error handling
     if (byte_received == -1)
@@ -479,10 +479,10 @@ int Pulse::readSensorValue(void)
   }
 
   // get sensor reading from decoded packet
-  t_sensor = (short) ((packet[1] & 0xFF) << 8) | (packet[2] & 0xFF);
+  m_sensor = (short) ((packet[1] & 0xFF) << 8) | (packet[2] & 0xFF);
 
   // screen output
-  cout << dec << t_sensor << endl;
+  cout << dec << m_sensor << endl;
 
-  return t_sensor;
+  return m_sensor;
 }

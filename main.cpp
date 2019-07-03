@@ -175,9 +175,9 @@ int main(int argc, char* argv[])
   }
 
   // create pulsemeter object
-  Pulse meter(rrd_file, rrdcached_address, 
-    meter_reading, rev_per_kWh, 
-    pvoutput_api_key, pvoutput_system_id);
+  Pulse meter(rrd_file, rrdcached_address,  
+    pvoutput_api_key, pvoutput_system_id,
+    rev_per_kWh, meter_reading);
 
   // set debug flag
   if (debug)

@@ -13,8 +13,8 @@ extern "C" {
 class Pulse
 {
 public:
-  Pulse(const char * t_file, const char * t_socket, double t_meter, 
-    int t_rev, const char * t_apikey, const char * t_sysid);
+  Pulse(const char * t_file, const char * t_socket, const char * t_apikey, 
+    const char * t_sysid, int t_rev, double t_meter);
   ~Pulse(void);
   void setDebug(void);
 
@@ -28,7 +28,7 @@ public:
   void createFile(void);
   void updateEnergyCounter(void);
   unsigned long getLastEnergyCounter(void);
-  void setTime(time_t t_rrdtime);
+  void setTime(time_t t_time);
   
   // PVOutput methods
   void getEnergyAndPower(void);
@@ -36,18 +36,18 @@ public:
 
 private:
   // variables
-  bool m_debug;                 // debug flag
-  int m_serialport;             // serial port
-  int m_rev;                    // revolutions per kWh
-  int m_sensor;                 // sensor value
-  unsigned long m_last_energy;  // last energy counter
-  const char * m_socket;        // socket of rrdcached daemon
   const char * m_file;          // filename of RRD database
-  time_t m_time;                // timestamp of energy and power
-  double m_energy;              // energy [Wh]
-  double m_power;               // power [W]
+  const char * m_socket;        // socket of rrdcached daemon
   const char * m_apikey;        // PVOutput api key
   const char * m_sysid;         // PVOutput system id
+  int m_rev;                    // revolutions per kWh
+  bool m_debug;                 // debug flag
+  int m_serialport;             // serial port
+  double m_energy;              // energy [Wh]
+  double m_power;               // power [W]
+  time_t m_time;                // timestamp of energy and power
+  int m_sensor;                 // sensor value
+  unsigned long m_last_energy;  // last energy counter
 
   // methods
   unsigned short crc16(unsigned char * t_data, int t_length);

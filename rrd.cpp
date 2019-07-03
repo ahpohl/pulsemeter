@@ -64,7 +64,7 @@ void Pulse::createFile(void)
 
 	if (m_debug)
   {
-		cout << "RRD: file created (" << RRDFile << ")" << endl;
+		cout << "RRD: file created (" << m_file << ")" << endl;
 	}
 
   // set last meter reading
@@ -238,13 +238,13 @@ void Pulse::getEnergyAndPower(void)
   args.push_back(def_value.c_str());
 
 	string cdef_energy_kwh = string("CDEF:energy_kwh=counts,") 
-		+ to_string(t_rev) + ",/";
+		+ to_string(m_rev) + ",/";
 	args.push_back(cdef_energy_kwh.c_str());
 
 	args.push_back("CDEF:energy=energy_kwh,1000,*");
 
 	string cdef_power = string("CDEF:power=value,") 
-		+ to_string(3600 * 1000 / t_rev) + ",*";
+		+ to_string(3600 * 1000 / m_rev) + ",*";
 	args.push_back(cdef_power.c_str());	
 
 	args.push_back("XPORT:energy");
@@ -267,12 +267,11 @@ void Pulse::getEnergyAndPower(void)
   }
 
 	// ds_data[0]: energy in Wh, ds_data[1]: power in W
-  memcpy(&Energy, ds_data++, sizeof(double));
-  memcpy(&Power, ds_data, sizeof(double));
+  memcpy(&m_energy, ds_data++, sizeof(double));
+  memcpy(&m_power, ds_data, sizeof(double));
 
   // format end_time
-	memcpy(&RRDTime, &end_time, sizeof(time_t));
-  struct tm * tm = localtime(m_time);
+  struct tm * tm = localtime(&m_time);
   char time_buffer[20] = {0};
   strftime(time_buffer, 19, "%F %R", tm);
 
@@ -281,4 +280,10 @@ void Pulse::getEnergyAndPower(void)
     << ", energy: " << fixed << setprecision(3) << m_energy
     << " Wh, power: " << setprecision(8) << m_power << " W, sys id: "
     << m_sysid << endl;
+}
+
+// set the time when energy and power are fetched from rrd
+void Pulse::setTime(time_t t_time)
+{
+  m_time = t_time;
 }
