@@ -9,35 +9,35 @@ extern "C" {
 #include <curl/curl.h>
 }
 
-#include "pulse.h"
+#include "pulse.hpp"
 
 using namespace std;
 
-static size_t WriteCallback(void *contents, size_t size, size_t nmemb, 
-	void *userp)
+static size_t Pulse::curlCallback(void * t_contents, size_t t_size, 
+  size_t t_nmemb, void * t_user)
 {
-    ((std::string*)userp)->append((char*)contents, size * nmemb);
-    return size * nmemb;
+  ((string*)t_user) -> append((char*)t_contents, (t_size * t_nmemb));
+    
+  return (t_size * t_nmemb);
 }
 
-
 // upload energy and power to PVOutput.org
-void Pulse::RRDUploadToPVOutput(time_t end_time)
+void Pulse::uploadToPVOutput(void)
 {
 	CURLcode res;
 	string url = "https://pvoutput.org/service/r2/addstatus.jsp";
 	struct curl_slist * headers = nullptr;
-	string api_key_header = string("X-Pvoutput-Apikey: ") + PVOutputApiKey;
-	string sys_id_header = string("X-Pvoutput-SystemId: ") + PVOutputSysId;
-	string readBuffer;
-    char date_buffer[12] = {0};
-    char time_buffer[12] = {0};
+	string api_key_header = string("X-Pvoutput-Apikey: ") + m_apikey;
+	string sys_id_header = string("X-Pvoutput-SystemId: ") + m_sysid;
+	string read_buffer;
+  char date_buffer[12] = {0};
+  char time_buffer[12] = {0};
 
 	// create curl easyhandle
 	CURL * easyhandle = curl_easy_init();
 
 	// CURL verbose
-	if (Debug)
+	if (m_debug)
 	{
 		curl_easy_setopt(easyhandle, CURLOPT_VERBOSE, 1L);
 	}
@@ -50,15 +50,15 @@ void Pulse::RRDUploadToPVOutput(time_t end_time)
 	curl_easy_setopt(easyhandle, CURLOPT_HTTPHEADER, headers);
 
 	// format date and time
-	struct tm * tm = localtime(&RRDTime);
-    strftime(date_buffer, 11, "%Y%m%d", tm);
+	struct tm * tm = localtime(&m_time);
+  strftime(date_buffer, 11, "%Y%m%d", tm);
 	strftime(time_buffer, 11, "%R", tm);
 
 	// append data
 	string data = string("d=") + date_buffer
 		+ "&t=" + time_buffer 
-		+ "&v3=" + to_string(Energy)
-		+ "&v4=" + to_string(Power)
+		+ "&v3=" + to_string(m_energy)
+		+ "&v4=" + to_string(m_power)
 		+ "&c1=1";
 
 	// pass list to curl
@@ -68,8 +68,8 @@ void Pulse::RRDUploadToPVOutput(time_t end_time)
 	curl_easy_setopt(easyhandle, CURLOPT_URL, url.c_str());
 
 	// catch the answer
-	curl_easy_setopt(easyhandle, CURLOPT_WRITEFUNCTION, WriteCallback);
-    curl_easy_setopt(easyhandle, CURLOPT_WRITEDATA, &readBuffer);
+	curl_easy_setopt(easyhandle, CURLOPT_WRITEFUNCTION, curlCallback);
+  curl_easy_setopt(easyhandle, CURLOPT_WRITEDATA, &read_buffer);
 
 	// transfer http
 	res = curl_easy_perform(easyhandle);
@@ -85,9 +85,9 @@ void Pulse::RRDUploadToPVOutput(time_t end_time)
 	curl_easy_cleanup(easyhandle);
 
 	// free the custom headers
-    curl_slist_free_all(headers);
+  curl_slist_free_all(headers);
 
 	// output the CURL answer on screen	
-	cout << "PVOutput response: " << readBuffer << endl;
+	cout << "PVOutput response: " << read_buffer << endl;
 }
 

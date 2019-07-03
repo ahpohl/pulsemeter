@@ -10,149 +10,149 @@
 #include <getopt.h> // for getopt_long
 
 // program headers
-#include "pulse.h"
+#include "pulse.hpp"
 
 using namespace std;
 
 int main(int argc, char* argv[])
 {
-	// parse command line
-	const struct option longOpts[] = {
-        { "help", no_argument, NULL, 'h' },
-        { "debug", no_argument, NULL, 'D' },
-		{ "device", required_argument, NULL, 'd' },
-		{ "raw", no_argument, NULL, 'R' },
-        { "trigger", no_argument, NULL, 'T' },
-        { "low", required_argument, NULL, 'L' },
-		{ "high", required_argument, NULL, 'H' },
-		{ "create", no_argument, NULL, 'c' },
-		{ "file", required_argument, NULL, 'f' },
-		{ "address", required_argument, NULL, 'a'},
-		{ "rev", required_argument, NULL, 'r'},
-		{ "meter", required_argument, NULL, 'm'},
-		{ "energy", no_argument, NULL, 'e' },
-		{ "power", no_argument, NULL, 'p' },
-		{ "pvoutput", no_argument, NULL, 'P' },
-		{ "api-key", required_argument, NULL, 'A' },
-		{ "sys-id", required_argument, NULL, 's' },
-        { NULL, 0, NULL, 0 }
-    };
+  // parse command line
+  const struct option longOpts[] = {
+    { "help", no_argument, nullptr, 'h' },
+    { "debug", no_argument, nullptr, 'D' },
+    { "device", required_argument, nullptr, 'd' },
+    { "raw", no_argument, nullptr, 'R' },
+    { "trigger", no_argument, nullptr, 'T' },
+    { "low", required_argument, nullptr, 'L' },
+    { "high", required_argument, nullptr, 'H' },
+    { "create", no_argument, nullptr, 'c' },
+    { "file", required_argument, nullptr, 'f' },
+    { "address", required_argument, nullptr, 'a'},
+    { "rev", required_argument, nullptr, 'r'},
+    { "meter", required_argument, nullptr, 'm'},
+    { "energy", no_argument, nullptr, 'e' },
+    { "power", no_argument, nullptr, 'p' },
+    { "pvoutput", no_argument, nullptr, 'P' },
+    { "api-key", required_argument, nullptr, 'A' },
+    { "sys-id", required_argument, nullptr, 's' },
+    { nullptr, 0, nullptr, 0 }
+  };
 
-    const char * optString = "hDd:RTL:H:cf:a:r:m:epPA:s:";
-    int opt = 0;
-    int longIndex = 0;
-	char mode = '\0'; // raw: R, trigger: T
-	bool debug = false;
-	bool help = false;
-	bool create_rrd_file = false;
-	bool get_energy = false, get_power = false;
-	double meter_reading = 0;
-	bool pvoutput = false;
+  const char * optString = "hDd:RTL:H:cf:a:r:m:epPA:s:";
+  int opt = 0;
+  int longIndex = 0;
+  char mode = '\0'; // raw: R, trigger: T
+  bool debug = false;
+  bool help = false;
+  bool create_rrd_file = false;
+  bool get_energy = false, get_power = false;
+  double meter_reading = 0;
+  bool pvoutput = false;
 
-	// set default path to rrd file
-	const char * rrd_file = "/var/lib/rrdcached/pulse.rrd";
+  // set default path to rrd file
+  const char * rrd_file = "/var/lib/rrdcached/pulse.rrd";
 
-	// set default address of rrdcached daemon 
-	const char * rrdcached_address = "unix:/run/rrdcached/rrdcached.sock";
+  // set default address of rrdcached daemon 
+  const char * rrdcached_address = "unix:/run/rrdcached/rrdcached.sock";
 
-	// set default serial device
-	const char * serial_device = "/dev/ttyACM0";
+  // set default serial device
+  const char * serial_device = "/dev/ttyACM0";
 
-	// set default trigger levels
-	int trigger_level_low = 85, trigger_level_high = 100;
+  // set default trigger levels
+  int trigger_level_low = 85, trigger_level_high = 100;
 
-	// set revolutions per kWh of ferraris energy meter
-	int rev_per_kWh = 75;
+  // set revolutions per kWh of ferraris energy meter
+  int rev_per_kWh = 75;
 
-	// set default PVOutput.org api key
-	const char * pvoutput_api_key = "212dc3361019148fdb63eb0ba53b8d2dfcc4e2ec";
+  // set default PVOutput.org api key
+  const char * pvoutput_api_key = "212dc3361019148fdb63eb0ba53b8d2dfcc4e2ec";
 
-	// set default PVOutput.org system id (Ilvesheim_test)
-	const char * pvoutput_system_id = "67956";
+  // set default PVOutput.org system id (Ilvesheim_test)
+  const char * pvoutput_system_id = "67956";
 
-    do {
-        opt = getopt_long(argc, argv, optString, longOpts, &longIndex);
-        switch (opt) {
-        case 'h':
-			help = true;
-            break;
+  do {
+    opt = getopt_long(argc, argv, optString, longOpts, &longIndex);
+    switch (opt) {
+    case 'h':
+      help = true;
+      break;
 
-        case 'D':
-			debug = true;
-            break;
+    case 'D':
+      debug = true;
+      break;
 
-		case 'd':
-			serial_device = optarg;
-			break;
+    case 'd':
+      serial_device = optarg;
+      break;
 
-        case 'R':
-            mode = 'R';
-            break;
+    case 'R':
+      mode = 'R';
+      break;
 
-	    case 'T':
-            mode = 'T';
-            break;
+    case 'T':
+      mode = 'T';
+      break;
 
-		case 'L':
-			trigger_level_low = atoi(optarg);
-			break;
-		
-		case 'H':
-			trigger_level_high = atoi(optarg);
-			break;
+    case 'L':
+      trigger_level_low = atoi(optarg);
+      break;
+    
+    case 'H':
+      trigger_level_high = atoi(optarg);
+      break;
 
-		case 'c':
-			create_rrd_file = true;
-			break;
+    case 'c':
+      create_rrd_file = true;
+      break;
 
-		case 'f':
-			rrd_file = optarg;
-			break;
+    case 'f':
+      rrd_file = optarg;
+      break;
 
-		case 'a':
-			rrdcached_address = optarg;
-			break;
+    case 'a':
+      rrdcached_address = optarg;
+      break;
 
-		case 'r':
-			rev_per_kWh = atoi(optarg);
-			break;
+    case 'r':
+      rev_per_kWh = atoi(optarg);
+      break;
 
-		case 'm':
-			meter_reading = atof(optarg);
-			break;
+    case 'm':
+      meter_reading = atof(optarg);
+      break;
 
-		case 'e':
-			get_energy = true;
-			break;
+    case 'e':
+      get_energy = true;
+      break;
 
-		case 'p':
-			get_power = true;
-			break;
+    case 'p':
+      get_power = true;
+      break;
 
-		case 'P':
-			pvoutput = true;
-			break;
+    case 'P':
+      pvoutput = true;
+      break;
 
-		case 'A':
-			pvoutput_api_key = optarg;
-			break;
+    case 'A':
+      pvoutput_api_key = optarg;
+      break;
 
-		case 's':
-			pvoutput_system_id = optarg;
-			break;
+    case 's':
+      pvoutput_system_id = optarg;
+      break;
 
-		default:
-            break;
-        }
+    default:
+      break;
+    }
 
-	} while (opt != -1);
+  } while (opt != -1);
 
-	// display help
-	if (help)
-	{
-		cout << "Energy Pulsemeter Version <insert version>" << endl;
-    	cout << endl << "Usage: " << argv[0] << " [options]" << endl << endl;
-    	cout << "\
+  // display help
+  if (help)
+  {
+    cout << "Energy Pulsemeter Version <insert version>" << endl;
+    cout << endl << "Usage: " << argv[0] << " [options]" << endl << endl;
+    cout << "\
   -h --help             Show help message\n\
   -D --debug            Show debug messages\n\
   -d --device [dev]     Serial device\n\
@@ -170,96 +170,97 @@ int main(int argc, char* argv[])
   -P --pvoutput         Upload to PVOutput.org\n\
   -A --api-key [key]    PVOutput.org api key\n\
   -s --sys-id [id]      PVOutput.org system id"
-		<< endl;
-		return 0;
-	}
+    << endl;
+    return 0;
+  }
 
-    // create pulsemeter object
-    Pulse meter(rrd_file, rrdcached_address, 
-		meter_reading, rev_per_kWh, 
-		pvoutput_api_key, pvoutput_system_id);
+  // create pulsemeter object
+  Pulse meter(rrd_file, rrdcached_address, 
+    meter_reading, rev_per_kWh, 
+    pvoutput_api_key, pvoutput_system_id);
 
-	// set debug flag
-    if (debug)
+  // set debug flag
+  if (debug)
+  {
+    meter.setDebug();
+  }
+
+  // get energy in Wh and power in W
+  if (get_energy || get_power)
+  {
+    time_t current_time = time(nullptr) - 60;
+    meter.setTime(current_time);
+    meter.getEnergyAndPower();
+
+    // upload energy and power to PVOutput.org
+    if (pvoutput)
     {
-        meter.SetDebug();
+      meter.uploadToPVOutput();
     }
+    
+    return 0;
+  }
 
-	// get energy in Wh and power in W
-	if (get_energy || get_power)
-	{
-		time_t current_time = time(nullptr) - 60;
-		meter.RRDGetEnergyAndPower(current_time);
+  // print message if no mode was selected
+  if (mode == '\0')
+  {
+    cerr << "Please select raw or trigger mode for sensor operation." << endl;
+    return 1;
+  }
 
-		// upload energy and power to PVOutput.org
-    	if (pvoutput)
-    	{
-        	meter.RRDUploadToPVOutput(current_time);
-		}
-		
-		return 0;
-	}
+  // check trigger levels 
+  if (trigger_level_low > trigger_level_high)
+  {
+    cerr << "Trigger level low larger than level high (" 
+      << trigger_level_low << " < " << trigger_level_high << ")"
+      << endl;
+    return 1;
+  }
 
-	// print message if no mode was selected
-    if (mode == '\0')
+  // read raw sensor data
+  if (mode == 'R')
+  {
+    // open serial port
+    meter.openSerialPort(serial_device);
+
+    // set raw mode
+    meter.setRawMode();
+
+    // read sensor values
+    while (1)
     {
-        cerr << "Please select raw or trigger mode for sensor operation." << endl;
-        return 1;
+      meter.readSensorValue();
     }
+  }
 
-	// check trigger levels	
-	if (trigger_level_low > trigger_level_high)
-	{
-		cerr << "Trigger level low larger than level high (" 
-			 << trigger_level_low << " < " << trigger_level_high << ")"
-			 << endl;
-		return 1;
-	}
+  // read trigger data
+  else if (mode == 'T')
+  {
+    // open serial port
+    meter.openSerialPort(serial_device);
 
-	// read raw sensor data
-	if (mode == 'R')
-	{
-		// open serial port
-    	meter.OpenSyncSerialPort(serial_device);
+    // create RRD file
+    if (create_rrd_file)
+    {
+      meter.createFile();
+    }
+    
+    // get current meter reading from RRD file
+    meter.getLastEnergyCounter();  
 
-		// set raw mode
-		meter.SetRawMode();
+    // set trigger mode
+    meter.setTriggerMode(trigger_level_low, trigger_level_high);
 
-		// read sensor values
-		while (1)
-		{
-			meter.ReadSensorValue();
-		}
-	}
+    // read sensor values
+    while (1)
+    {
+      // read sensor value
+      meter.readSensorValue();
 
-	// read trigger data
-	else if (mode == 'T')
-	{
-		// open serial port
-        meter.OpenSyncSerialPort(serial_device);
+      // update rrd file
+      meter.updateEnergyCounter();
+    }
+  }
 
-		// create RRD file
-		if (create_rrd_file)
-		{
-    		meter.RRDCreate();
-		}
-		
-		// get current meter reading from RRD file
-        meter.RRDGetLastEnergyCounter();	
-
-		// set trigger mode
-		meter.SetTriggerMode(trigger_level_low, trigger_level_high);
-
-		// read sensor values
-    	while (1)
-    	{
-        	// read sensor value
-        	meter.ReadSensorValue();
-
-        	// update rrd file
-        	meter.RRDUpdateEnergyCounter();
-    	}
-	}
-
-	return 0;
+  return 0;
 }

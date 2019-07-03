@@ -1,45 +1,43 @@
 #include <iostream>
-#include <math.h>
-#include "pulse.h"
+#include "pulse.hpp"
 
 using namespace std;
 
 // constructor
-Pulse::Pulse(const char * rrd_file, const char * rrdcached_address,
-	double meter_reading, int rev_per_kWh,
-	const char * pvoutput_api_key, const char * pvoutput_system_id)
+Pulse::Pulse(const char * t_file, const char * t_socket, double t_meter, 
+  int t_rev, const char * t_apikey, const char * t_sysid) :
+  m_file(t_file), 
+  m_socket(t_socket),
+  m_rev(t_rev),
+  m_apikey(t_apikey),
+  m_sysid(t_sysid)
 {
-    // set arguments
-	this -> RRDFile = rrd_file;
-	this -> RRDCachedAddress = rrdcached_address;
-    this -> RevPerKiloWattHour = rev_per_kWh;
-    this -> LastEnergyCounter = lround(meter_reading * rev_per_kWh);
-	this -> PVOutputApiKey = pvoutput_api_key;
-	this -> PVOutputSysId = pvoutput_system_id;    
+  // calculate last energy counter
+  m_last_energy = t_meter * t_rev;
 
-	// init private variables
-	this -> Debug = false;
-	this -> SerialPort = 0;
-	this -> Energy = 0;
-	this -> Power = 0;
-	this -> RRDTime = 0;
+	// initialise private variables
+	m_debug = false;
+	m_serialport = 0;
+	m_energy = 0;
+	m_power = 0;
+	m_time = 0;
 }
 
 // destructor
 Pulse::~Pulse(void)
 {
-    if (SerialPort > 0)
+    if (m_serial > 0)
     {
-        close(SerialPort);
-        if (Debug)
+        close(m_serial);
+        if (m_debug)
             cout << "Serial port closed" << endl;
     }
 
-    if (Debug)
+    if (m_debug)
         cout << "Pulse destructor method called" << endl;
 }
 
-void Pulse::SetDebug()
+void Pulse::setDebug()
 {
-    this -> Debug = true;
+    m_debug = true;
 }

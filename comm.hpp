@@ -1,14 +1,17 @@
-#ifndef CONSTANTS_H
-#define CONSTANTS_H
+#ifndef COMM_HPP
+#define COMM_HPP
+
+// crc16 polynomial, 1021H bit reversed
+const int POLY = 0x8408;
 
 // transmission state:
 enum transmission_status {SENSOR_VALUE, 
-      SYNC_OK,
-      RAW_MODE,
-      TRIGGER_MODE,
-      UNKNOWN_COMMAND,
-      CRC_CHECKSUM_MISMATCH, 
-      WRONG_PACKET_SIZE};
+  SYNC_OK,
+  RAW_MODE,
+  TRIGGER_MODE,
+  UNKNOWN_COMMAND,
+  CRC_CHECKSUM_MISMATCH, 
+  WRONG_PACKET_SIZE};
 
 // serial buffer
 const int BUF_SIZE = 16;
@@ -21,4 +24,4 @@ const int DATA_PACKET_SIZE = 5;
 const int COBS_COMMAND_PACKET_SIZE = 9;
 const int COBS_DATA_PACKET_SIZE = 7;
 
-#endif // CONSTANTS_H
+#endif // COMM_HPP
