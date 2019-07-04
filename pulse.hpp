@@ -7,21 +7,21 @@ class Pulse
 {
 public:
   Pulse(const char * t_file, const char * t_socket, const char * t_apikey, 
-    const char * t_sysid, int t_rev, double t_meter);
+    const char * t_sysid, const int &t_rev, const double &t_meter);
   ~Pulse(void);
   void setDebug(void);
 
   // sensor methods
   void openSerialPort(const char * t_device);
   void setRawMode(void) const;
-  void setTriggerMode(short int t_low, short int t_high) const;
+  void setTriggerMode(const short int &t_low, const short int &t_high) const;
   int readSensorValue(void);
 
   // rrd methods
   void createFile(void) const;
   void updateEnergyCounter(void);
   unsigned long getLastEnergyCounter(void);
-  void setTime(time_t t_time);
+  void setTime(const time_t &t_time);
   void getEnergyAndPower(void);
   
   // PVOutput methods
@@ -43,16 +43,16 @@ private:
   unsigned long m_last_energy;  // last energy counter
 
   // methods
-  unsigned short crc16(unsigned char * t_data, int t_length) const;
-  void configureSerialPort(unsigned char t_vmin,
-    unsigned char t_vtime) const;
-  void sendCommand(unsigned char * t_cmd, int t_length) const;
+  unsigned short crc16(const unsigned char * t_data, int t_length) const;
+  void configureSerialPort(const unsigned char &t_vmin,
+    const unsigned char &t_vtime) const;
+  void sendCommand(const unsigned char * t_cmd, const int &t_length) const;
   bool syncPacket(void) const;
-  void receivePacket(unsigned char * t_packet, int t_size) const;
+  void receivePacket(unsigned char * t_packet, const int &t_size) const;
 
   // callback function for CURL output
-  static size_t curlCallback(void * t_contents, size_t t_size,
-    size_t t_nmemb, void * t_user);
+  static size_t curlCallback(void * t_contents, const size_t &t_size,
+    const size_t &t_nmemb, void * t_user);
 };
 
 #endif // PULSE_HPP

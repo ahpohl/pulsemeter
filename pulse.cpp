@@ -8,7 +8,7 @@ using namespace std;
 
 // constructor
 Pulse::Pulse(const char * t_file, const char * t_socket, const char * t_apikey, 
-  const char * t_sysid, int t_rev, double t_meter) :
+  const char * t_sysid, const int &t_rev, const double &t_meter) :
   m_file(t_file), 
   m_socket(t_socket),
   m_apikey(t_apikey),

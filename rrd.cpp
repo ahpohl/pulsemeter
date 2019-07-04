@@ -290,7 +290,7 @@ void Pulse::getEnergyAndPower(void)
 }
 
 // set the time when energy and power are fetched from rrd
-void Pulse::setTime(time_t t_time)
+void Pulse::setTime(const time_t &t_time)
 {
   m_time = t_time;
 }
