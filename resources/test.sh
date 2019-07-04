@@ -2,7 +2,7 @@
 
 # PV output
 api=212dc3361019148fdb63eb0ba53b8d2dfcc4e2ec
-sys_id=66419 # Ilvesheim: 66419, Ilvesheim_test: 67956
+sys_id=67956 # Ilvesheim: 66419, Ilvesheim_test: 67956
 url=https://pvoutput.org/service/r2/addstatus.jsp
 
 # rrdtool
@@ -13,8 +13,8 @@ rrdcached=unix:/run/rrdcached/rrdcached.sock
 rev_per_kwh=75
 step_size=300
 
-# fetch data at current time minus 6 minutes
-fetch_time=$(date +%H:%M --date '-6000 sec')
+# fetch data at current time
+fetch_time=$(date +%H:%M --date '-1 min')
 
 # calculate energy in Wh
 energy_json=$(rrdtool xport --daemon $rrdcached --step $step_size --start e-$step_size --end $fetch_time --json  "DEF:counts=$rrd:energy:LAST" "CDEF:energy_kwh=counts,$rev_per_kwh,/" "CDEF:energy=energy_kwh,1000,*" XPORT:energy)

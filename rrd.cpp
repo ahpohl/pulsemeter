@@ -15,7 +15,7 @@ extern "C" {
 using namespace std;
 
 // create rrd database (use rrdcached)
-void Pulse::createFile(void)
+void Pulse::createFile(void) const
 {
 	int ret = 0;
 	time_t timestamp_start = time(nullptr) - 120;
@@ -68,15 +68,15 @@ void Pulse::createFile(void)
 	}
 
   // set last meter reading
-  char * argv[RRD_BUF_SIZE];
+  char * argv[Con::RRD_BUF_SIZE];
 	timestamp_start += 60;
     
-	*argv = (char *) malloc(RRD_BUF_SIZE * sizeof(char));
-  memset(*argv, '\0', RRD_BUF_SIZE);
-  snprintf(*argv, RRD_BUF_SIZE, "%ld:%ld:%ld", timestamp_start, 
+	*argv = (char *) malloc(Con::RRD_BUF_SIZE * sizeof(char));
+  memset(*argv, '\0', Con::RRD_BUF_SIZE);
+  snprintf(*argv, Con::RRD_BUF_SIZE, "%ld:%ld:%ld", timestamp_start, 
     m_last_energy, m_last_energy);
 
-  ret = rrdc_update(m_file, RRD_DS_LEN, (const char **) argv);
+  ret = rrdc_update(m_file, Con::RRD_DS_LEN, (const char **) argv);
   if (ret)
   {
     throw runtime_error(rrd_get_error());
@@ -107,8 +107,8 @@ void Pulse::updateEnergyCounter(void)
 	static unsigned long energy_counter = m_last_energy;
 
 	// rrd update string to write into rrd file
-  char * argv[RRD_BUF_SIZE];
-	*argv = (char *) malloc(RRD_BUF_SIZE * sizeof(char));
+  char * argv[Con::RRD_BUF_SIZE];
+	*argv = (char *) malloc(Con::RRD_BUF_SIZE * sizeof(char));
 
   // connect to daemon
   ret = rrdc_connect(m_socket);
@@ -123,8 +123,8 @@ void Pulse::updateEnergyCounter(void)
     energy_counter++;
         
     // rrd format, timestamp : energy (Wh) : power (Ws)
-		memset(*argv, '\0', RRD_BUF_SIZE);
-		snprintf(*argv, RRD_BUF_SIZE, "%ld:%ld:%ld", timestamp, energy_counter, 
+		memset(*argv, '\0', Con::RRD_BUF_SIZE);
+		snprintf(*argv, Con::RRD_BUF_SIZE, "%ld:%ld:%ld", timestamp, energy_counter, 
 			energy_counter);
 	
 		// output sensor value in rrd format	
@@ -134,7 +134,7 @@ void Pulse::updateEnergyCounter(void)
     }
 
 		// update rrd file
-		ret = rrdc_update(m_file, RRD_DS_LEN, (const char **) argv);
+		ret = rrdc_update(m_file, Con::RRD_DS_LEN, (const char **) argv);
 		if (ret)
     {
       throw runtime_error(rrd_get_error());
@@ -169,7 +169,8 @@ unsigned long Pulse::getLastEnergyCounter(void)
   }	
 
 	// get energy value from rrd file
-	ret = rrd_lastupdate_r(m_file, &last_update, &ds_count, &ds_names, &ds_data);
+	ret = rrd_lastupdate_r(m_file, &last_update, &ds_count, 
+    &ds_names, &ds_data);
 
 	if (ret)
   {
@@ -211,6 +212,12 @@ void Pulse::getEnergyAndPower(void)
   unsigned long ds_count = 0;
 	char ** ds_legend = 0;
 	rrd_value_t * ds_data = 0;
+
+  // check if time has been set
+  if (m_time == 0)
+  {
+    throw runtime_error("setTime(): timestamp not set");
+  }
 
 	// construct vector of <const char *> for rrd_xport
 	vector<const char*> args;

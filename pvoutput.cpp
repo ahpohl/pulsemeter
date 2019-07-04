@@ -22,7 +22,7 @@ size_t Pulse::curlCallback(void * t_contents, size_t t_size,
 }
 
 // upload energy and power to PVOutput.org
-void Pulse::uploadToPVOutput(void)
+void Pulse::uploadToPVOutput(void) const
 {
 	CURLcode res;
 	string url = "https://pvoutput.org/service/r2/addstatus.jsp";
@@ -32,6 +32,12 @@ void Pulse::uploadToPVOutput(void)
 	string read_buffer;
   char date_buffer[12] = {0};
   char time_buffer[12] = {0};
+
+  // check if time has been set
+  if (m_time == 0)
+  {
+    throw runtime_error("setTime(): timestamp not set");
+  }
 
 	// create curl easyhandle
 	CURL * easyhandle = curl_easy_init();

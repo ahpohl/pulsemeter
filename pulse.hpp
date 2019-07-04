@@ -1,13 +1,6 @@
 #ifndef PULSE_HPP
 #define PULSE_HPP
 
-/*
-extern "C" {
-#include <rrd.h>
-#include <rrd_client.h>
-}
-*/
-
 #include <ctime>
 
 class Pulse
@@ -20,19 +13,19 @@ public:
 
   // sensor methods
   void openSerialPort(const char * t_device);
-  void setRawMode(void);
-  void setTriggerMode(short int t_low, short int t_high);
+  void setRawMode(void) const;
+  void setTriggerMode(short int t_low, short int t_high) const;
   int readSensorValue(void);
 
   // rrd methods
-  void createFile(void);
+  void createFile(void) const;
   void updateEnergyCounter(void);
   unsigned long getLastEnergyCounter(void);
   void setTime(time_t t_time);
+  void getEnergyAndPower(void);
   
   // PVOutput methods
-  void getEnergyAndPower(void);
-  void uploadToPVOutput(void);
+  void uploadToPVOutput(void) const; 
 
 private:
   // variables
@@ -40,7 +33,7 @@ private:
   const char * m_socket;        // socket of rrdcached daemon
   const char * m_apikey;        // PVOutput api key
   const char * m_sysid;         // PVOutput system id
-  int m_rev;                    // revolutions per kWh
+  const int m_rev;              // revolutions per kWh
   bool m_debug;                 // debug flag
   int m_serialport;             // serial port
   double m_energy;              // energy [Wh]
@@ -50,11 +43,12 @@ private:
   unsigned long m_last_energy;  // last energy counter
 
   // methods
-  unsigned short crc16(unsigned char * t_data, int t_length);
-  void configureSerialPort(unsigned char t_vmin, unsigned char t_vtime);
-  void sendCommand(unsigned char * t_cmd, int t_length);
-  bool syncPacket(void);
-  void receivePacket(unsigned char * t_packet, int t_size);
+  unsigned short crc16(unsigned char * t_data, int t_length) const;
+  void configureSerialPort(unsigned char t_vmin,
+    unsigned char t_vtime) const;
+  void sendCommand(unsigned char * t_cmd, int t_length) const;
+  bool syncPacket(void) const;
+  void receivePacket(unsigned char * t_packet, int t_size) const;
 
   // callback function for CURL output
   static size_t curlCallback(void * t_contents, size_t t_size,
