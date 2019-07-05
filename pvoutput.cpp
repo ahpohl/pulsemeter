@@ -13,8 +13,8 @@ extern "C" {
 
 using namespace std;
 
-size_t Pulse::curlCallback(void * t_contents, const size_t &t_size, 
-  const size_t &t_nmemb, void * t_user)
+size_t Pulse::curlCallback(void * t_contents, size_t const& t_size, 
+  size_t const& t_nmemb, void * t_user)
 {
   ((string*)t_user) -> append((char*)t_contents, (t_size * t_nmemb));
     

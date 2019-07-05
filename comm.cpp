@@ -30,7 +30,7 @@ using namespace std;
 //  bit is always assumed to be set, thus we only use 16 bits to
 //  represent the 17 bit value.
 
-unsigned short Pulse::crc16(const unsigned char * t_data, int t_length) const
+unsigned short Pulse::crc16(unsigned char const* t_data, int t_length) const
 {
     unsigned char i;
     unsigned int data;
@@ -54,7 +54,7 @@ unsigned short Pulse::crc16(const unsigned char * t_data, int t_length) const
     return (crc);
 }
 
-void Pulse::openSerialPort(const char * t_device)
+void Pulse::openSerialPort(char const* t_device)
 {
   int ret = 0;
   unsigned char sync_command[Con::COMMAND_PACKET_SIZE] = {0};
@@ -176,8 +176,8 @@ void Pulse::openSerialPort(const char * t_device)
 }
 
 // configure serial port (baud rate, vmin and vtime etc)
-void Pulse::configureSerialPort(const unsigned char &t_vmin, 
-  const unsigned char &t_vtime) const
+void Pulse::configureSerialPort(unsigned char const& t_vmin, 
+  unsigned char const& t_vtime) const
 {
   struct termios tty;
   int ret = 0;
@@ -251,7 +251,7 @@ bool Pulse::syncPacket(void) const
 }
 
 // send command to sensor
-void Pulse::sendCommand(const unsigned char * t_cmd, const int &t_length) const
+void Pulse::sendCommand(unsigned char const* t_cmd, int const& t_length) const
 {
   // command
   unsigned char cobs_command[Con::BUF_SIZE] = {0};
@@ -298,7 +298,7 @@ void Pulse::sendCommand(const unsigned char * t_cmd, const int &t_length) const
 }
 
 // receive response data packet
-void Pulse::receivePacket(unsigned char * t_packet, const int &t_size) const
+void Pulse::receivePacket(unsigned char * t_packet, int const& t_size) const
 {
   unsigned char cobs_packet[Con::BUF_SIZE];
   int bytes_received = 0;
@@ -421,8 +421,8 @@ void Pulse::setRawMode() const
 }
 
 // set trigger mode, command 0x20
-void Pulse::setTriggerMode(const short int &t_low, 
-  const short int &t_high) const
+void Pulse::setTriggerMode(short int const& t_low, 
+  short int const& t_high) const
 {
   unsigned char command[Con::COMMAND_PACKET_SIZE] = {0};
   unsigned short int crc = 0xFFFF;

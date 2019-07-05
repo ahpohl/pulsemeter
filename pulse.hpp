@@ -6,22 +6,22 @@
 class Pulse
 {
 public:
-  Pulse(const char * t_file, const char * t_socket, const char * t_apikey, 
-    const char * t_sysid, const int &t_rev, const double &t_meter);
+  Pulse(char const* t_file, char const* t_socket, char const* t_apikey, 
+    char const* t_sysid, int const& t_rev, double const& t_meter);
   ~Pulse(void);
   void setDebug(void);
 
   // sensor methods
-  void openSerialPort(const char * t_device);
+  void openSerialPort(char const* t_device);
   void setRawMode(void) const;
-  void setTriggerMode(const short int &t_low, const short int &t_high) const;
+  void setTriggerMode(short int const& t_low, short int const& t_high) const;
   int readSensorValue(void);
 
   // rrd methods
   void createFile(void) const;
   void updateEnergyCounter(void);
   unsigned long getLastEnergyCounter(void);
-  void setTime(const time_t &t_time);
+  void setTime(time_t const& t_time);
   void getEnergyAndPower(void);
   
   // PVOutput methods
@@ -29,11 +29,11 @@ public:
 
 private:
   // variables
-  const char * m_file;          // filename of RRD database
-  const char * m_socket;        // socket of rrdcached daemon
-  const char * m_apikey;        // PVOutput api key
-  const char * m_sysid;         // PVOutput system id
-  const int m_rev;              // revolutions per kWh
+  char const* m_file;           // filename of RRD database
+  char const* m_socket;         // socket of rrdcached daemon
+  char const* m_apikey;         // PVOutput api key
+  char const* m_sysid;          // PVOutput system id
+  int const m_rev;              // revolutions per kWh
   bool m_debug;                 // debug flag
   int m_serialport;             // serial port
   double m_energy;              // energy [Wh]
@@ -43,16 +43,16 @@ private:
   unsigned long m_last_energy;  // last energy counter
 
   // methods
-  unsigned short crc16(const unsigned char * t_data, int t_length) const;
-  void configureSerialPort(const unsigned char &t_vmin,
-    const unsigned char &t_vtime) const;
-  void sendCommand(const unsigned char * t_cmd, const int &t_length) const;
+  unsigned short crc16(unsigned char const* t_data, int t_length) const;
+  void configureSerialPort(unsigned char const& t_vmin,
+    unsigned char const& t_vtime) const;
+  void sendCommand(unsigned char const* t_cmd, int const& t_length) const;
   bool syncPacket(void) const;
-  void receivePacket(unsigned char * t_packet, const int &t_size) const;
+  void receivePacket(unsigned char * t_packet, int const& t_size) const;
 
   // callback function for CURL output
-  static size_t curlCallback(void * t_contents, const size_t &t_size,
-    const size_t &t_nmemb, void * t_user);
+  static size_t curlCallback(void * t_contents, size_t const& t_size,
+    size_t const& t_nmemb, void * t_user);
 };
 
 #endif // PULSE_HPP

@@ -36,7 +36,7 @@ void Pulse::createFile(void) const
 	// power = counts per second * 48000 [W]
 	// 48000 = 1000 * 3600 / 75 revolutions per kWh
 		
-	const char * ds_schema[] = {
+	char const* ds_schema[] = {
 		"DS:energy:GAUGE:3600:0:U",
     "DS:power:COUNTER:3600:0:48000",
 		"RRA:LAST:0.5:1:1500",
@@ -220,7 +220,7 @@ void Pulse::getEnergyAndPower(void)
   }
 
 	// construct vector of <const char *> for rrd_xport
-	vector<const char*> args;
+	vector<char const*> args;
 	args.push_back("xport");
 	
 	args.push_back("--daemon");
@@ -290,7 +290,7 @@ void Pulse::getEnergyAndPower(void)
 }
 
 // set the time when energy and power are fetched from rrd
-void Pulse::setTime(const time_t &t_time)
+void Pulse::setTime(time_t const& t_time)
 {
   m_time = t_time;
 }
