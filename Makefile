@@ -5,11 +5,32 @@
 # 'make clean'  removes all .o and executable files
 #
 
+# get build info from git
+version := $(subst -, ,$(shell git describe --long --dirty --tags))
+COMMIT := $(strip $(word 3, $(version)))
+COMMITS_PAST := $(strip $(word 2, $(version)))
+DIRTY := $(strip $(word 4, $(version)))
+ifneq ($(COMMITS_PAST), 0)
+    BUILD_INFO_COMMITS := "."$(COMMITS_PAST)
+endif
+ifneq ($(DIRTY),)
+    BUILD_INFO_DIRTY :="+"
+endif
+
+export BUILD_TAG :=$(strip $(word 1, $(version)))
+export BUILD_INFO := $(COMMIT)$(BUILD_INFO_COMMITS)$(BUILD_INFO_DIRTY)
+
 # define the C compiler to use
 CPP = g++
 
 # define any compile-time flags
 CPPFLAGS = -Wall -g -std=c++11 -pthread
+
+# build info
+CPPFLAGS += -DVERSION_BUILD_DATE=\""$(shell date)"\" \
+            -DVERSION_BUILD_MACHINE=\""$(shell echo `whoami`@`hostname`)"\" \
+            -DVERSION_TAG=\"$(BUILD_TAG)\" \
+            -DVERSION_BUILD=\"$(BUILD_INFO)\"
 
 # define any directories containing header files other than /usr/include
 #

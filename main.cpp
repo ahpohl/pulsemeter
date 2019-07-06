@@ -21,6 +21,7 @@ int main(int argc, char* argv[])
   // parse command line
   const struct option longOpts[] = {
     { "help", no_argument, nullptr, 'h' },
+    { "version", no_argument, nullptr, 'V' },
     { "debug", no_argument, nullptr, 'D' },
     { "device", required_argument, nullptr, 'd' },
     { "raw", no_argument, nullptr, 'R' },
@@ -37,11 +38,12 @@ int main(int argc, char* argv[])
     { nullptr, 0, nullptr, 0 }
   };
 
-  const char * optString = "hDd:RL:H:cf:a:r:m:PA:s:";
+  const char * optString = "hVDd:RL:H:cf:a:r:m:PA:s:";
   int opt = 0;
   int longIndex = 0;
   bool raw_mode = false;
   bool debug = false;
+  bool version = false;
   bool help = false;
   bool create_rrd_file = false;
   double meter_reading = 0;
@@ -73,6 +75,10 @@ int main(int argc, char* argv[])
     switch (opt) {
     case 'h':
       help = true;
+      break;
+ 
+    case 'V':
+      version = true;
       break;
 
     case 'D':
@@ -136,10 +142,11 @@ int main(int argc, char* argv[])
   // display help
   if (help)
   {
-    cout << "Energy Pulsemeter Version <insert version>" << endl;
+    cout << "Energy Pulsemeter Version " << VERSION_TAG << endl;
     cout << endl << "Usage: " << argv[0] << " [options]" << endl << endl;
     cout << "\
   -h --help             Show help message\n\
+  -V --version          Show build info\n\
   -D --debug            Show debug messages\n\
   -d --device [dev]     Serial device\n\
   -R --raw              Select raw mode\n\
@@ -155,6 +162,15 @@ int main(int argc, char* argv[])
   -s --sys-id [id]      PVOutput.org system id"
     << endl;
     return 0;
+  }
+
+  if (version)
+  {
+    cout << "Build date: " << VERSION_BUILD_DATE << " " 
+      << VERSION_BUILD_MACHINE << endl
+      << "Build version: " << VERSION_TAG 
+      << " (" << VERSION_BUILD << ")" << endl;
+      return 0;
   }
 
   // create threads
@@ -181,6 +197,10 @@ int main(int argc, char* argv[])
      + to_string(trigger_level_low) + " < " 
      + to_string(trigger_level_high) + ")");
   }
+
+  // start daemon
+  cout << "Energy Pulse Meter " << VERSION_TAG
+    << " (" << VERSION_BUILD << ")" << endl;
 
   // read raw sensor data
   if (raw_mode)

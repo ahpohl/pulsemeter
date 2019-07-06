@@ -1,5 +1,5 @@
 [Unit]
-Description=Pulse energy meter
+Description=energy pulse meter
 After=network.target rrdcached.service
 
 [Service]
