@@ -169,7 +169,10 @@ void Pulse::openSerialPort(char const* t_device)
     throw runtime_error("Communication failed: packets not in sync");
   }
   
-  cout << "Packet sync successful" << endl;
+  if (m_debug)
+  { 
+    cout << "Packet sync successful" << endl;
+  }
 }
 
 // configure serial port (baud rate, vmin and vtime etc)
