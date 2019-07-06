@@ -49,6 +49,15 @@ void Pulse::setDebug(void)
   m_debug = true;
 }
 
+void Pulse::runRaw(void)
+{
+  while (1)
+  {
+    // read sensor values
+    readSensorValue();
+  }
+}
+
 void Pulse::runTrigger(void)
 {
   while (1)
@@ -86,7 +95,7 @@ void Pulse::runPVOutput(void)
         getEnergyAndPower();
 
         // upload energy and power to PVOutput.org
-        //uploadToPVOutput();
+        uploadToPVOutput();
         
         break;
       }

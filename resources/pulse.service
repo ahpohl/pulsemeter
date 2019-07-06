@@ -1,10 +1,12 @@
 [Unit]
-Description=Pulse daemon
+Description=Pulse energy meter
+After=network.target rrdcached.service
 
 [Service]
-ExecStart=/scratch/git/pulse/pulse --energy --pvoutput
-User=rrdcached
-Group=rrdcached
+Type=simple
+ExecStart=/scratch/git/pulse/pulse --trigger --pvoutput
+User=pulse
+Group=pulse
 
 [Install]
 WantedBy=multi-user.target

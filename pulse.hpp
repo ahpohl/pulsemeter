@@ -10,6 +10,7 @@ public:
     char const* t_sysid, int const& t_rev, double const& t_meter);
   ~Pulse(void);
   void setDebug(void);
+  void runRaw(void);
   void runTrigger(void);
   void runPVOutput(void);
 
@@ -53,8 +54,8 @@ private:
   void receivePacket(unsigned char * t_packet, int const& t_size) const;
 
   // callback function for CURL output
-  static size_t curlCallback(void * t_contents, size_t const& t_size,
-    size_t const& t_nmemb, void * t_user);
+  static size_t curlCallback(void * t_contents, size_t t_size,
+    size_t t_nmemb, void * t_user);
 };
 
 #endif // PULSE_HPP

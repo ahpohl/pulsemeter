@@ -1,6 +1,7 @@
 // c++ headers
 #include <iostream>
 #include <string>
+#include <stdexcept>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -204,20 +205,19 @@ int main(int argc, char* argv[])
   // print message if no mode was selected
   if (mode == '\0')
   {
-    cerr << "Please select raw or trigger mode for sensor operation." << endl;
-    return 1;
+    throw runtime_error("Please select raw or trigger mode for sensor operation.");
   }
 
   // check trigger levels 
   if (trigger_level_low > trigger_level_high)
   {
-    cerr << "Trigger level low larger than level high (" 
-      << trigger_level_low << " < " << trigger_level_high << ")"
-      << endl;
-    return 1;
+    throw runtime_error(string("Trigger level low larger than level high (")
+       + to_string(trigger_level_low) + " < " + to_string(trigger_level_high) + ")");
   }
 
   // read raw sensor data
+  thread raw_thread;
+
   if (mode == 'R')
   {
     // open serial port
@@ -226,11 +226,8 @@ int main(int argc, char* argv[])
     // set raw mode
     meter->setRawMode();
 
-    // read sensor values
-    while (1)
-    {
-      meter->readSensorValue();
-    }
+    // create a new thread
+    raw_thread = thread(&Pulse::runRaw, meter);
   }
 
   // read trigger data
@@ -258,6 +255,11 @@ int main(int argc, char* argv[])
   }
   
   // join all threads
+  if (raw_thread.joinable())
+  {
+    raw_thread.join();
+  }  
+
   if (trigger_thread.joinable())
   {
     trigger_thread.join();

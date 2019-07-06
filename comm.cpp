@@ -485,7 +485,10 @@ int Pulse::readSensorValue(void)
   m_sensor = (short) ((packet[1] & 0xFF) << 8) | (packet[2] & 0xFF);
 
   // screen output
-  cout << dec << m_sensor << endl;
+  if (m_debug)
+  {
+    cout << dec << m_sensor << endl;
+  }
 
   return m_sensor;
 }
