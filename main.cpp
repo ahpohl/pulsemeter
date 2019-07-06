@@ -24,7 +24,6 @@ int main(int argc, char* argv[])
     { "debug", no_argument, nullptr, 'D' },
     { "device", required_argument, nullptr, 'd' },
     { "raw", no_argument, nullptr, 'R' },
-    { "trigger", no_argument, nullptr, 'T' },
     { "low", required_argument, nullptr, 'L' },
     { "high", required_argument, nullptr, 'H' },
     { "create", no_argument, nullptr, 'c' },
@@ -32,22 +31,19 @@ int main(int argc, char* argv[])
     { "address", required_argument, nullptr, 'a'},
     { "rev", required_argument, nullptr, 'r'},
     { "meter", required_argument, nullptr, 'm'},
-    { "energy", no_argument, nullptr, 'e' },
-    { "power", no_argument, nullptr, 'p' },
     { "pvoutput", no_argument, nullptr, 'P' },
     { "api-key", required_argument, nullptr, 'A' },
     { "sys-id", required_argument, nullptr, 's' },
     { nullptr, 0, nullptr, 0 }
   };
 
-  const char * optString = "hDd:RTL:H:cf:a:r:m:epPA:s:";
+  const char * optString = "hDd:RL:H:cf:a:r:m:PA:s:";
   int opt = 0;
   int longIndex = 0;
-  char mode = '\0'; // raw: R, trigger: T
+  bool raw_mode = false;
   bool debug = false;
   bool help = false;
   bool create_rrd_file = false;
-  bool get_energy = false, get_power = false;
   double meter_reading = 0;
   bool pvoutput = false;
 
@@ -88,11 +84,7 @@ int main(int argc, char* argv[])
       break;
 
     case 'R':
-      mode = 'R';
-      break;
-
-    case 'T':
-      mode = 'T';
+      raw_mode = true;
       break;
 
     case 'L':
@@ -123,14 +115,6 @@ int main(int argc, char* argv[])
       meter_reading = atof(optarg);
       break;
 
-    case 'e':
-      get_energy = true;
-      break;
-
-    case 'p':
-      get_power = true;
-      break;
-
     case 'P':
       pvoutput = true;
       break;
@@ -159,7 +143,6 @@ int main(int argc, char* argv[])
   -D --debug            Show debug messages\n\
   -d --device [dev]     Serial device\n\
   -R --raw              Select raw mode\n\
-  -T --trigger          Select trigger mode\n\
   -L --low [int]        Set trigger level low\n\
   -H --high [int]       Set trigger level high\n\
   -c --create           Create new round robin database\n\
@@ -167,14 +150,17 @@ int main(int argc, char* argv[])
   -a --address [sock]   Set address of rrdcached daemon\n\
   -r --rev [int]        Set revolutions per kWh\n\
   -m --meter [float]    Set initial meter reading [kWh]\n\
-  -e --energy           Get energy [Wh]\n\
-  -p --power            Get power [W]\n\
   -P --pvoutput         Upload to PVOutput.org\n\
   -A --api-key [key]    PVOutput.org api key\n\
   -s --sys-id [id]      PVOutput.org system id"
     << endl;
     return 0;
   }
+
+  // create threads
+  thread raw_thread;
+  thread trigger_thread;
+  thread pvoutput_thread;
 
   // create pulsemeter object on heap
   shared_ptr<Pulse> meter(new Pulse(
@@ -189,36 +175,16 @@ int main(int argc, char* argv[])
     meter->setDebug();
   }
 
-  if (get_energy || get_power)
-  {
-  }
-
-  // upload energy and power to PVOutput.org
-  thread pvoutput_thread;
-  
-  if (pvoutput)
-  {
-    // create new thread
-    pvoutput_thread = thread(&Pulse::runPVOutput, meter);
-  }
-
-  // print message if no mode was selected
-  if (mode == '\0')
-  {
-    throw runtime_error("Please select raw or trigger mode for sensor operation.");
-  }
-
   // check trigger levels 
   if (trigger_level_low > trigger_level_high)
   {
     throw runtime_error(string("Trigger level low larger than level high (")
-       + to_string(trigger_level_low) + " < " + to_string(trigger_level_high) + ")");
+     + to_string(trigger_level_low) + " < " 
+     + to_string(trigger_level_high) + ")");
   }
 
   // read raw sensor data
-  thread raw_thread;
-
-  if (mode == 'R')
+  if (raw_mode)
   {
     // open serial port
     meter->openSerialPort(serial_device);
@@ -231,9 +197,7 @@ int main(int argc, char* argv[])
   }
 
   // read trigger data
-  thread trigger_thread;
-
-  if (mode == 'T')
+  else
   {
     // open serial port
     meter->openSerialPort(serial_device);
@@ -253,22 +217,18 @@ int main(int argc, char* argv[])
     // create a new thread
     trigger_thread = thread(&Pulse::runTrigger, meter);
   }
+
+  // upload energy and power to PVOutput.org
+  if (pvoutput)
+  {
+    // create new thread
+    pvoutput_thread = thread(&Pulse::runPVOutput, meter);
+  }
   
   // join all threads
-  if (raw_thread.joinable())
-  {
-    raw_thread.join();
-  }  
-
-  if (trigger_thread.joinable())
-  {
-    trigger_thread.join();
-  }
-
-  if (pvoutput_thread.joinable())
-  {
-    pvoutput_thread.join();
-  }
+  if (raw_thread.joinable()) { raw_thread.join(); }  
+  if (trigger_thread.joinable()) { trigger_thread.join(); }
+  if (pvoutput_thread.joinable()) { pvoutput_thread.join(); }
 
   return 0;
 }
