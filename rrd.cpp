@@ -146,9 +146,9 @@ void Pulse::updateEnergyCounter(void)
     {
       last_energy_counter = energy_counter;
 
-      cout << "Energy: " << fixed << setprecision(1) 
-        << static_cast<double>(energy_counter) / m_rev << " kWh"
-        << endl;
+      cout << "energy: " << fixed << setprecision(1) 
+        << static_cast<double>(energy_counter) / m_rev << " kWh, "
+        << energy_counter << " counts" << endl;
     }
 	}
 

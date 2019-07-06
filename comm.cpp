@@ -169,10 +169,7 @@ void Pulse::openSerialPort(char const* t_device)
     throw runtime_error("Communication failed: packets not in sync");
   }
   
-  if (m_debug)
-  {
-    cout << "Communication ok" << endl;
-  }
+  cout << "Packet sync successful" << endl;
 }
 
 // configure serial port (baud rate, vmin and vtime etc)
@@ -386,7 +383,7 @@ void Pulse::receivePacket(unsigned char * t_packet, int const& t_size) const
 }
 
 // set raw mode, command 0x10
-void Pulse::setRawMode() const
+void Pulse::setRawMode(void)
 {
   unsigned char command[Con::COMMAND_PACKET_SIZE] = {0};
   unsigned short int crc = 0xFFFF;
@@ -414,10 +411,8 @@ void Pulse::setRawMode() const
     throw runtime_error("Error: setting raw mode failed");
   }
   
-  if (m_debug)
-  {
-    cout << "Sensor raw mode" << endl;
-  }
+  m_raw = true;
+  cout << "Sensor raw mode" << endl;
 }
 
 // set trigger mode, command 0x20
@@ -457,12 +452,8 @@ void Pulse::setTriggerMode(short int const& t_low,
   }
 
   // output
-  if (m_debug)
-  {
-    cout << "Sensor trigger mode" << endl;
-    cout << "Trigger level: " << dec << t_low 
-      << " " << t_high << endl;
-  }
+  cout << "Sensor trigger mode, trigger level: " 
+    << dec << t_low << " " << t_high << endl;
 }
 
 // read sensor value
@@ -485,7 +476,7 @@ int Pulse::readSensorValue(void)
   m_sensor = (short) ((packet[1] & 0xFF) << 8) | (packet[2] & 0xFF);
 
   // screen output
-  if (m_debug)
+  if (m_raw)
   {
     cout << dec << m_sensor << endl;
   }

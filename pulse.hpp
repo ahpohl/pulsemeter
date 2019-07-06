@@ -16,7 +16,7 @@ public:
 
   // sensor methods
   void openSerialPort(char const* t_device);
-  void setRawMode(void) const;
+  void setRawMode(void);
   void setTriggerMode(short int const& t_low, short int const& t_high) const;
   int readSensorValue(void);
 
@@ -44,6 +44,7 @@ private:
   time_t m_time;                // timestamp of energy and power
   int m_sensor;                 // sensor value
   unsigned long m_last_energy;  // last energy counter
+  bool m_raw;                   // flag for raw sensor mode
 
   // methods
   unsigned short crc16(unsigned char const* t_data, int t_length) const;

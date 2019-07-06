@@ -20,6 +20,7 @@ Pulse::Pulse(const char * t_file, const char * t_socket, const char * t_apikey,
 
 	// initialise private variables
 	m_debug = false;
+  m_raw = false;
 	m_serialport = 0;
 	m_energy = 0;
 	m_power = 0;
