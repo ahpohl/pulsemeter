@@ -117,7 +117,7 @@ void Pulse::openSerialPort(char const* t_device)
     {
       throw runtime_error("Unable to sync serial port");
     }
-    count++;
+    ++count;
   }
   while (byte_received == 0);
 
@@ -138,7 +138,7 @@ void Pulse::openSerialPort(char const* t_device)
       throw runtime_error(string("Error reading serial port: ")
         + strerror(errno) + " (" + to_string(errno) + ")");
     }
-    garbage++;
+    ++garbage;
   }
   while (byte_received > 0);
 
@@ -232,7 +232,7 @@ bool Pulse::syncPacket(void) const
         + strerror(errno) + " (" + to_string(errno) + ")");
     }
 
-    count++;
+    ++count;
 
     if (count == 100)
     {

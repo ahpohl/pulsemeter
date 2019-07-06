@@ -120,7 +120,7 @@ void Pulse::updateEnergyCounter(void)
   // update energy counter if sensor is triggered
   if (m_sensor == 1)
   {
-    energy_counter++;
+    ++energy_counter;
         
     // rrd format, timestamp : energy (Wh) : power (Ws)
 		memset(*argv, '\0', Con::RRD_BUF_SIZE);
