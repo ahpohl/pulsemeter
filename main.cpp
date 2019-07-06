@@ -166,10 +166,10 @@ int main(int argc, char* argv[])
 
   if (version)
   {
-    cout << "Build date: " << VERSION_BUILD_DATE << " " 
-      << VERSION_BUILD_MACHINE << endl
-      << "Build version: " << VERSION_TAG 
-      << " (" << VERSION_BUILD << ")" << endl;
+      cout << "Version " << VERSION_TAG 
+        << " (" << VERSION_BUILD << ") built " 
+        << VERSION_BUILD_DATE 
+        << " by " << VERSION_BUILD_MACHINE << endl;
       return 0;
   }
 

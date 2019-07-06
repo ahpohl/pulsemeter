@@ -27,7 +27,7 @@ CPP = g++
 CPPFLAGS = -Wall -g -std=c++11 -pthread
 
 # build info
-CPPFLAGS += -DVERSION_BUILD_DATE=\""$(shell date)"\" \
+CPPFLAGS += -DVERSION_BUILD_DATE=\""$(shell date "+%F %T")"\" \
             -DVERSION_BUILD_MACHINE=\""$(shell echo `whoami`@`hostname`)"\" \
             -DVERSION_TAG=\"$(BUILD_TAG)\" \
             -DVERSION_BUILD=\"$(BUILD_INFO)\"
