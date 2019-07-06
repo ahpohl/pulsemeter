@@ -158,8 +158,7 @@ int main(int argc, char* argv[])
   }
 
   // create threads
-  thread raw_thread;
-  thread trigger_thread;
+  thread sensor_thread;
   thread pvoutput_thread;
 
   // create pulsemeter object on heap
@@ -193,7 +192,7 @@ int main(int argc, char* argv[])
     meter->setRawMode();
 
     // create a new thread
-    raw_thread = thread(&Pulse::runRaw, meter);
+    sensor_thread = thread(&Pulse::runRaw, meter);
   }
 
   // read trigger data
@@ -215,7 +214,7 @@ int main(int argc, char* argv[])
     meter->setTriggerMode(trigger_level_low, trigger_level_high);
 
     // create a new thread
-    trigger_thread = thread(&Pulse::runTrigger, meter);
+    sensor_thread = thread(&Pulse::runTrigger, meter);
   }
 
   // upload energy and power to PVOutput.org
@@ -225,9 +224,8 @@ int main(int argc, char* argv[])
     pvoutput_thread = thread(&Pulse::runPVOutput, meter);
   }
   
-  // join all threads
-  if (raw_thread.joinable()) { raw_thread.join(); }  
-  if (trigger_thread.joinable()) { trigger_thread.join(); }
+  // join threads
+  if (sensor_thread.joinable()) { sensor_thread.join(); }  
   if (pvoutput_thread.joinable()) { pvoutput_thread.join(); }
 
   return 0;
