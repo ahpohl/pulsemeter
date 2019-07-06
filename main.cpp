@@ -4,6 +4,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <future>
 
 // c headers
 #include <csignal>
@@ -174,31 +175,30 @@ int main(int argc, char* argv[])
     return 0;
   }
 
-  // create pulsemeter object
-  Pulse meter(rrd_file, rrdcached_address,  
+  // create pulsemeter object on heap
+  shared_ptr<Pulse> meter(new Pulse(
+    rrd_file, rrdcached_address, 
     pvoutput_api_key, pvoutput_system_id,
-    rev_per_kWh, meter_reading);
+    rev_per_kWh, meter_reading)
+  );
 
   // set debug flag
   if (debug)
   {
-    meter.setDebug();
+    meter->setDebug();
   }
 
-  // get energy in Wh and power in W
   if (get_energy || get_power)
   {
-    time_t current_time = time(nullptr) - 60;
-    meter.setTime(current_time);
-    meter.getEnergyAndPower();
+  }
 
-    // upload energy and power to PVOutput.org
-    if (pvoutput)
-    {
-      meter.uploadToPVOutput();
-    }
-    
-    return 0;
+  // upload energy and power to PVOutput.org
+  thread pvoutput_thread;
+  
+  if (pvoutput)
+  {
+    // create new thread
+    pvoutput_thread = thread(&Pulse::runPVOutput, meter);
   }
 
   // print message if no mode was selected
@@ -221,45 +221,51 @@ int main(int argc, char* argv[])
   if (mode == 'R')
   {
     // open serial port
-    meter.openSerialPort(serial_device);
+    meter->openSerialPort(serial_device);
 
     // set raw mode
-    meter.setRawMode();
+    meter->setRawMode();
 
     // read sensor values
     while (1)
     {
-      meter.readSensorValue();
+      meter->readSensorValue();
     }
   }
 
   // read trigger data
-  else if (mode == 'T')
+  thread trigger_thread;
+
+  if (mode == 'T')
   {
     // open serial port
-    meter.openSerialPort(serial_device);
+    meter->openSerialPort(serial_device);
 
     // create RRD file
     if (create_rrd_file)
     {
-      meter.createFile();
+      meter->createFile();
     }
     
     // get current meter reading from RRD file
-    meter.getLastEnergyCounter();  
+    meter->getLastEnergyCounter();  
 
     // set trigger mode
-    meter.setTriggerMode(trigger_level_low, trigger_level_high);
+    meter->setTriggerMode(trigger_level_low, trigger_level_high);
 
-    // read sensor values
-    while (1)
-    {
-      // read sensor value
-      meter.readSensorValue();
+    // create a new thread
+    trigger_thread = thread(&Pulse::runTrigger, meter);
+  }
+  
+  // join all threads
+  if (trigger_thread.joinable())
+  {
+    trigger_thread.join();
+  }
 
-      // update rrd file
-      meter.updateEnergyCounter();
-    }
+  if (pvoutput_thread.joinable())
+  {
+    pvoutput_thread.join();
   }
 
   return 0;

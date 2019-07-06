@@ -10,6 +10,8 @@ public:
     char const* t_sysid, int const& t_rev, double const& t_meter);
   ~Pulse(void);
   void setDebug(void);
+  void runTrigger(void);
+  void runPVOutput(void);
 
   // sensor methods
   void openSerialPort(char const* t_device);
