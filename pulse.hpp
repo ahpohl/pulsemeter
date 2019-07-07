@@ -6,8 +6,8 @@
 class Pulse
 {
 public:
-  Pulse(char const* t_file, char const* t_socket, char const* t_apikey, 
-    char const* t_sysid, int const& t_rev, double const& t_meter);
+  Pulse(char const* t_file, char const* t_socket, int const& t_rev, 
+    double const& t_meter);
   ~Pulse(void);
   void setDebug(void);
   void runRaw(void);
@@ -28,6 +28,7 @@ public:
   void getEnergyAndPower(void);
   
   // PVOutput methods
+  void setPVOutput(char const* t_apikey, char const* t_sysid, char const* t_url);
   void uploadToPVOutput(void) const; 
 
 private:
@@ -36,6 +37,7 @@ private:
   char const* m_socket;         // socket of rrdcached daemon
   char const* m_apikey;         // PVOutput api key
   char const* m_sysid;          // PVOutput system id
+  char const* m_url;            // PVOutput add status url
   int const m_rev;              // revolutions per kWh
   bool m_debug;                 // debug flag
   int m_serialport;             // serial port

@@ -35,10 +35,11 @@ int main(int argc, char* argv[])
     { "pvoutput", no_argument, nullptr, 'P' },
     { "api-key", required_argument, nullptr, 'A' },
     { "sys-id", required_argument, nullptr, 's' },
+    { "url", required_argument, nullptr, 'u' },
     { nullptr, 0, nullptr, 0 }
   };
 
-  const char * optString = "hVDd:RL:H:cf:a:r:m:PA:s:";
+  const char * optString = "hVDd:RL:H:cf:a:r:m:PA:s:u:";
   int opt = 0;
   int longIndex = 0;
   bool raw_mode = false;
@@ -50,13 +51,13 @@ int main(int argc, char* argv[])
   bool pvoutput = false;
 
   // set default path to rrd file
-  const char * rrd_file = "/var/lib/rrdcached/pulse.rrd";
+  char const* rrd_file = "/var/lib/rrdcached/pulse.rrd";
 
   // set default address of rrdcached daemon 
-  const char * rrdcached_address = "unix:/run/rrdcached/rrdcached.sock";
+  char const* rrdcached_address = "unix:/run/rrdcached/rrdcached.sock";
 
   // set default serial device
-  const char * serial_device = "/dev/ttyACM0";
+  char const* serial_device = "/dev/ttyACM0";
 
   // set default trigger levels
   int trigger_level_low = 85, trigger_level_high = 100;
@@ -65,10 +66,13 @@ int main(int argc, char* argv[])
   int rev_per_kWh = 75;
 
   // set default PVOutput.org api key
-  const char * pvoutput_api_key = "212dc3361019148fdb63eb0ba53b8d2dfcc4e2ec";
+  char const* pvoutput_api_key = "212dc3361019148fdb63eb0ba53b8d2dfcc4e2ec";
 
   // set default PVOutput.org system id (Ilvesheim_test)
-  const char * pvoutput_system_id = "67956";
+  char const* pvoutput_system_id = "67956";
+
+  // set default PVOutput.org upload url
+  char const* pvoutput_url = "https://pvoutput.org/service/r2/addstatus.jsp";
 
   do {
     opt = getopt_long(argc, argv, optString, longOpts, &longIndex);
@@ -133,6 +137,10 @@ int main(int argc, char* argv[])
       pvoutput_system_id = optarg;
       break;
 
+    case 'u':
+      pvoutput_url = optarg;
+      break;
+
     default:
       break;
     }
@@ -159,7 +167,8 @@ int main(int argc, char* argv[])
   -m --meter [float]    Set initial meter reading [kWh]\n\
   -P --pvoutput         Upload to PVOutput.org\n\
   -A --api-key [key]    PVOutput.org api key\n\
-  -s --sys-id [id]      PVOutput.org system id"
+  -s --sys-id [id]      PVOutput.org system id\n\
+  -u --url [url]        PVOutput.org add status url"
     << endl;
     return 0;
   }
@@ -178,9 +187,7 @@ int main(int argc, char* argv[])
   thread pvoutput_thread;
 
   // create pulsemeter object on heap
-  shared_ptr<Pulse> meter(new Pulse(
-    rrd_file, rrdcached_address, 
-    pvoutput_api_key, pvoutput_system_id,
+  shared_ptr<Pulse> meter(new Pulse(rrd_file, rrdcached_address, 
     rev_per_kWh, meter_reading)
   );
 
@@ -240,6 +247,9 @@ int main(int argc, char* argv[])
   // upload energy and power to PVOutput.org
   if (pvoutput)
   {
+    // set pvoutput parameters
+    meter->setPVOutput(pvoutput_api_key, pvoutput_system_id, pvoutput_url);
+
     // create new thread
     pvoutput_thread = thread(&Pulse::runPVOutput, meter);
   }

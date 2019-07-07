@@ -7,12 +7,10 @@
 using namespace std;
 
 // constructor
-Pulse::Pulse(const char * t_file, const char * t_socket, const char * t_apikey, 
-  const char * t_sysid, const int &t_rev, const double &t_meter) :
+Pulse::Pulse(const char * t_file, const char * t_socket, const int &t_rev, 
+    const double &t_meter) :
   m_file(t_file), 
   m_socket(t_socket),
-  m_apikey(t_apikey),
-  m_sysid(t_sysid),
   m_rev(t_rev)
 {
   // calculate last energy counter from meter reading
@@ -25,6 +23,9 @@ Pulse::Pulse(const char * t_file, const char * t_socket, const char * t_apikey,
 	m_energy = 0;
 	m_power = 0;
 	m_time = 0;
+  m_apikey = nullptr;
+  m_sysid = nullptr;
+  m_url = nullptr;
 }
 
 // destructor

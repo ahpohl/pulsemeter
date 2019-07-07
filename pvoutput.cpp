@@ -13,6 +13,20 @@ extern "C" {
 
 using namespace std;
 
+// set PVOutput.org parameters
+void Pulse::setPVOutput(char const* t_apikey, char const* t_sysid, 
+  char const* t_url)
+{
+  if ((!t_apikey || !t_sysid || !t_apikey))
+  {
+    throw runtime_error("Please set PVOutput.org api key, system id and add status url");
+  }
+
+  m_apikey = t_apikey;
+  m_sysid = t_sysid;
+  m_url = t_url;
+}
+
 size_t Pulse::curlCallback(void * t_contents, size_t t_size, 
   size_t t_nmemb, void * t_user)
 {
