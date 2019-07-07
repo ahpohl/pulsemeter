@@ -105,7 +105,6 @@ void Pulse::updateEnergyCounter(void)
 
 	// get total energy counter
 	static unsigned long energy_counter = m_last_energy;
-  static unsigned long last_energy_counter = 0;
 
 	// rrd update string to write into rrd file
   char * argv[Con::RRD_BUF_SIZE];
@@ -139,16 +138,6 @@ void Pulse::updateEnergyCounter(void)
 		if (ret)
     {
       throw runtime_error(rrd_get_error());
-    }
-
-    // output energy counter
-    if (energy_counter >= (last_energy_counter + m_rev))
-    {
-      last_energy_counter = energy_counter;
-
-      cout << "Energy: " << fixed << setprecision(1) 
-        << static_cast<double>(energy_counter) / m_rev << " kWh, "
-        << energy_counter << " counts" << endl;
     }
 	}
 
@@ -201,14 +190,10 @@ unsigned long Pulse::getLastEnergyCounter(void)
   rrd_freemem(ds_names);
 	rrd_freemem(ds_data);
 	
-  if (m_debug)
-  {
-    cout << "RRD: last energy counter ("
-      << dec << m_last_energy << " counts, "
-			<< fixed << setprecision(1) 
-			<< static_cast<double>(m_last_energy) / m_rev
-			<< " kWh)" << endl;
-  }
+  // output
+  cout << "Meter reading: " << fixed << setprecision(1)
+    << static_cast<double>(m_last_energy) / m_rev << " kWh, " 
+    << dec << m_last_energy << " counts"  << endl;
 
 	return m_last_energy;
 }
