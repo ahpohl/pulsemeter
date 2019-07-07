@@ -60,6 +60,11 @@ void Pulse::openSerialPort(char const* t_device)
   int count = 0;
   int garbage = 0;
 
+  if (!t_device)
+  {
+    throw runtime_error("Serial device argument empty"); 
+  }
+
   // open serial port 
   m_serialport = open(t_device, O_RDWR | O_NOCTTY);
     
@@ -406,7 +411,7 @@ void Pulse::setRawMode(void)
 
   if (packet_buffer[0] != Con::RAW_MODE)
   {
-    throw runtime_error("Error: setting raw mode failed");
+    throw runtime_error("Setting raw mode failed");
   }
   
   m_raw = true;
@@ -420,6 +425,13 @@ void Pulse::setTriggerMode(short int const& t_low,
   unsigned char command[Con::COMMAND_PACKET_SIZE] = {0};
   unsigned short int crc = 0xFFFF;
   unsigned char packet_buffer[Con::BUF_SIZE];
+
+  // check trigger levels 
+  if (t_low > t_high)
+  {
+    throw runtime_error(string("Trigger level low greater than high (")
+     + to_string(t_low) + " <= " + to_string(t_high) + ")");
+  }
 
   // command
   command[0] = 0x20; // trigger mode
@@ -446,7 +458,7 @@ void Pulse::setTriggerMode(short int const& t_low,
 
   if (packet_buffer[0] != Con::TRIGGER_MODE)
   {
-    throw runtime_error("Error: setting trigger mode failed");
+    throw runtime_error("Setting trigger mode failed");
   }
 
   // output
@@ -467,7 +479,7 @@ int Pulse::readSensorValue(void)
 
   if (packet[0] != Con::SENSOR_VALUE)
   {
-    throw runtime_error("Error: packet not a sensor reading");
+    throw runtime_error("Packet not a sensor reading");
   }
 
   // get sensor reading from decoded packet

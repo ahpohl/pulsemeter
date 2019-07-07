@@ -20,9 +20,19 @@ using namespace std;
 void Pulse::setPVOutput(char const* t_apikey, char const* t_sysid, 
   char const* t_url)
 {
-  if ((!t_apikey || !t_sysid || !t_apikey))
+  if (!t_apikey)
   {
-    throw runtime_error("Please set PVOutput.org api key, system id and add status url");
+    throw runtime_error("PVOutput.org api key empty");
+  }
+
+  if (!t_sysid)
+  {
+    throw runtime_error("PVOutput.org system id empty");
+  }
+
+  if (!t_url)
+  {
+    throw runtime_error("PVOutput.org add status url empty");
   }
 
   m_apikey = t_apikey;
@@ -53,7 +63,7 @@ void Pulse::uploadToPVOutput(void) const
   // check if time has been set
   if (m_time == 0)
   {
-    throw runtime_error("setTime(): timestamp not set");
+    throw runtime_error("Timestamp not set");
   }
 
 	// create curl easyhandle
@@ -100,7 +110,7 @@ void Pulse::uploadToPVOutput(void) const
 	// error handling
 	if (res != CURLE_OK)
 	{
-		throw runtime_error(string("curl_easy_perform() failed: ") 
+		throw runtime_error(string("Curl_easy_perform() failed: ") 
 			+ curl_easy_strerror(res));
 	}
  

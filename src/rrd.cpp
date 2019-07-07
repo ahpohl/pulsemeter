@@ -20,7 +20,7 @@ extern "C" {
 using namespace std;
 
 // create rrd database (use rrdcached)
-void Pulse::createFile(double const& t_meter)
+void Pulse::createFile(char const* t_file, char const* t_socket)
 {
 	int ret = 0;
 	time_t timestamp_start = time(nullptr) - 120;
@@ -28,8 +28,24 @@ void Pulse::createFile(double const& t_meter)
 	const int step_size = 60;
 	const int no_overwrite = 1;
 
+  if (!t_file)
+  {
+    throw runtime_error("RRD file location empty");
+  }
+
+  if (!t_socket)
+  {
+    throw runtime_error("RRD cached address empty");
+  }
+
+  // set private members
+  m_file = t_file;
+  m_socket = t_socket;
+
+  // TODO: check if rrd file exists, if exist exit here
+
 	// connect to rrdcached daemon socket
-  ret = rrdc_connect(m_socket);
+  ret = rrdc_connect(t_socket);
   if (ret)
   {
     throw runtime_error(rrd_get_error());
@@ -60,7 +76,7 @@ void Pulse::createFile(double const& t_meter)
 	// keep 1 year in 1 day resolution
 	// consolidate LAST (energy) and AVERAGE (power)
 
-	ret = rrdc_create(m_file, step_size, timestamp_start, no_overwrite, 
+	ret = rrdc_create(t_file, step_size, timestamp_start, no_overwrite, 
 		ds_count, ds_schema);
 	if (ret)
 	{
@@ -69,29 +85,92 @@ void Pulse::createFile(double const& t_meter)
 
 	if (m_debug)
   {
-		cout << "RRD: file created (" << m_file << ")" << endl;
+		cout << "RRD: file created (" << t_file << ")" << endl;
 	}
+}
 
-  // set last meter reading
+// get last energy counter from RRD file
+unsigned long Pulse::getLastEnergyCounter(int const& t_rev)
+{
+  int ret = 0;
+	char **ds_names = 0;
+  char **ds_data = 0;
+  time_t last_update;
+  unsigned long ds_count = 0;
+
+  if (t_rev == 0)
+  {
+    throw runtime_error("Revolutions per kWh not set");
+  }
+
+  // update private member
+  m_rev = t_rev;
+
+	// flush if connected to rrdcached daemon
+	ret = rrdc_flush_if_daemon(m_socket, m_file);
+	if (ret)
+  {
+    throw runtime_error(rrd_get_error());
+  }	
+
+	// get energy value from rrd file
+	ret = rrd_lastupdate_r(m_file, &last_update, &ds_count, 
+    &ds_names, &ds_data);
+
+	if (ret)
+  {
+    throw runtime_error(rrd_get_error());
+  }
+
+	// ds_data[0]: energy, ds_data[1]: power
+  for (unsigned long i = 0; i < ds_count; i++)
+	{
+    if (strcmp(ds_names[i], "energy") == 0)
+    {
+      m_last_counter = atol(ds_data[i]);
+    }
+    rrd_freemem(ds_names[i]);
+    rrd_freemem(ds_data[i]);
+  }
+  rrd_freemem(ds_names);
+	rrd_freemem(ds_data);
+
+  if (m_debug)
+  {
+    cout << "RRD: revolutions per kWh (" << dec << m_rev << ")" << endl;
+  }
+	
+  // output
+  cout << "Meter reading: " << fixed << setprecision(1)
+    << static_cast<double>(m_last_counter) / t_rev << " kWh, " 
+    << dec << m_last_counter << " counts"  << endl;
+
+	return m_last_counter;
+}
+
+// update RRD file with new meter reading 
+void Pulse::updateMeterReading(double const& t_meter)
+{
+  unsigned long new_counter = lround(t_meter * m_rev);
+  if (new_counter < m_last_counter)
+  {
+    return;
+  }
+
+  int ret = 0;
   char * argv[Con::RRD_BUF_SIZE];
-	timestamp_start += 60;
-  m_last_energy = lround(m_rev * t_meter);
+  time_t timestamp = time(nullptr);
     
 	*argv = (char *) malloc(Con::RRD_BUF_SIZE * sizeof(char));
   memset(*argv, '\0', Con::RRD_BUF_SIZE);
-  snprintf(*argv, Con::RRD_BUF_SIZE, "%ld:%ld:%ld", timestamp_start, 
-    m_last_energy, m_last_energy);
+  snprintf(*argv, Con::RRD_BUF_SIZE, "%ld:%ld:%ld", timestamp, 
+    new_counter, new_counter);
 
   ret = rrdc_update(m_file, Con::RRD_DS_LEN, (const char **) argv);
   if (ret)
   {
     throw runtime_error(rrd_get_error());
   }
-
-	if (m_debug)
-  {
-		cout << "RRD: revolutions per kWh (" << dec << m_rev << ")" << endl;
-	}
 
 	// disconnect daemon
   ret = rrdc_disconnect();
@@ -110,7 +189,7 @@ void Pulse::updateEnergyCounter(void)
 	time_t timestamp = time(nullptr);
 
 	// get total energy counter
-	static unsigned long energy_counter = m_last_energy;
+	static unsigned long current_counter = m_last_counter;
 
 	// rrd update string to write into rrd file
   char * argv[Con::RRD_BUF_SIZE];
@@ -126,12 +205,12 @@ void Pulse::updateEnergyCounter(void)
   // update energy counter if sensor is triggered
   if (m_sensor == 1)
   {
-    ++energy_counter;
+    ++current_counter;
         
     // rrd format, timestamp : energy (Wh) : power (Ws)
 		memset(*argv, '\0', Con::RRD_BUF_SIZE);
-		snprintf(*argv, Con::RRD_BUF_SIZE, "%ld:%ld:%ld", timestamp, energy_counter, 
-			energy_counter);
+		snprintf(*argv, Con::RRD_BUF_SIZE, "%ld:%ld:%ld", timestamp, 
+      current_counter, current_counter);
 	
 		// output sensor value in rrd format	
 		if (m_debug)
@@ -157,53 +236,6 @@ void Pulse::updateEnergyCounter(void)
 	free(*argv);
 }
 
-// get meter reading from rrd file (in Wh)
-// works both with and without rrdcached
-unsigned long Pulse::getLastEnergyCounter(void)
-{
-  int ret = 0;
-	char **ds_names = 0;
-  char **ds_data = 0;
-  time_t last_update;
-  unsigned long ds_count = 0;
-
-	// flush if connected to rrdcached daemon
-	ret = rrdc_flush_if_daemon(m_socket, m_file);
-	if (ret)
-  {
-    throw runtime_error(rrd_get_error());
-  }	
-
-	// get energy value from rrd file
-	ret = rrd_lastupdate_r(m_file, &last_update, &ds_count, 
-    &ds_names, &ds_data);
-
-	if (ret)
-  {
-    throw runtime_error(rrd_get_error());
-  }
-
-	// ds_data[0]: energy, ds_data[1]: power
-  for (unsigned long i = 0; i < ds_count; i++)
-	{
-    if (strcmp(ds_names[i], "energy") == 0)
-    {
-      m_last_energy = atol(ds_data[i]);
-    }
-    rrd_freemem(ds_names[i]);
-    rrd_freemem(ds_data[i]);
-  }
-  rrd_freemem(ds_names);
-	rrd_freemem(ds_data);
-	
-  // output
-  cout << "Meter reading: " << fixed << setprecision(1)
-    << static_cast<double>(m_last_energy) / m_rev << " kWh, " 
-    << dec << m_last_energy << " counts"  << endl;
-
-	return m_last_energy;
-}
-
 // get energy and power from rrd file
 void Pulse::getEnergyAndPower(void)
 {
@@ -218,7 +250,7 @@ void Pulse::getEnergyAndPower(void)
   // check if time has been set
   if (m_time == 0)
   {
-    throw runtime_error("setTime(): timestamp not set");
+    throw runtime_error("Timestamp not set");
   }
 
 	// construct vector of <const char *> for rrd_xport

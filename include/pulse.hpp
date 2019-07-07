@@ -6,7 +6,7 @@
 class Pulse
 {
 public:
-  Pulse(char const* t_file, char const* t_socket, int const& t_rev);
+  Pulse(void);
   ~Pulse(void);
   void setDebug(void);
   void runRaw(void);
@@ -20,14 +20,16 @@ public:
   int readSensorValue(void);
 
   // rrd methods
-  void createFile(double const& t_meter);
+  void createFile(char const* t_file, char const* t_socket);
+  unsigned long getLastEnergyCounter(int const& t_rev);
+  void updateMeterReading(double const& t_meter);
   void updateEnergyCounter(void);
-  unsigned long getLastEnergyCounter(void);
   void setTime(time_t const& t_time);
   void getEnergyAndPower(void);
   
   // PVOutput methods
-  void setPVOutput(char const* t_apikey, char const* t_sysid, char const* t_url);
+  void setPVOutput(char const* t_apikey, char const* t_sysid,
+    char const* t_url);
   void uploadToPVOutput(void) const; 
 
 private:
@@ -37,14 +39,14 @@ private:
   char const* m_apikey;         // PVOutput api key
   char const* m_sysid;          // PVOutput system id
   char const* m_url;            // PVOutput add status url
-  int const m_rev;              // revolutions per kWh
+  int m_rev;                    // revolutions per kWh
   bool m_debug;                 // debug flag
   int m_serialport;             // serial port
   double m_energy;              // energy [Wh]
   double m_power;               // power [W]
   time_t m_time;                // timestamp of energy and power
   int m_sensor;                 // sensor value
-  unsigned long m_last_energy;  // last energy counter
+  unsigned long m_last_counter; // last energy counter
   bool m_raw;                   // flag for raw sensor mode
 
   // methods

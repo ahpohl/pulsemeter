@@ -21,52 +21,37 @@ int main(int argc, char* argv[])
     { "raw", no_argument, nullptr, 'R' },
     { "low", required_argument, nullptr, 'L' },
     { "high", required_argument, nullptr, 'H' },
-    { "create", no_argument, nullptr, 'c' },
     { "file", required_argument, nullptr, 'f' },
-    { "address", required_argument, nullptr, 'a'},
+    { "socket", required_argument, nullptr, 's'},
     { "rev", required_argument, nullptr, 'r'},
     { "meter", required_argument, nullptr, 'm'},
     { "pvoutput", no_argument, nullptr, 'P' },
     { "api-key", required_argument, nullptr, 'A' },
-    { "sys-id", required_argument, nullptr, 's' },
+    { "sys-id", required_argument, nullptr, 'S' },
     { "url", required_argument, nullptr, 'u' },
     { nullptr, 0, nullptr, 0 }
   };
 
-  const char * optString = "hVDd:RL:H:cf:a:r:m:PA:s:u:";
+  const char * optString = "hVDd:RL:H:f:s:r:m:PA:S:u:";
   int opt = 0;
   int longIndex = 0;
+
+  // define variables for pulse
   bool raw_mode = false;
   bool debug = false;
   bool version = false;
   bool help = false;
-  bool create_rrd_file = false;
   double meter_reading = 0;
   bool pvoutput = false;
-
-  // set default path to rrd file
-  char const* rrd_file = "/var/lib/rrdcached/pulse.rrd";
-
-  // set default address of rrdcached daemon 
-  char const* rrdcached_address = "unix:/run/rrdcached/rrdcached.sock";
-
-  // set default serial device
-  char const* serial_device = "/dev/ttyACM0";
-
-  // set default trigger levels
-  int trigger_level_low = 85, trigger_level_high = 100;
-
-  // set revolutions per kWh of ferraris energy meter
-  int rev_per_kWh = 75;
-
-  // set default PVOutput.org api key
-  char const* pvoutput_api_key = "212dc3361019148fdb63eb0ba53b8d2dfcc4e2ec";
-
-  // set default PVOutput.org system id (Ilvesheim_test)
-  char const* pvoutput_system_id = "67956";
-
-  // set default PVOutput.org upload url
-  char const* pvoutput_url = "https://pvoutput.org/service/r2/addstatus.jsp";
+  char const* rrd_file = nullptr;
+  char const* rrdcached_socket = nullptr;
+  char const* serial_device = nullptr;
+  int trigger_level_low = 0;
+  int trigger_level_high = 0;
+  int rev_per_kwh = 0;
+  char const* pvoutput_api_key = 0;
+  char const* pvoutput_system_id = 0;
+  char const* pvoutput_url = nullptr;
 
   do {
     opt = getopt_long(argc, argv, optString, longOpts, &longIndex);
@@ -99,20 +84,16 @@ int main(int argc, char* argv[])
       trigger_level_high = atoi(optarg);
       break;
 
-    case 'c':
-      create_rrd_file = true;
-      break;
-
     case 'f':
       rrd_file = optarg;
       break;
 
     case 'a':
-      rrdcached_address = optarg;
+      rrdcached_socket = optarg;
       break;
 
     case 'r':
-      rev_per_kWh = atoi(optarg);
+      rev_per_kwh = atoi(optarg);
       break;
 
     case 'm':
@@ -156,12 +137,12 @@ int main(int argc, char* argv[])
   -H --high [int]       Set trigger level high\n\
   -c --create           Create new round robin database\n\
   -f --file [path]      Full path to rrd file\n\
-  -a --address [sock]   Set address of rrdcached daemon\n\
+  -s --socket [fd]      Set socket of rrdcached daemon\n\
   -r --rev [int]        Set revolutions per kWh\n\
   -m --meter [float]    Set initial meter reading [kWh]\n\
   -P --pvoutput         Upload to PVOutput.org\n\
   -A --api-key [key]    PVOutput.org api key\n\
-  -s --sys-id [id]      PVOutput.org system id\n\
+  -S --sys-id [id]      PVOutput.org system id\n\
   -u --url [url]        PVOutput.org add status url"
     << endl;
     return 0;
@@ -181,22 +162,12 @@ int main(int argc, char* argv[])
   thread pvoutput_thread;
 
   // create pulsemeter object on heap
-  shared_ptr<Pulse> meter(new Pulse(rrd_file, rrdcached_address, 
-    rev_per_kWh)
-  );
+  shared_ptr<Pulse> meter(new Pulse());
 
   // set debug flag
   if (debug)
   {
     meter->setDebug();
-  }
-
-  // check trigger levels 
-  if (trigger_level_low > trigger_level_high)
-  {
-    throw runtime_error(string("Trigger level low larger than level high (")
-     + to_string(trigger_level_low) + " < " 
-     + to_string(trigger_level_high) + ")");
   }
 
   // start daemon
@@ -212,29 +183,29 @@ int main(int argc, char* argv[])
     // set raw mode
     meter->setRawMode();
 
-    // create a new thread
+    // run sensor thread
     sensor_thread = thread(&Pulse::runRaw, meter);
   }
 
   // read trigger data
   else
   {
+    // create RRD file if it doesn't exist already
+    meter->createFile(rrd_file, rrdcached_socket);
+      
+    // get current meter reading from RRD file
+    meter->getLastEnergyCounter(rev_per_kwh);    
+
+    // update rrd file with given meter reading
+    meter->updateMeterReading(meter_reading);
+    
     // open serial port
     meter->openSerialPort(serial_device);
-
-    // create RRD file
-    if (create_rrd_file)
-    {
-      meter->createFile(meter_reading);
-    }
-    
-    // get current meter reading from RRD file
-    meter->getLastEnergyCounter();  
 
     // set trigger mode
     meter->setTriggerMode(trigger_level_low, trigger_level_high);
 
-    // create a new thread
+    // run sensor thread
     sensor_thread = thread(&Pulse::runTrigger, meter);
   }
 

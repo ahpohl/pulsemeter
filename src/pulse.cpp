@@ -6,21 +6,22 @@
 using namespace std;
 
 // constructor
-Pulse::Pulse(const char * t_file, const char * t_socket, const int &t_rev) :
-  m_file(t_file), 
-  m_socket(t_socket),
-  m_rev(t_rev)
+Pulse::Pulse(void)
 {
-	m_debug = false;
-  m_raw = false;
-	m_serialport = 0;
-	m_energy = 0;
-	m_power = 0;
-  m_last_energy = 0;
-	m_time = 0;
+  m_file = nullptr;
+  m_socket = nullptr;
   m_apikey = nullptr;
   m_sysid = nullptr;
   m_url = nullptr;
+  m_rev = 0;
+	m_debug = false;
+  m_serialport = 0;
+	m_energy = 0;
+	m_power = 0;
+  m_time = 0;
+  m_sensor = 0;
+  m_last_counter = 0;
+  m_raw = false;
 }
 
 // destructor
