@@ -25,8 +25,12 @@ LFLAGS =
 #   option, something like (this will link in libmylib.so and libm.so:
 LIBS = -lrrd -lcurl
 
+# define src and obj directories
+SRC_DIR = src
+OBJ_DIR = obj
+
 # define the C source files
-SRCS = main.cpp pulse.cpp comm.cpp cobs.cpp rrd.cpp pvoutput.cpp
+SRCS = $(wildcard $(SRC_DIR)/*.cpp)
 
 # define the C object files 
 #
@@ -36,7 +40,7 @@ SRCS = main.cpp pulse.cpp comm.cpp cobs.cpp rrd.cpp pvoutput.cpp
 # Below we are replacing the suffix .c of all words in the macro SRCS
 # with the .o suffix
 #
-OBJS = $(SRCS:.cpp=.o)
+OBJS = $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
 # define the executable file 
 MAIN = pulse
@@ -82,11 +86,11 @@ $(MAIN): $(OBJS)
 # it uses automatic variables $<: the name of the prerequisite of
 # the rule(a .c file) and $@: the name of the target of the rule (a .o file) 
 # (see the gnu make manual section about automatic variables)
-.cpp.o:
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	$(CPP) $(CPPFLAGS) $(INCLUDES) -c $<  -o $@
 
 clean:
-	$(RM) *.o *~ $(MAIN)
+	$(RM) $(OBJS) *~ $(MAIN)
 
 depend: $(SRCS)
 	makedepend $(INCLUDES) $^
