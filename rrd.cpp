@@ -3,10 +3,12 @@
 #include <iomanip>
 #include <vector>
 
+#include <curl/curl.h>
+#include <math.h>
+
 extern "C" {
 #include <rrd.h>
 #include <rrd_client.h>
-#include <curl/curl.h>
 }
 
 #include "pulse.hpp"
@@ -15,7 +17,7 @@ extern "C" {
 using namespace std;
 
 // create rrd database (use rrdcached)
-void Pulse::createFile(void) const
+void Pulse::createFile(double const& t_meter)
 {
 	int ret = 0;
 	time_t timestamp_start = time(nullptr) - 120;
@@ -70,6 +72,7 @@ void Pulse::createFile(void) const
   // set last meter reading
   char * argv[Con::RRD_BUF_SIZE];
 	timestamp_start += 60;
+  m_last_energy = lround(m_rev * t_meter);
     
 	*argv = (char *) malloc(Con::RRD_BUF_SIZE * sizeof(char));
   memset(*argv, '\0', Con::RRD_BUF_SIZE);

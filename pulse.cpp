@@ -1,5 +1,4 @@
 #include <iostream>
-#include <math.h>     // contains lround function
 #include <unistd.h>   // write(), read(), close()
 
 #include "pulse.hpp"
@@ -7,21 +6,17 @@
 using namespace std;
 
 // constructor
-Pulse::Pulse(const char * t_file, const char * t_socket, const int &t_rev, 
-    const double &t_meter) :
+Pulse::Pulse(const char * t_file, const char * t_socket, const int &t_rev) :
   m_file(t_file), 
   m_socket(t_socket),
   m_rev(t_rev)
 {
-  // calculate last energy counter from meter reading
-  m_last_energy = lround(t_meter * t_rev);
-
-	// initialise private variables
 	m_debug = false;
   m_raw = false;
 	m_serialport = 0;
 	m_energy = 0;
 	m_power = 0;
+  m_last_energy = 0;
 	m_time = 0;
   m_apikey = nullptr;
   m_sysid = nullptr;

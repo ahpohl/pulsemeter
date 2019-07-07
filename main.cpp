@@ -188,7 +188,7 @@ int main(int argc, char* argv[])
 
   // create pulsemeter object on heap
   shared_ptr<Pulse> meter(new Pulse(rrd_file, rrdcached_address, 
-    rev_per_kWh, meter_reading)
+    rev_per_kWh)
   );
 
   // set debug flag
@@ -231,7 +231,7 @@ int main(int argc, char* argv[])
     // create RRD file
     if (create_rrd_file)
     {
-      meter->createFile();
+      meter->createFile(meter_reading);
     }
     
     // get current meter reading from RRD file

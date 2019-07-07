@@ -6,8 +6,7 @@
 class Pulse
 {
 public:
-  Pulse(char const* t_file, char const* t_socket, int const& t_rev, 
-    double const& t_meter);
+  Pulse(char const* t_file, char const* t_socket, int const& t_rev);
   ~Pulse(void);
   void setDebug(void);
   void runRaw(void);
@@ -21,7 +20,7 @@ public:
   int readSensorValue(void);
 
   // rrd methods
-  void createFile(void) const;
+  void createFile(double const& t_meter);
   void updateEnergyCounter(void);
   unsigned long getLastEnergyCounter(void);
   void setTime(time_t const& t_time);
