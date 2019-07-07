@@ -1,8 +1,10 @@
+// c++ headers
 #include <iostream>
-#include <ctime>
 #include <iomanip>
 #include <vector>
+#include <ctime>
 
+// c headers
 #include <curl/curl.h>
 #include <math.h>
 
@@ -11,6 +13,7 @@ extern "C" {
 #include <rrd_client.h>
 }
 
+// program headers
 #include "pulse.hpp"
 #include "rrd.hpp"
 

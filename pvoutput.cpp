@@ -1,14 +1,17 @@
+// c++ headers
 #include <iostream>
-#include <ctime>
 #include <iomanip>
-#include <vector>
+#include <ctime>
+
+// c headers
+#include <curl/curl.h>
 
 extern "C" {
 #include <rrd.h>
 #include <rrd_client.h>
-#include <curl/curl.h>
 }
 
+// program headers
 #include "pulse.hpp"
 
 using namespace std;
@@ -110,4 +113,3 @@ void Pulse::uploadToPVOutput(void) const
 	// output the CURL answer on screen	
 	cout << "PVOutput response: " << read_buffer << endl;
 }
-

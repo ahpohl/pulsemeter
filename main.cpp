@@ -1,14 +1,8 @@
 // c++ headers
 #include <iostream>
-#include <string>
-#include <stdexcept>
 #include <thread>
-#include <mutex>
-#include <condition_variable>
-#include <future>
 
 // c headers
-#include <csignal>
 #include <getopt.h> // for getopt_long
 
 // program headers
