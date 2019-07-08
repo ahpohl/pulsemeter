@@ -20,8 +20,8 @@ public:
   int readSensorValue(void);
 
   // rrd methods
-  void createFile(char const* t_file, char const* t_socket);
-  void setMeterReading(double const& t_meter, int const& t_rev);
+  void createFile(char const* t_file, char const* t_socket,
+    int const& t_rev, double const& t_meter);
   unsigned long getEnergyCounter(void) const;
   void setEnergyCounter(void);
   void setTime(time_t const& t_time);

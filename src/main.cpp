@@ -191,11 +191,9 @@ int main(int argc, char* argv[])
   else
   {
     // create RRD file if it doesn't exist already
-    meter->createFile(rrd_file, rrdcached_socket);
+    meter->createFile(rrd_file, rrdcached_socket,
+      rev_per_kwh, meter_reading);
       
-    // update rrd file with given meter reading
-    meter->setMeterReading(meter_reading, rev_per_kwh);
-    
     // open serial port
     meter->openSerialPort(serial_device);
 

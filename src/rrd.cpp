@@ -20,27 +20,27 @@ extern "C" {
 using namespace std;
 
 // create rrd database (use rrdcached)
-void Pulse::createFile(char const* t_file, char const* t_socket)
+void Pulse::createFile(char const* t_file, char const* t_socket,
+  int const& t_rev, double const& t_meter)
 {
-  if (!t_file)
-  {
-    throw runtime_error("RRD file location not set");
-  }
+  if (!t_file) {
+    throw runtime_error("RRD file location not set"); }
 
-  if (!t_socket)
-  {
-    throw runtime_error("RRD cached socket not set");
-  }
+  if (!t_socket) {
+    throw runtime_error("RRD cached socket not set"); }
+
+  if (t_rev == 0) {
+    throw runtime_error("Revolutions per kWh not set"); }
+
+  m_file = t_file;
+  m_socket = t_socket;
+  m_rev = t_rev;
 
 	int ret = 0;
 	time_t timestamp_start = time(nullptr) - 120;
 	const int ds_count = 10;
 	const int step_size = 60;
 	const int no_overwrite = 1;
-
-  // set private members
-  m_file = t_file;
-  m_socket = t_socket;
 
 	// energy is stored in counts (GAUGE)
 	// energy = counts * revolutions per kWh [kWh]
@@ -77,38 +77,18 @@ void Pulse::createFile(char const* t_file, char const* t_socket)
   // create rrd file if it doesn't exist yet
 	ret = rrdc_create(t_file, step_size, timestamp_start, no_overwrite, 
 		ds_count, ds_schema);
+
 	if (!ret)
 	{
-		//throw runtime_error(rrd_get_error());
     cout << "Round Robin Database \"" << t_file << "\" created" << endl;
   }
-}
-
-// update RRD file with new meter reading
-void Pulse::setMeterReading(double const& t_meter, int const& t_rev)
-{
-  int ret = 0;  
+  
   char * argv[Con::RRD_BUF_SIZE];
   time_t timestamp = time(nullptr);
-
-  if (t_rev == 0)
-  {
-    throw runtime_error("Revolutions per kWh not set");
-  }
-
-  if (m_debug)
-  {
-    cout << "RRD: revolutions per kWh (" << dec << t_rev << ")" << endl;
-  }
-
-  // update private member
-  m_rev = t_rev;
+  unsigned long requested_counter = lround(t_meter * t_rev);
 
   // get last counter from RRD file
   m_counter = getEnergyCounter();
-
-  // calulate requested counter
-  unsigned long requested_counter = lround(t_meter * t_rev);
 
   // check if update is necessary
   if (m_counter < requested_counter)
@@ -141,48 +121,6 @@ void Pulse::setMeterReading(double const& t_meter, int const& t_rev)
   cout << "Meter reading: " << fixed << setprecision(1)
     << static_cast<double>(m_counter) / t_rev << " kWh, "
     << dec << m_counter << " counts"  << endl;
-}
-
-// get energy counter from RRD file
-unsigned long Pulse::getEnergyCounter(void) const
-{
-  int ret = 0;
-	char **ds_names = 0;
-  char **ds_data = 0;
-  time_t last_update;
-  unsigned long ds_count = 0;
-  unsigned long counter = 0;
-
-	// flush if connected to rrdcached daemon
-	ret = rrdc_flush_if_daemon(m_socket, m_file);
-	if (ret)
-  {
-    throw runtime_error(rrd_get_error());
-  }	
-
-	// get energy value from rrd file
-	ret = rrd_lastupdate_r(m_file, &last_update, &ds_count, 
-    &ds_names, &ds_data);
-
-	if (ret)
-  {
-    throw runtime_error(rrd_get_error());
-  }
-
-	// ds_data[0]: energy, ds_data[1]: power
-  for (unsigned long i = 0; i < ds_count; i++)
-	{
-    if (strcmp(ds_names[i], "energy") == 0)
-    {
-      counter = atol(ds_data[i]);
-    }
-    rrd_freemem(ds_names[i]);
-    rrd_freemem(ds_data[i]);
-  }
-  rrd_freemem(ds_names);
-	rrd_freemem(ds_data);
-
-	return counter;
 }
 
 // set energy counter in rrd file if trigger is received 
