@@ -5,7 +5,7 @@ After=network.target rrdcached.service
 [Service]
 Type=simple
 EnvironmentFile=/scratch/git/pulse/resources/pulse_defs.conf
-ExecStart=/scratch/git/pulse/pulse --device ${SERIAL_DEVICE} --file ${RRD_FILE} --socket {RRDCACHED_SOCKET} --low ${TRIGGER_LEVEL_LOW} --high ${TRIGGER_LEVEL_HIGH} --rev ${REV_PER_KWH} --meter ${METER_READING} --pvoutput --api-key ${PVOUTPUT_API_KEY} --sys-id ${PVOUTPUT_SYSTEM_ID}
+ExecStart=/scratch/git/pulse/pulse --device ${SERIAL_DEVICE} --file ${RRD_FILE} --socket ${RRDCACHED_SOCKET} --low ${TRIGGER_LEVEL_LOW} --high ${TRIGGER_LEVEL_HIGH} --rev ${REV_PER_KWH} --meter ${METER_READING} --pvoutput --api-key ${PVOUTPUT_API_KEY} --sys-id ${PVOUTPUT_SYSTEM_ID} --url ${PVOUTPUT_URL}
 User=pulse
 Group=pulse
 
