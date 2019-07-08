@@ -22,34 +22,25 @@ using namespace std;
 // create rrd database (use rrdcached)
 void Pulse::createFile(char const* t_file, char const* t_socket)
 {
+  if (!t_file)
+  {
+    throw runtime_error("RRD file location not set");
+  }
+
+  if (!t_socket)
+  {
+    throw runtime_error("RRD cached socket not set");
+  }
+
 	int ret = 0;
 	time_t timestamp_start = time(nullptr) - 120;
 	const int ds_count = 10;
 	const int step_size = 60;
 	const int no_overwrite = 1;
 
-  if (!t_file)
-  {
-    throw runtime_error("RRD file location empty");
-  }
-
-  if (!t_socket)
-  {
-    throw runtime_error("RRD cached address empty");
-  }
-
   // set private members
   m_file = t_file;
   m_socket = t_socket;
-
-  // TODO: check if rrd file exists, if exist exit here
-
-	// connect to rrdcached daemon socket
-  ret = rrdc_connect(t_socket);
-  if (ret)
-  {
-    throw runtime_error(rrd_get_error());
-  }
 
 	// energy is stored in counts (GAUGE)
 	// energy = counts * revolutions per kWh [kWh]
@@ -76,17 +67,21 @@ void Pulse::createFile(char const* t_file, char const* t_socket)
 	// keep 1 year in 1 day resolution
 	// consolidate LAST (energy) and AVERAGE (power)
 
+  // connect to rrdcached daemon socket
+  ret = rrdc_connect(t_socket);
+  if (ret)
+  {
+    throw runtime_error(rrd_get_error());
+  }
+
+  // create rrd file if it doesn't exist yet
 	ret = rrdc_create(t_file, step_size, timestamp_start, no_overwrite, 
 		ds_count, ds_schema);
-	if (ret)
+	if (!ret)
 	{
-		throw runtime_error(rrd_get_error());
-	}
-
-	if (m_debug)
-  {
-		cout << "RRD: file created (" << t_file << ")" << endl;
-	}
+		//throw runtime_error(rrd_get_error());
+    cout << "RRD file \"" << t_file << "\" created" << endl;
+  }
 }
 
 // get last energy counter from RRD file

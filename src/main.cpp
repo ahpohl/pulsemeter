@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
       rrd_file = optarg;
       break;
 
-    case 'a':
+    case 's':
       rrdcached_socket = optarg;
       break;
 
@@ -108,7 +108,7 @@ int main(int argc, char* argv[])
       pvoutput_api_key = optarg;
       break;
 
-    case 's':
+    case 'S':
       pvoutput_system_id = optarg;
       break;
 
