@@ -1,11 +1,10 @@
 #include <iostream>
-#include <unistd.h>   // write(), read(), close()
+#include <unistd.h>
 
 #include "pulse.hpp"
 
 using namespace std;
 
-// constructor
 Pulse::Pulse(void)
 {
   m_file = nullptr;
@@ -24,20 +23,17 @@ Pulse::Pulse(void)
   m_raw = false;
 }
 
-// destructor
 Pulse::~Pulse(void)
 {
-  if (m_serialport > 0)
-  {
+  if (m_serialport > 0) {
     close(m_serialport);
-    if (m_debug)
-    {
+    
+    if (m_debug) {
       cout << "Serial port closed" << endl;
     }
   }
 
-  if (m_debug)
-  {
+  if (m_debug) {
     cout << "Pulse destructor method called" << endl;
   }
 }
@@ -49,21 +45,15 @@ void Pulse::setDebug(void)
 
 void Pulse::runRaw(void)
 {
-  while (1)
-  {
-    // read sensor values
+  while (1) {
     readSensorValue();
   }
 }
 
 void Pulse::runTrigger(void)
 {
-  while (1)
-  {
-    // read sensor value
+  while (1) {
     readSensorValue();
-
-    // update rrd file
     setEnergyCounter();
   }
 }
@@ -77,31 +67,19 @@ void Pulse::runPVOutput(void)
   time_t rawtime;
   struct tm * tm;
   
-  while (1)
-  {
+  while (1) {
     rawtime = time(nullptr);
     tm = localtime(&rawtime);
 
-    for (int i = 0; i < STEPS; ++i, ++p)
-    {
-      if ((*p == tm->tm_min) && (tm->tm_sec == 0))
-      {
-        // set the timestamp minus some offset
-        setTime(rawtime - OFFSET);
-  
-        // get energy in Wh and power in W
-        getEnergyAndPower();
-
-        // upload energy and power to PVOutput.org
+    for (int i = 0; i < STEPS; ++i, ++p) {
+      if ((*p == tm->tm_min) && (tm->tm_sec == 0)) {
+        getEnergyAndPower(rawtime - OFFSET);
         uploadToPVOutput();
-        
         break;
       }
     }
     
-    // reset interval pointer
     p = interval;
-
     sleep(1);
   }
 } 

@@ -13,27 +13,22 @@ public:
   void runTrigger(void);
   void runPVOutput(void);
 
-  // sensor methods
   void openSerialPort(char const* t_device);
   void setRawMode(void);
   void setTriggerMode(short int const& t_low, short int const& t_high) const;
   int readSensorValue(void);
 
-  // rrd methods
   void createFile(char const* t_file, char const* t_socket,
     int const& t_rev, double const& t_meter);
   unsigned long getEnergyCounter(void) const;
   void setEnergyCounter(void);
-  void setTime(time_t const& t_time);
-  void getEnergyAndPower(void);
+  void getEnergyAndPower(time_t const& t_time);
   
-  // PVOutput methods
   void setPVOutput(char const* t_apikey, char const* t_sysid,
     char const* t_url);
   void uploadToPVOutput(void) const; 
 
 private:
-  // variables
   char const* m_file;           // filename of RRD database
   char const* m_socket;         // socket of rrdcached daemon
   char const* m_apikey;         // PVOutput api key
@@ -49,7 +44,6 @@ private:
   unsigned long m_counter;      // energy counter
   bool m_raw;                   // flag for raw sensor mode
 
-  // methods
   unsigned short crc16(unsigned char const* t_data, int t_length) const;
   void configureSerialPort(unsigned char const& t_vmin,
     unsigned char const& t_vtime) const;
@@ -57,7 +51,6 @@ private:
   bool syncPacket(void) const;
   void receivePacket(unsigned char * t_packet, int const& t_size) const;
 
-  // callback function for CURL output
   static size_t curlCallback(void * t_contents, size_t t_size,
     size_t t_nmemb, void * t_user);
 };
