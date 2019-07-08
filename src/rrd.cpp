@@ -101,13 +101,18 @@ void Pulse::setMeterReading(double const& t_meter, int const& t_rev)
   m_rev = t_rev;
 
   // get last counter from RRD file
-  unsigned long last_counter = getEnergyCounter();
+  m_counter = getEnergyCounter();
+
+  // output
+  cout << "Meter reading: " << fixed << setprecision(1)
+    << static_cast<double>(m_counter) / t_rev << " kWh, "
+    << dec << m_counter << " counts"  << endl;  
 
   // calulate requested counter
   unsigned long requested_counter = lround(t_meter * t_rev);
 
   // check if update is necessary
-  if (requested_counter < last_counter)
+  if (requested_counter < m_counter)
   {
     return;
   }
@@ -138,19 +143,19 @@ void Pulse::setMeterReading(double const& t_meter, int const& t_rev)
 	free(*argv);
 
   // output
-  cout << "Meter reading: " << fixed << setprecision(1)
-    << static_cast<double>(requested_counter) / t_rev << " kWh, " 
-    << dec << requested_counter << " counts"  << endl;
+  cout << "Set meter reading: " << fixed << setprecision(1)
+    << static_cast<double>(requested_counter) / t_rev << " kWh" << endl;
 }
 
-// get last energy counter from RRD file
-unsigned long Pulse::getEnergyCounter(void)
+// get energy counter from RRD file
+unsigned long Pulse::getEnergyCounter(void) const
 {
   int ret = 0;
 	char **ds_names = 0;
   char **ds_data = 0;
   time_t last_update;
   unsigned long ds_count = 0;
+  unsigned long counter = 0;
 
 	// flush if connected to rrdcached daemon
 	ret = rrdc_flush_if_daemon(m_socket, m_file);
@@ -173,7 +178,7 @@ unsigned long Pulse::getEnergyCounter(void)
 	{
     if (strcmp(ds_names[i], "energy") == 0)
     {
-      m_counter = atol(ds_data[i]);
+      counter = atol(ds_data[i]);
     }
     rrd_freemem(ds_names[i]);
     rrd_freemem(ds_data[i]);
@@ -181,7 +186,7 @@ unsigned long Pulse::getEnergyCounter(void)
   rrd_freemem(ds_names);
 	rrd_freemem(ds_data);
 
-	return m_counter;
+	return counter;
 }
 
 // set energy counter in rrd file if trigger is received 

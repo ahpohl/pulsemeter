@@ -22,7 +22,7 @@ public:
   // rrd methods
   void createFile(char const* t_file, char const* t_socket);
   void setMeterReading(double const& t_meter, int const& t_rev);
-  unsigned long getEnergyCounter(void);
+  unsigned long getEnergyCounter(void) const;
   void setEnergyCounter(void);
   void setTime(time_t const& t_time);
   void getEnergyAndPower(void);
