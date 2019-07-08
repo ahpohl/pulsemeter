@@ -20,7 +20,7 @@ Pulse::Pulse(void)
 	m_power = 0;
   m_time = 0;
   m_sensor = 0;
-  m_last_counter = 0;
+  m_counter = 0;
   m_raw = false;
 }
 
@@ -64,7 +64,7 @@ void Pulse::runTrigger(void)
     readSensorValue();
 
     // update rrd file
-    updateEnergyCounter();
+    setEnergyCounter();
   }
 }
 

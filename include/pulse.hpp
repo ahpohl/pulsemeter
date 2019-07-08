@@ -21,9 +21,9 @@ public:
 
   // rrd methods
   void createFile(char const* t_file, char const* t_socket);
-  unsigned long getLastEnergyCounter(int const& t_rev);
-  void updateMeterReading(double const& t_meter);
-  void updateEnergyCounter(void);
+  void setMeterReading(double const& t_meter, int const& t_rev);
+  unsigned long getEnergyCounter(void);
+  void setEnergyCounter(void);
   void setTime(time_t const& t_time);
   void getEnergyAndPower(void);
   
@@ -46,7 +46,7 @@ private:
   double m_power;               // power [W]
   time_t m_time;                // timestamp of energy and power
   int m_sensor;                 // sensor value
-  unsigned long m_last_counter; // last energy counter
+  unsigned long m_counter;      // energy counter
   bool m_raw;                   // flag for raw sensor mode
 
   // methods

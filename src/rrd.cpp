@@ -80,26 +80,77 @@ void Pulse::createFile(char const* t_file, char const* t_socket)
 	if (!ret)
 	{
 		//throw runtime_error(rrd_get_error());
-    cout << "RRD file \"" << t_file << "\" created" << endl;
+    cout << "Round Robin Database \"" << t_file << "\" created" << endl;
   }
 }
 
+// update RRD file with new meter reading
+void Pulse::setMeterReading(double const& t_meter, int const& t_rev)
+{
+  if (t_rev == 0)
+  {
+    throw runtime_error("Revolutions per kWh not set");
+  }
+
+  if (m_debug)
+  {
+    cout << "RRD: revolutions per kWh (" << dec << t_rev << ")" << endl;
+  }
+
+  // update private member
+  m_rev = t_rev;
+
+  // get last counter from RRD file
+  unsigned long last_counter = getEnergyCounter();
+
+  // calulate requested counter
+  unsigned long requested_counter = lround(t_meter * t_rev);
+
+  // check if update is necessary
+  if (requested_counter < last_counter)
+  {
+    return;
+  }
+
+  // update counter in rrd file
+  int ret = 0;
+  char * argv[Con::RRD_BUF_SIZE];
+  time_t timestamp = time(nullptr);
+    
+	*argv = (char *) malloc(Con::RRD_BUF_SIZE * sizeof(char));
+  memset(*argv, '\0', Con::RRD_BUF_SIZE);
+  snprintf(*argv, Con::RRD_BUF_SIZE, "%ld:%ld:%ld", timestamp, 
+    requested_counter, requested_counter);
+
+  ret = rrdc_update(m_file, Con::RRD_DS_LEN, (const char **) argv);
+  if (ret)
+  {
+    throw runtime_error(rrd_get_error());
+  }
+
+	// disconnect daemon
+  ret = rrdc_disconnect();
+  if (ret)
+  {
+    throw runtime_error(rrd_get_error());
+  }
+
+	free(*argv);
+
+  // output
+  cout << "Meter reading: " << fixed << setprecision(1)
+    << static_cast<double>(requested_counter) / t_rev << " kWh, " 
+    << dec << requested_counter << " counts"  << endl;
+}
+
 // get last energy counter from RRD file
-unsigned long Pulse::getLastEnergyCounter(int const& t_rev)
+unsigned long Pulse::getEnergyCounter(void)
 {
   int ret = 0;
 	char **ds_names = 0;
   char **ds_data = 0;
   time_t last_update;
   unsigned long ds_count = 0;
-
-  if (t_rev == 0)
-  {
-    throw runtime_error("Revolutions per kWh not set");
-  }
-
-  // update private member
-  m_rev = t_rev;
 
 	// flush if connected to rrdcached daemon
 	ret = rrdc_flush_if_daemon(m_socket, m_file);
@@ -122,7 +173,7 @@ unsigned long Pulse::getLastEnergyCounter(int const& t_rev)
 	{
     if (strcmp(ds_names[i], "energy") == 0)
     {
-      m_last_counter = atol(ds_data[i]);
+      m_counter = atol(ds_data[i]);
     }
     rrd_freemem(ds_names[i]);
     rrd_freemem(ds_data[i]);
@@ -130,61 +181,14 @@ unsigned long Pulse::getLastEnergyCounter(int const& t_rev)
   rrd_freemem(ds_names);
 	rrd_freemem(ds_data);
 
-  if (m_debug)
-  {
-    cout << "RRD: revolutions per kWh (" << dec << m_rev << ")" << endl;
-  }
-	
-  // output
-  cout << "Meter reading: " << fixed << setprecision(1)
-    << static_cast<double>(m_last_counter) / t_rev << " kWh, " 
-    << dec << m_last_counter << " counts"  << endl;
-
-	return m_last_counter;
+	return m_counter;
 }
 
-// update RRD file with new meter reading 
-void Pulse::updateMeterReading(double const& t_meter)
-{
-  unsigned long new_counter = lround(t_meter * m_rev);
-  if (new_counter < m_last_counter)
-  {
-    return;
-  }
-
-  int ret = 0;
-  char * argv[Con::RRD_BUF_SIZE];
-  time_t timestamp = time(nullptr);
-    
-	*argv = (char *) malloc(Con::RRD_BUF_SIZE * sizeof(char));
-  memset(*argv, '\0', Con::RRD_BUF_SIZE);
-  snprintf(*argv, Con::RRD_BUF_SIZE, "%ld:%ld:%ld", timestamp, 
-    new_counter, new_counter);
-
-  ret = rrdc_update(m_file, Con::RRD_DS_LEN, (const char **) argv);
-  if (ret)
-  {
-    throw runtime_error(rrd_get_error());
-  }
-
-	// disconnect daemon
-  ret = rrdc_disconnect();
-  if (ret)
-  {
-    throw runtime_error(rrd_get_error());
-  }
-
-	free(*argv);
-}
-
-// update meter reading in the rrd file (in kWh)
-void Pulse::updateEnergyCounter(void)
+// set energy counter in rrd file if trigger is received 
+void Pulse::setEnergyCounter(void)
 {
 	int ret = 0;
 	time_t timestamp = time(nullptr);
-
-	// get total energy counter
-	static unsigned long current_counter = m_last_counter;
 
 	// rrd update string to write into rrd file
   char * argv[Con::RRD_BUF_SIZE];
@@ -200,12 +204,12 @@ void Pulse::updateEnergyCounter(void)
   // update energy counter if sensor is triggered
   if (m_sensor == 1)
   {
-    ++current_counter;
+    ++m_counter;
         
     // rrd format, timestamp : energy (Wh) : power (Ws)
 		memset(*argv, '\0', Con::RRD_BUF_SIZE);
 		snprintf(*argv, Con::RRD_BUF_SIZE, "%ld:%ld:%ld", timestamp, 
-      current_counter, current_counter);
+      m_counter, m_counter);
 	
 		// output sensor value in rrd format	
 		if (m_debug)
