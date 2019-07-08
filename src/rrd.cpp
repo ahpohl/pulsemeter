@@ -87,6 +87,10 @@ void Pulse::createFile(char const* t_file, char const* t_socket)
 // update RRD file with new meter reading
 void Pulse::setMeterReading(double const& t_meter, int const& t_rev)
 {
+  int ret = 0;  
+  char * argv[Con::RRD_BUF_SIZE];
+  time_t timestamp = time(nullptr);
+
   if (t_rev == 0)
   {
     throw runtime_error("Revolutions per kWh not set");
@@ -103,34 +107,27 @@ void Pulse::setMeterReading(double const& t_meter, int const& t_rev)
   // get last counter from RRD file
   m_counter = getEnergyCounter();
 
-  // output
-  cout << "Meter reading: " << fixed << setprecision(1)
-    << static_cast<double>(m_counter) / t_rev << " kWh, "
-    << dec << m_counter << " counts"  << endl;  
-
   // calulate requested counter
   unsigned long requested_counter = lround(t_meter * t_rev);
 
   // check if update is necessary
-  if (requested_counter < m_counter)
+  if (m_counter < requested_counter)
   {
-    return;
-  }
+	  *argv = (char *) malloc(Con::RRD_BUF_SIZE * sizeof(char));
+    memset(*argv, '\0', Con::RRD_BUF_SIZE);
+    snprintf(*argv, Con::RRD_BUF_SIZE, "%ld:%ld:%ld", timestamp, 
+      requested_counter, requested_counter);
 
-  // update counter in rrd file
-  int ret = 0;
-  char * argv[Con::RRD_BUF_SIZE];
-  time_t timestamp = time(nullptr);
+    ret = rrdc_update(m_file, Con::RRD_DS_LEN, (const char **) argv);
+    if (ret)
+    {
+      throw runtime_error(rrd_get_error());
+    }
+  
+    // update counter
+    m_counter = requested_counter;
     
-	*argv = (char *) malloc(Con::RRD_BUF_SIZE * sizeof(char));
-  memset(*argv, '\0', Con::RRD_BUF_SIZE);
-  snprintf(*argv, Con::RRD_BUF_SIZE, "%ld:%ld:%ld", timestamp, 
-    requested_counter, requested_counter);
-
-  ret = rrdc_update(m_file, Con::RRD_DS_LEN, (const char **) argv);
-  if (ret)
-  {
-    throw runtime_error(rrd_get_error());
+    free(*argv);
   }
 
 	// disconnect daemon
@@ -140,11 +137,10 @@ void Pulse::setMeterReading(double const& t_meter, int const& t_rev)
     throw runtime_error(rrd_get_error());
   }
 
-	free(*argv);
-
   // output
-  cout << "Set meter reading: " << fixed << setprecision(1)
-    << static_cast<double>(requested_counter) / t_rev << " kWh" << endl;
+  cout << "Meter reading: " << fixed << setprecision(1)
+    << static_cast<double>(m_counter) / t_rev << " kWh, "
+    << dec << m_counter << " counts"  << endl;
 }
 
 // get energy counter from RRD file
