@@ -44,7 +44,7 @@ private:
   unsigned long m_counter;      // energy counter
   bool m_raw;                   // flag for raw sensor mode
 
-  unsigned short crc16(unsigned char const* t_data, int t_length) const;
+  unsigned short crc16(unsigned char const* t_packet, int t_length) const;
   void configureSerialPort(unsigned char const& t_vmin,
     unsigned char const& t_vtime) const;
   void sendCommand(unsigned char const* t_cmd, int const& t_length) const;
