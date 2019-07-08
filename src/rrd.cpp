@@ -123,6 +123,46 @@ void Pulse::createFile(char const* t_file, char const* t_socket,
     << dec << m_counter << " counts"  << endl;
 }
 
+// get energy counter from RRD file
+unsigned long Pulse::getEnergyCounter(void) const
+{
+  int ret = 0;
+  char **ds_names = 0;
+  char **ds_data = 0;
+  time_t last_update;
+  unsigned long ds_count = 0;
+  unsigned long counter = 0;
+
+  // flush if connected to rrdcached daemon
+  ret = rrdc_flush_if_daemon(m_socket, m_file);
+  if (ret)
+  {
+    throw runtime_error(rrd_get_error());
+  }
+
+  // get energy value from rrd file
+  ret = rrd_lastupdate_r(m_file, &last_update, &ds_count,
+    &ds_names, &ds_data);
+
+  if (ret)
+  {
+    throw runtime_error(rrd_get_error());
+  }
+
+  // ds_data[0]: energy, ds_data[1]: power
+  for (unsigned long i = 0; i < ds_count; i++)
+  {
+    if (strcmp(ds_names[i], "energy") == 0)
+    {
+      counter = atol(ds_data[i]);
+    }
+    rrd_freemem(ds_names[i]);
+    rrd_freemem(ds_data[i]);
+  }
+
+  return counter;
+}
+
 // set energy counter in rrd file if trigger is received 
 void Pulse::setEnergyCounter(void)
 {
