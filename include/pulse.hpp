@@ -22,7 +22,8 @@ public:
     int const& t_rev, double const& t_meter);
   unsigned long getEnergyCounter(void) const;
   void setEnergyCounter(void);
-  void getEnergyAndPower(time_t const& t_time);
+  void getEnergyAndPower(time_t* t_time, double* t_energy,
+    double* t_power) const;
   
   void setPVOutput(char const* t_apikey, char const* t_sysid,
     char const* t_url);
@@ -37,9 +38,6 @@ private:
   int m_rev;                    // revolutions per kWh
   bool m_debug;                 // debug flag
   int m_serialport;             // serial port
-  double m_energy;              // energy [Wh]
-  double m_power;               // power [W]
-  time_t m_time;                // timestamp of energy and power
   int m_sensor;                 // sensor value
   unsigned long m_counter;      // energy counter
   bool m_raw;                   // flag for raw sensor mode

@@ -176,15 +176,19 @@ void Pulse::setEnergyCounter(void)
 	free(*argv);
 }
 
-void Pulse::getEnergyAndPower(time_t const& t_time)
+void Pulse::getEnergyAndPower(time_t* t_time, double* t_energy, 
+  double* t_power) const
 {
   if (!t_time) {
     throw runtime_error("Timestamp not set");
   }
 
-  m_time = t_time;
+  int ret = rrdc_connect(m_socket);
+  if (ret) {
+    throw runtime_error(rrd_get_error());
+  }
 
-  int ret = rrdc_flush_if_daemon(m_socket, m_file);
+  ret = rrdc_flush_if_daemon(m_socket, m_file);
   if (ret) {
     throw runtime_error(rrd_get_error());
   }
@@ -199,10 +203,10 @@ void Pulse::getEnergyAndPower(time_t const& t_time)
 	string step = to_string(step_size);
 	args.push_back(step.c_str());
 	args.push_back("--start");
-	string start = to_string(m_time - step_size);
+	string start = to_string((*t_time) - step_size);
 	args.push_back(start.c_str());
 	args.push_back("--end");
-	string end = to_string(m_time);
+	string end = to_string(*t_time);
 	args.push_back(end.c_str());
 	string def_counts = string("DEF:counts=") + m_file + ":energy:LAST";
 	args.push_back(def_counts.c_str());
@@ -225,21 +229,26 @@ void Pulse::getEnergyAndPower(time_t const& t_time)
   rrd_value_t * ds_data = 0;
   
   ret = rrd_xport(args.size(), (char**)args.data(), &no_output, &start_time,
-		&m_time, &step_size, &ds_count, &ds_legend, &ds_data);    
+		t_time, &step_size, &ds_count, &ds_legend, &ds_data);    
 	if (ret) {
     throw runtime_error(rrd_get_error());
   }
 
-	// ds_data[0]: energy in Wh, ds_data[1]: power in W
-  memcpy(&m_energy, ds_data, sizeof(double));
-  memcpy(&m_power, ++ds_data, sizeof(double));
+  ret = rrdc_disconnect();
+  if (ret) {
+    throw runtime_error(rrd_get_error());
+  }
 
-  struct tm * tm = localtime(&m_time);
+	// ds_data[0]: energy in Wh, ds_data[1]: power in W
+  memcpy(t_energy, ds_data, sizeof(double));
+  memcpy(t_power, ++ds_data, sizeof(double));
+
+  struct tm * tm = localtime(t_time);
   char time_buffer[20] = {0};
   strftime(time_buffer, 19, "%F %R", tm);
 
   cout << "Date: " << time_buffer
-    << ", energy: " << fixed << setprecision(1) << m_energy / 1000
-    << " kWh, power: " << setprecision(1) << m_power << " W, sys id: "
+    << ", energy: " << fixed << setprecision(1) << *t_energy / 1000
+    << " kWh, power: " << setprecision(1) << *t_power << " W, sys id: "
     << m_sysid << endl;
 }

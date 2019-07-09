@@ -38,14 +38,28 @@ size_t Pulse::curlCallback(void * t_contents, size_t t_size,
   return (t_size * t_nmemb);
 }
 
-// upload energy and power to PVOutput.org
 void Pulse::uploadToPVOutput(void) const
 {
-  if (!m_time) {
-    throw runtime_error("Timestamp not set");
-  }
-  
   if (!m_pvoutput) {
+    return;
+  }
+
+  int const STEPS = 12;
+  int const OFFSET = 60;
+  int interval[STEPS] = {0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55};
+  int *p = interval;
+  time_t rawtime = time(nullptr);
+  struct tm* tm = localtime(&rawtime);
+  bool is_time = false;
+
+  for (int i = 0; i < STEPS; ++i, ++p) {
+    if ((*p == tm->tm_min) && (tm->tm_sec == 0)) {
+      is_time = true;
+      break;
+    }
+  }
+
+  if (!is_time) {
     return;
   }
 
@@ -63,7 +77,12 @@ void Pulse::uploadToPVOutput(void) const
 	headers = curl_slist_append(headers, sys_id_header.c_str());
 	curl_easy_setopt(easyhandle, CURLOPT_HTTPHEADER, headers);
 
-	struct tm * tm = localtime(&m_time);
+  double energy = 0;
+  double power = 0;
+  
+  rawtime -= OFFSET;
+  getEnergyAndPower(&rawtime, &energy, &power);
+
   char date_buffer[12] = {0};
   char time_buffer[12] = {0};
   
@@ -72,8 +91,8 @@ void Pulse::uploadToPVOutput(void) const
 
 	string data = string("d=") + date_buffer
 		+ "&t=" + time_buffer 
-		+ "&v3=" + to_string(m_energy)
-		+ "&v4=" + to_string(m_power)
+		+ "&v3=" + to_string(energy)
+		+ "&v4=" + to_string(power)
 		+ "&c1=1";
 
 	curl_easy_setopt(easyhandle, CURLOPT_POSTFIELDS, data.c_str());

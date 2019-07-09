@@ -15,9 +15,6 @@ Pulse::Pulse(void)
   m_rev = 0;
 	m_debug = false;
   m_serialport = 0;
-	m_energy = 0;
-	m_power = 0;
-  m_time = 0;
   m_sensor = 0;
   m_counter = 0;
   m_raw = false;
@@ -61,26 +58,8 @@ void Pulse::runTrigger(void)
 
 void Pulse::runPVOutput(void)
 {
-  int const STEPS = 12; 
-  int const OFFSET = 60;
-  int interval[STEPS] = {0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55};
-  int *p = interval;
-  time_t rawtime;
-  struct tm * tm;
-  
   while (1) {
-    rawtime = time(nullptr);
-    tm = localtime(&rawtime);
-
-    for (int i = 0; i < STEPS; ++i, ++p) {
-      if ((*p == tm->tm_min) && (tm->tm_sec == 0)) {
-        getEnergyAndPower(rawtime - OFFSET);
-        uploadToPVOutput();
-        break;
-      }
-    }
-    
-    p = interval;
+    uploadToPVOutput();
     sleep(1);
   }
 } 
