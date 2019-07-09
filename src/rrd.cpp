@@ -192,7 +192,9 @@ void Pulse::getEnergyAndPower(time_t const& t_time, double* t_energy,
   if (ret) {
     throw runtime_error(rrd_get_error());
   }
-  
+ 
+  int const OFFSET = 60;
+  time_t req_time = t_time - OFFSET; 
 	unsigned long step_size = 300;
 	vector<char const*> args;	
 
@@ -203,10 +205,10 @@ void Pulse::getEnergyAndPower(time_t const& t_time, double* t_energy,
 	string step = to_string(step_size);
 	args.push_back(step.c_str());
 	args.push_back("--start");
-	string start = to_string(t_time - step_size);
+	string start = to_string(req_time - step_size);
 	args.push_back(start.c_str());
 	args.push_back("--end");
-	string end = to_string(t_time);
+	string end = to_string(req_time);
 	args.push_back(end.c_str());
 	string def_counts = string("DEF:counts=") + m_file + ":energy:LAST";
 	args.push_back(def_counts.c_str());
@@ -240,9 +242,15 @@ void Pulse::getEnergyAndPower(time_t const& t_time, double* t_energy,
     throw runtime_error(rrd_get_error());
   }
 
-  if ((t_time != end_time) && 
+  if ((t_time != end_time) || 
     ((t_time - static_cast<time_t>(step_size)) != start_time))
   {
+    if (m_debug) {
+      cout << dec << "Start time: " << (t_time - step_size)
+        << " ret " << start_time << endl
+        << "End time: " << t_time << " ret " << end_time 
+        << endl;
+    }
     throw runtime_error("Requested time does not match returned time");
   }
 

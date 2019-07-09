@@ -79,8 +79,6 @@ void Pulse::uploadToPVOutput(void) const
   double energy = 0;
   double power = 0;
  
-  int const OFFSET = 60; 
-  rawtime -= OFFSET;
   getEnergyAndPower(rawtime, &energy, &power);
 
   char date_buffer[12] = {0};
