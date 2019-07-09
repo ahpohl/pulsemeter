@@ -43,6 +43,7 @@ private:
   int m_sensor;                 // sensor value
   unsigned long m_counter;      // energy counter
   bool m_raw;                   // flag for raw sensor mode
+  bool m_pvoutput;              // flag for pvoutput
 
   unsigned short crc16(unsigned char const* t_packet, int t_length) const;
   void configureSerialPort(unsigned char const& t_vmin,

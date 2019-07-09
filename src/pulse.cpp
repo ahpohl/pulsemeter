@@ -21,6 +21,7 @@ Pulse::Pulse(void)
   m_sensor = 0;
   m_counter = 0;
   m_raw = false;
+  m_pvoutput = false;
 }
 
 Pulse::~Pulse(void)

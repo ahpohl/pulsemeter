@@ -12,7 +12,6 @@ int main(int argc, char* argv[])
   bool version = false;
   bool help = false;
   double meter_reading = 0;
-  bool pvoutput = false;
   char const* rrd_file = nullptr;
   char const* rrdcached_socket = nullptr;
   char const* serial_device = nullptr;
@@ -35,14 +34,13 @@ int main(int argc, char* argv[])
     { "socket", required_argument, nullptr, 's'},
     { "rev", required_argument, nullptr, 'r'},
     { "meter", required_argument, nullptr, 'm'},
-    { "pvoutput", no_argument, nullptr, 'P' },
     { "api-key", required_argument, nullptr, 'A' },
     { "sys-id", required_argument, nullptr, 'S' },
     { "url", required_argument, nullptr, 'u' },
     { nullptr, 0, nullptr, 0 }
   };
 
-  const char * optString = "hVDd:RL:H:f:s:r:m:PA:S:u:";
+  const char * optString = "hVDd:RL:H:f:s:r:m:A:S:u:";
   int opt = 0;
   int longIndex = 0;
 
@@ -82,9 +80,6 @@ int main(int argc, char* argv[])
     case 'm':
       meter_reading = atof(optarg);
       break;
-    case 'P':
-      pvoutput = true;
-      break;
     case 'A':
       pvoutput_api_key = optarg;
       break;
@@ -117,7 +112,6 @@ int main(int argc, char* argv[])
   -s --socket [fd]      Set socket of rrdcached daemon\n\
   -r --rev [int]        Set revolutions per kWh\n\
   -m --meter [float]    Set meter reading [kWh]\n\
-  -P --pvoutput         Upload to PVOutput.org\n\
   -A --api-key [key]    PVOutput.org api key\n\
   -S --sys-id [id]      PVOutput.org system id\n\
   -u --url [url]        PVOutput.org add status url"
@@ -159,14 +153,13 @@ int main(int argc, char* argv[])
 
   thread pvoutput_thread;
 
-  if (pvoutput) {
-    meter->setPVOutput(pvoutput_api_key, pvoutput_system_id, pvoutput_url);
-    pvoutput_thread = thread(&Pulse::runPVOutput, meter);
-  }
-  
-  if (sensor_thread.joinable()) { 
+  meter->setPVOutput(pvoutput_api_key, pvoutput_system_id, pvoutput_url);
+  pvoutput_thread = thread(&Pulse::runPVOutput, meter);
+ 
+  if (sensor_thread.joinable()) {
     sensor_thread.join();
-  }  
+  }
+ 
   if (pvoutput_thread.joinable()) { 
     pvoutput_thread.join(); 
   }
