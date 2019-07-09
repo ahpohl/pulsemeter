@@ -176,7 +176,7 @@ void Pulse::setEnergyCounter(void)
 	free(*argv);
 }
 
-void Pulse::getEnergyAndPower(time_t* t_time, double* t_energy, 
+void Pulse::getEnergyAndPower(time_t const& t_time, double* t_energy, 
   double* t_power) const
 {
   if (!t_time) {
@@ -203,10 +203,10 @@ void Pulse::getEnergyAndPower(time_t* t_time, double* t_energy,
 	string step = to_string(step_size);
 	args.push_back(step.c_str());
 	args.push_back("--start");
-	string start = to_string((*t_time) - step_size);
+	string start = to_string(t_time - step_size);
 	args.push_back(start.c_str());
 	args.push_back("--end");
-	string end = to_string(*t_time);
+	string end = to_string(t_time);
 	args.push_back(end.c_str());
 	string def_counts = string("DEF:counts=") + m_file + ":energy:LAST";
 	args.push_back(def_counts.c_str());
@@ -223,13 +223,14 @@ void Pulse::getEnergyAndPower(time_t* t_time, double* t_energy,
 	args.push_back("XPORT:power");
 
 	time_t start_time = 0;
+  time_t end_time = 0;
   int no_output = 0;
   unsigned long ds_count = 0;
   char ** ds_legend = 0;
   rrd_value_t * ds_data = 0;
   
   ret = rrd_xport(args.size(), (char**)args.data(), &no_output, &start_time,
-		t_time, &step_size, &ds_count, &ds_legend, &ds_data);    
+		&end_time, &step_size, &ds_count, &ds_legend, &ds_data);    
 	if (ret) {
     throw runtime_error(rrd_get_error());
   }
@@ -239,11 +240,17 @@ void Pulse::getEnergyAndPower(time_t* t_time, double* t_energy,
     throw runtime_error(rrd_get_error());
   }
 
+  if ((t_time != end_time) && 
+    ((t_time - static_cast<time_t>(step_size)) != start_time))
+  {
+    throw runtime_error("Requested time does not match returned time");
+  }
+
 	// ds_data[0]: energy in Wh, ds_data[1]: power in W
   memcpy(t_energy, ds_data, sizeof(double));
   memcpy(t_power, ++ds_data, sizeof(double));
 
-  struct tm * tm = localtime(t_time);
+  struct tm * tm = localtime(&t_time);
   char time_buffer[20] = {0};
   strftime(time_buffer, 19, "%F %R", tm);
 

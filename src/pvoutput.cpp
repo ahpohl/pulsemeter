@@ -45,7 +45,6 @@ void Pulse::uploadToPVOutput(void) const
   }
 
   int const STEPS = 12;
-  int const OFFSET = 60;
   int interval[STEPS] = {0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55};
   int *p = interval;
   time_t rawtime = time(nullptr);
@@ -79,9 +78,10 @@ void Pulse::uploadToPVOutput(void) const
 
   double energy = 0;
   double power = 0;
-  
+ 
+  int const OFFSET = 60; 
   rawtime -= OFFSET;
-  getEnergyAndPower(&rawtime, &energy, &power);
+  getEnergyAndPower(rawtime, &energy, &power);
 
   char date_buffer[12] = {0};
   char time_buffer[12] = {0};
