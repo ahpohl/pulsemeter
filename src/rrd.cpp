@@ -178,7 +178,7 @@ void Pulse::setEnergyCounter(void)
 
 void Pulse::getEnergyAndPower(time_t const& t_time)
 {
-  if (!m_time) {
+  if (!t_time) {
     throw runtime_error("Timestamp not set");
   }
 

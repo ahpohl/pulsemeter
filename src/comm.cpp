@@ -312,7 +312,7 @@ void Pulse::setRawMode(void)
   receivePacket(packet_buffer, Con::BUF_SIZE);
 
   if (packet_buffer[0] != Con::RAW_MODE) {
-    throw runtime_error("Setting raw mode failed");
+    throw runtime_error("Invalid packet received. Setting raw mode failed");
   }
   
   cout << "Sensor raw mode" << endl;
@@ -345,7 +345,7 @@ void Pulse::setTriggerMode(short int const& t_low,
   receivePacket(packet_buffer, Con::BUF_SIZE);
 
   if (packet_buffer[0] != Con::TRIGGER_MODE) {
-    throw runtime_error("Setting trigger mode failed");
+    throw runtime_error("Invalid packet received. Setting trigger mode failed");
   }
 
   cout << "Sensor trigger mode, trigger level: " 
