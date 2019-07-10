@@ -1,0 +1,1 @@
+./pulse --device /dev/ttyACM0 --file /var/lib/rrdcached/pulse.rrd --socket unix:/run/rrdcached/rrdcached.sock --low 85 --high 100 --rev 75 --meter 56786.9 --api-key 212dc3361019148fdb63eb0ba53b8d2dfcc4e2ec --sys-id 67956 --url https://pvoutput.org/service/r2/addstatus.jsp --debug
