@@ -115,7 +115,7 @@ unsigned long Pulse::getEnergyCounter(void) const
   
   char **ds_names = 0;
   char **ds_data = 0;
-  time_t last_update;
+  time_t last_update = 0;
   unsigned long ds_count = 0;
 
   ret = rrd_lastupdate_r(m_file, &last_update, &ds_count,

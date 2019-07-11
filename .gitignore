@@ -3,3 +3,5 @@ pulse
 *.png
 *.hex
 *.ods
+*.dump
+*.log
