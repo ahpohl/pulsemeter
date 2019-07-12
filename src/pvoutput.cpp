@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iomanip>
 #include <ctime>
+#include <mutex>
 
 // c headers
 #include <curl/curl.h>
@@ -39,7 +40,7 @@ size_t Pulse::curlCallback(void * t_contents, size_t t_size,
   return (t_size * t_nmemb);
 }
 
-void Pulse::uploadToPVOutput(void) const
+void Pulse::uploadToPVOutput(void) 
 {
   if (!m_pvoutput) {
     return;
@@ -111,22 +112,4 @@ void Pulse::uploadToPVOutput(void) const
   curl_slist_free_all(headers);
 	
   cout << "PVOutput response: " << read_buffer << endl;
-
-  if (m_debug) {
-    static unsigned long previous_counter = 0;
-    double my_energy = static_cast<double>(m_counter) / m_rev * 1000;
-    double my_power = (static_cast<double>(m_counter) - previous_counter) / 
-      m_rev * 1000 * 3600 / 300;
-    previous_counter = m_counter;
-
-    ofstream log;
-    log.open("pulse.log", ios::app);
-    
-    log << date_buffer << " " << time_buffer << "," << rawtime << "," 
-        << m_counter << "," << fixed << setprecision(1) 
-        << my_energy << "," << energy << "," 
-        << my_power << "," << power << endl;
-    
-    log.close();
-  }
 }

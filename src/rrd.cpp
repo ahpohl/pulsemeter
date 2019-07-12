@@ -78,6 +78,8 @@ void Pulse::createFile(char const* t_file, char const* t_socket,
   char * argv[Con::RRD_BUF_SIZE];
   time_t timestamp = time(nullptr);
   unsigned long requested_counter = lround(t_meter * t_rev);
+
+  lock_guard<mutex> lk(m_mutex);
   m_counter = getEnergyCounter();
 
   if (m_counter < requested_counter)
@@ -95,7 +97,7 @@ void Pulse::createFile(char const* t_file, char const* t_socket,
     m_counter = requested_counter;
     free(*argv);
   }
-
+  
   ret = rrdc_disconnect();
   if (ret) {
     throw runtime_error(rrd_get_error());
@@ -151,6 +153,7 @@ void Pulse::setEnergyCounter(void)
 
   if (getSensorValue())
   {
+    lock_guard<mutex> lk(m_mutex);
     ++m_counter;
         
     // rrd format: "timestamp : energy (Wh) : power (Ws)"

@@ -2,6 +2,7 @@
 #define PULSE_HPP
 
 #include <ctime>
+#include <mutex>
 
 class Pulse
 {
@@ -27,9 +28,10 @@ public:
   
   void setPVOutput(char const* t_apikey, char const* t_sysid,
     char const* t_url);
-  void uploadToPVOutput(void) const; 
+  void uploadToPVOutput(void); 
 
 private:
+  std::mutex m_mutex;           // class level mutex
   char const* m_file;           // filename of RRD database
   char const* m_socket;         // socket of rrdcached daemon
   char const* m_apikey;         // PVOutput api key
