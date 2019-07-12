@@ -16,7 +16,7 @@ public:
   void openSerialPort(char const* t_device);
   void setRawMode(void);
   void setTriggerMode(short int const& t_low, short int const& t_high) const;
-  int readSensorValue(void);
+  int getSensorValue(void) const;
 
   void createFile(char const* t_file, char const* t_socket,
     int const& t_rev, double const& t_meter);
@@ -38,7 +38,6 @@ private:
   int m_rev;                    // revolutions per kWh
   bool m_debug;                 // debug flag
   int m_serialport;             // serial port
-  int m_sensor;                 // sensor value
   unsigned long m_counter;      // energy counter
   bool m_raw;                   // flag for raw sensor mode
   bool m_pvoutput;              // flag for pvoutput

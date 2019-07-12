@@ -15,7 +15,6 @@ Pulse::Pulse(void)
   m_rev = 0;
 	m_debug = false;
   m_serialport = 0;
-  m_sensor = 0;
   m_counter = 0;
   m_raw = false;
   m_pvoutput = false;
@@ -44,14 +43,13 @@ void Pulse::setDebug(void)
 void Pulse::runRaw(void)
 {
   while (1) {
-    readSensorValue();
+    getSensorValue();
   }
 }
 
 void Pulse::runTrigger(void)
 {
   while (1) {
-    readSensorValue();
     setEnergyCounter();
   }
 }

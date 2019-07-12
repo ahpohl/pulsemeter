@@ -149,7 +149,7 @@ void Pulse::setEnergyCounter(void)
   char * argv[Con::RRD_BUF_SIZE];
 	*argv = (char *) malloc(Con::RRD_BUF_SIZE * sizeof(char));
 
-  if (m_sensor == 1)
+  if (getSensorValue())
   {
     ++m_counter;
         

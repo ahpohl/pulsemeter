@@ -112,8 +112,7 @@ void Pulse::uploadToPVOutput(void) const
 	
   cout << "PVOutput response: " << read_buffer << endl;
 
-  bool is_log = true;
-  if (is_log) {
+  if (m_debug) {
     static unsigned long previous_counter = 0;
     double my_energy = static_cast<double>(m_counter) / m_rev * 1000;
     double my_power = (static_cast<double>(m_counter) - previous_counter) / 
@@ -123,7 +122,6 @@ void Pulse::uploadToPVOutput(void) const
     ofstream log;
     log.open("pulse.log", ios::app);
     
-
     log << date_buffer << " " << time_buffer << "," << rawtime << "," 
         << m_counter << "," << fixed << setprecision(1) 
         << my_energy << "," << energy << "," 

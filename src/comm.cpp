@@ -352,7 +352,7 @@ void Pulse::setTriggerMode(short int const& t_low,
     << dec << t_low << " " << t_high << endl;
 }
 
-int Pulse::readSensorValue(void)
+int Pulse::getSensorValue(void) const
 {
   unsigned char packet[Con::BUF_SIZE];
   memset(packet, '\0', Con::BUF_SIZE);
@@ -363,11 +363,11 @@ int Pulse::readSensorValue(void)
     throw runtime_error("Packet not a sensor reading");
   }
 
-  m_sensor = (short) ((packet[1] & 0xFF) << 8) | (packet[2] & 0xFF);
+  int sensor_value = (short) ((packet[1] & 0xFF) << 8) | (packet[2] & 0xFF);
 
   if (m_raw) {
-    cout << dec << m_sensor << endl;
+    cout << dec << sensor_value << endl;
   }
 
-  return m_sensor;
+  return sensor_value;
 }
