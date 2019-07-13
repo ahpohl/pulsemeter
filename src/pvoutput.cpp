@@ -3,7 +3,6 @@
 #include <fstream>
 #include <iomanip>
 #include <ctime>
-#include <mutex>
 
 // c headers
 #include <curl/curl.h>
