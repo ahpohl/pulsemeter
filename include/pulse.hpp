@@ -2,7 +2,6 @@
 #define PULSE_HPP
 
 #include <ctime>
-#include <mutex>
 
 class Pulse
 {
@@ -22,16 +21,15 @@ public:
   void createFile(char const* t_file, char const* t_socket,
     int const& t_rev, double const& t_meter);
   unsigned long getEnergyCounter(void) const;
-  void setEnergyCounter(void);
-  void getEnergyAndPower(time_t const& t_time, double* t_energy,
-    double* t_power) const;
+  void setEnergyCounter(void) const;
+  void getEnergyAndPower(time_t const& t_time, time_t* t_endtime,
+    double* t_energy, double* t_power) const;
   
   void setPVOutput(char const* t_apikey, char const* t_sysid,
     char const* t_url);
   void uploadToPVOutput(void); 
 
 private:
-  std::mutex m_mutex;           // class level mutex
   char const* m_file;           // filename of RRD database
   char const* m_socket;         // socket of rrdcached daemon
   char const* m_apikey;         // PVOutput api key
@@ -40,7 +38,6 @@ private:
   int m_rev;                    // revolutions per kWh
   bool m_debug;                 // debug flag
   int m_serialport;             // serial port
-  unsigned long m_counter;      // energy counter
   bool m_raw;                   // flag for raw sensor mode
   bool m_pvoutput;              // flag for pvoutput
 

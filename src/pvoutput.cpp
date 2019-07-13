@@ -78,14 +78,16 @@ void Pulse::uploadToPVOutput(void)
 	headers = curl_slist_append(headers, sys_id_header.c_str());
 	curl_easy_setopt(easyhandle, CURLOPT_HTTPHEADER, headers);
 
+  time_t endtime = 0;
   double energy = 0;
   double power = 0;
  
-  getEnergyAndPower(rawtime, &energy, &power);
+  getEnergyAndPower(rawtime, &endtime, &energy, &power);
 
   char date_buffer[12] = {0};
   char time_buffer[12] = {0};
   
+  tm = localtime(&endtime);
   strftime(date_buffer, 11, "%Y%m%d", tm);
 	strftime(time_buffer, 11, "%R", tm);
 

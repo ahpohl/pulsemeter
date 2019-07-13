@@ -78,11 +78,9 @@ void Pulse::createFile(char const* t_file, char const* t_socket,
   char * argv[Con::RRD_BUF_SIZE];
   time_t timestamp = time(nullptr);
   unsigned long requested_counter = lround(t_meter * t_rev);
+  unsigned long counter = getEnergyCounter();
 
-  lock_guard<mutex> lk(m_mutex);
-  m_counter = getEnergyCounter();
-
-  if (m_counter < requested_counter)
+  if (counter < requested_counter)
   {
 	  *argv = (char *) malloc(Con::RRD_BUF_SIZE * sizeof(char));
     memset(*argv, '\0', Con::RRD_BUF_SIZE);
@@ -93,8 +91,7 @@ void Pulse::createFile(char const* t_file, char const* t_socket,
     if (ret) {
       throw runtime_error(rrd_get_error());
     }
-  
-    m_counter = requested_counter;
+    counter = requested_counter;
     free(*argv);
   }
   
@@ -104,8 +101,8 @@ void Pulse::createFile(char const* t_file, char const* t_socket,
   }
 
   cout << "Meter reading: " << fixed << setprecision(1)
-    << static_cast<double>(m_counter) / t_rev << " kWh, "
-    << dec << m_counter << " counts"  << endl;
+    << static_cast<double>(counter) / t_rev << " kWh, "
+    << dec << counter << " counts"  << endl;
 }
 
 unsigned long Pulse::getEnergyCounter(void) const
@@ -140,7 +137,7 @@ unsigned long Pulse::getEnergyCounter(void) const
   return counter;
 }
 
-void Pulse::setEnergyCounter(void)
+void Pulse::setEnergyCounter(void) const
 {
   int ret = rrdc_connect(m_socket);
   if (ret) {
@@ -148,18 +145,18 @@ void Pulse::setEnergyCounter(void)
   }
 
 	time_t timestamp = time(nullptr);
-  char * argv[Con::RRD_BUF_SIZE];
-	*argv = (char *) malloc(Con::RRD_BUF_SIZE * sizeof(char));
+  char* argv[Con::RRD_BUF_SIZE];
+	*argv = (char*) malloc(Con::RRD_BUF_SIZE * sizeof(char));
+  static unsigned long counter = getEnergyCounter();
 
   if (getSensorValue())
   {
-    lock_guard<mutex> lk(m_mutex);
-    ++m_counter;
+    ++counter;
         
     // rrd format: "timestamp : energy (Wh) : power (Ws)"
 		memset(*argv, '\0', Con::RRD_BUF_SIZE);
 		snprintf(*argv, Con::RRD_BUF_SIZE, "%ld:%ld:%ld", timestamp, 
-      m_counter, m_counter);
+      counter, counter);
 	
 		if (m_debug) {
 			cout << argv[0] << endl;
@@ -179,8 +176,8 @@ void Pulse::setEnergyCounter(void)
 	free(*argv);
 }
 
-void Pulse::getEnergyAndPower(time_t const& t_time, double* t_energy, 
-  double* t_power) const
+void Pulse::getEnergyAndPower(time_t const& t_time, time_t* t_endtime,
+  double* t_energy, double* t_power) const
 {
   if (!t_time) {
     throw runtime_error("Timestamp not set");
@@ -197,7 +194,7 @@ void Pulse::getEnergyAndPower(time_t const& t_time, double* t_energy,
   }
  
   int const OFFSET = 60;
-  time_t req_time = t_time - OFFSET; 
+  *t_endtime = t_time - OFFSET; 
 	unsigned long step_size = 300;
 	vector<char const*> args;	
 
@@ -208,10 +205,10 @@ void Pulse::getEnergyAndPower(time_t const& t_time, double* t_energy,
 	string step = to_string(step_size);
 	args.push_back(step.c_str());
 	args.push_back("--start");
-	string start = to_string(req_time - step_size);
+	string start = to_string(*t_endtime - step_size);
 	args.push_back(start.c_str());
 	args.push_back("--end");
-	string end = to_string(req_time);
+	string end = to_string(*t_endtime);
 	args.push_back(end.c_str());
 	string def_counts = string("DEF:counts=") + m_file + ":energy:LAST";
 	args.push_back(def_counts.c_str());
@@ -228,14 +225,13 @@ void Pulse::getEnergyAndPower(time_t const& t_time, double* t_energy,
 	args.push_back("XPORT:power");
 
 	time_t start_time = 0;
-  time_t end_time = 0;
   int no_output = 0;
   unsigned long ds_count = 0;
   char ** ds_legend = 0;
   rrd_value_t * ds_data = 0;
   
   ret = rrd_xport(args.size(), (char**)args.data(), &no_output, &start_time,
-		&end_time, &step_size, &ds_count, &ds_legend, &ds_data);    
+		t_endtime, &step_size, &ds_count, &ds_legend, &ds_data);    
 	if (ret) {
     throw runtime_error(rrd_get_error());
   }
@@ -245,23 +241,15 @@ void Pulse::getEnergyAndPower(time_t const& t_time, double* t_energy,
     throw runtime_error(rrd_get_error());
   }
 
-  if ((t_time != end_time) || 
-    ((t_time - static_cast<time_t>(step_size)) != start_time))
-  {
-    if (m_debug) {
-      cout << dec << "Start time: " << (t_time - step_size)
-        << " ret " << start_time << endl
-        << "End time: " << t_time << " ret " << end_time 
-        << endl;
-    }
-    throw runtime_error("Requested time does not match returned time");
+  if (*t_endtime != t_time) {
+    cout << "Requested time does not match time reported by rrd xport" << endl;
   }
 
 	// ds_data[0]: energy in Wh, ds_data[1]: power in W
   memcpy(t_energy, ds_data, sizeof(double));
   memcpy(t_power, ++ds_data, sizeof(double));
 
-  struct tm * tm = localtime(&t_time);
+  struct tm * tm = localtime(t_endtime);
   char time_buffer[20] = {0};
   strftime(time_buffer, 19, "%F %R", tm);
 

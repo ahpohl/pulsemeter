@@ -15,7 +15,6 @@ Pulse::Pulse(void)
   m_rev = 0;
 	m_debug = false;
   m_serialport = 0;
-  m_counter = 0;
   m_raw = false;
   m_pvoutput = false;
 }
