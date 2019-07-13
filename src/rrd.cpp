@@ -123,16 +123,11 @@ unsigned long Pulse::getEnergyCounter(void) const
     throw runtime_error(rrd_get_error());
   }
   
-  unsigned long counter = 0;
+  // ds_data[0]: energy counts, ds_data[1]: power counts
+  unsigned long counter = atol(ds_data[0]);
 
-  // ds_data[0]: energy, ds_data[1]: power
-  for (unsigned long i = 0; i < ds_count; i++) {
-    if (strcmp(ds_names[i], "energy") == 0) {
-      counter = atol(ds_data[i]);
-    }
-    rrd_freemem(ds_names[i]);
-    rrd_freemem(ds_data[i]);
-  }
+  rrd_freemem(ds_names);
+  rrd_freemem(ds_data);
 
   return counter;
 }
@@ -160,8 +155,13 @@ void Pulse::setEnergyCounter(void) const
 	
 		if (m_debug) {
 			cout << argv[0] << endl;
-    }
-
+    }    
+    
+    ret = rrdc_flush_if_daemon(m_socket, m_file);
+    if (ret) {
+      throw runtime_error(rrd_get_error());
+    } 
+ 
 		ret = rrdc_update(m_file, Con::RRD_DS_LEN, (const char **) argv);
 		if (ret) {
       throw runtime_error(rrd_get_error());
@@ -241,7 +241,7 @@ void Pulse::getEnergyAndPower(time_t const& t_time, time_t* t_endtime,
     throw runtime_error(rrd_get_error());
   }
 
-  if (*t_endtime != t_time) {
+  if ((*t_endtime != t_time) && m_debug) {
     cout << "Requested time does not match time reported by rrd xport" << endl;
   }
 
