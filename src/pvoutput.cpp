@@ -111,6 +111,19 @@ void Pulse::uploadToPVOutput(void)
  
 	curl_easy_cleanup(easyhandle);
   curl_slist_free_all(headers);
+
+
+  if ((endtime != rawtime) && m_debug) {
+    cout << "Requested time does not match time reported by rrd xport" << endl;
+  }
+
+  char buffer[32] = {0};
+  strftime(buffer, 31, "%F %T", tm);
+
+  cout << "Date: " << buffer
+    << ", energy: " << fixed << setprecision(1) << energy / 1000
+    << " kWh, power: " << setprecision(1) << power << " W, sys id: "
+    << m_sysid << endl;
 	
   cout << "PVOutput response: " << read_buffer << endl;
 }

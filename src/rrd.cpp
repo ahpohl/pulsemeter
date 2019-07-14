@@ -267,20 +267,10 @@ void Pulse::getEnergyAndPower(time_t const& t_time, time_t* t_endtime,
     throw runtime_error(rrd_get_error());
   }
 
-  if ((*t_endtime != t_time) && m_debug) {
-    cout << "Requested time does not match time reported by rrd xport" << endl;
-  }
-
 	// ds_data[0]: energy in Wh, ds_data[1]: power in W
   memcpy(t_energy, ds_data, sizeof(double));
   memcpy(t_power, ++ds_data, sizeof(double));
 
-  struct tm * tm = localtime(t_endtime);
-  char time_buffer[20] = {0};
-  strftime(time_buffer, 19, "%F %R", tm);
-
-  cout << "Date: " << time_buffer
-    << ", energy: " << fixed << setprecision(1) << *t_energy / 1000
-    << " kWh, power: " << setprecision(1) << *t_power << " W, sys id: "
-    << m_sysid << endl;
+  rrd_freemem(ds_data);
+  rrd_freemem(ds_legend);
 }
