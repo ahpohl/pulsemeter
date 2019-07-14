@@ -14,6 +14,7 @@ extern "C" {
 
 // program headers
 #include "pulse.hpp"
+#include "rrd.hpp"
 
 using namespace std;
 
@@ -52,8 +53,13 @@ void Pulse::uploadToPVOutput(void)
   struct tm* tm = localtime(&rawtime);
   bool is_time = false;
 
+  // upload at interval[steps] plus the offset in minutes
+  // because the rrd average consolitation won't be ready at
+  // exact intervals, so upload will happen later.
+  // PVOutput.org will correct the offsets and saves the 
+  // data at exact intervals
   for (int i = 0; i < STEPS; ++i, ++p) {
-    if ((*p == tm->tm_min) && (tm->tm_sec == 0)) {
+    if (((*p + Con::RRD_MIN_OFFSET) == tm->tm_min) && (tm->tm_sec == 0)) {
       is_time = true;
       break;
     }

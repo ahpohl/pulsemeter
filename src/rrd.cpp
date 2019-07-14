@@ -226,8 +226,7 @@ void Pulse::getEnergyAndPower(time_t const& t_time, time_t* t_endtime,
     throw runtime_error(rrd_get_error());
   }
  
-  int const OFFSET = 60;
-  *t_endtime = t_time - OFFSET; 
+  *t_endtime = t_time - (Con::RRD_MIN_OFFSET * 60); 
 	unsigned long step_size = 300;
 	vector<char const*> args;	
 
