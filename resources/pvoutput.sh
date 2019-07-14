@@ -15,17 +15,16 @@ step_size=300
 
 # fetch data at current time
 fetch_time=$(date +%H:%M --date '-1 min')
+json=$(rrdtool xport --daemon $rrdcached --step $step_size --end $fetch_time --start e-$step_size --json  "DEF:counts=$rrd:energy:LAST" "CDEF:energy_kwh=counts,$rev_per_kwh,/" "CDEF:energy=energy_kwh,1000,*" "DEF:value=$rrd:power:AVERAGE" "CDEF:power=value,48000,*" XPORT:energy XPORT:power)
 
 # calculate energy in Wh
-energy_json=$(rrdtool xport --daemon $rrdcached --step $step_size --start e-$step_size --end $fetch_time --json  "DEF:counts=$rrd:energy:LAST" "CDEF:energy_kwh=counts,$rev_per_kwh,/" "CDEF:energy=energy_kwh,1000,*" XPORT:energy)
-energy=$(echo $energy_json | jq '.data[0][0]')
+energy=$(echo $json | jq '.data[0][0]')
 
 # calculate power in W
-power_json=$(rrdtool xport --daemon $rrdcached --step $step_size --start e-$step_size --end $fetch_time --json "DEF:value=$rrd:power:AVERAGE" "CDEF:power=value,48000,*" XPORT:power)
-power=$(echo $power_json | jq '.data[0][0]')
+power=$(echo $json | jq '.data[0][1]')
 
 # pulse date and time
-epoch=$(echo $power_json | jq '.meta.end')
+epoch=$(echo $json | jq '.meta.end')
 date=$(date -d @$epoch +%Y%m%d)
 time=$(date -d @$epoch +%H:%M)
 
