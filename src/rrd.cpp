@@ -145,40 +145,42 @@ unsigned long Pulse::getEnergyCounter(void) const
 
 void Pulse::setEnergyCounter(void) const
 {
-  int ret = rrdc_connect(m_socket);
-  if (ret) {
-    throw runtime_error(rrd_get_error());
+  if (!getSensorValue())
+  {
+    return;
   }
+
+  static unsigned long counter = getEnergyCounter();
+  ++counter;
 
 	time_t timestamp = time(nullptr);
   char* argv[Con::RRD_BUF_SIZE];
 	*argv = (char*) malloc(Con::RRD_BUF_SIZE * sizeof(char));
-  static unsigned long counter = getEnergyCounter();
 
-  if (getSensorValue())
-  {
-    ++counter;
-        
-    // rrd format: "timestamp : energy (Wh) : power (Ws)"
-		memset(*argv, '\0', Con::RRD_BUF_SIZE);
-		snprintf(*argv, Con::RRD_BUF_SIZE, "%ld:%ld:%ld", timestamp, 
-      counter, counter);
+  // rrd format: "timestamp : energy (Wh) : power (Ws)"
+  memset(*argv, '\0', Con::RRD_BUF_SIZE);
+  snprintf(*argv, Con::RRD_BUF_SIZE, "%ld:%ld:%ld", timestamp, 
+    counter, counter);
 	
-		if (m_debug) {
-			cout << argv[0] << endl;
-    }    
-    
-    ret = rrdc_flush_if_daemon(m_socket, m_file);
-    if (ret) {
-      throw runtime_error(rrd_get_error());
-    } 
- 
-		ret = rrdc_update(m_file, Con::RRD_DS_LEN, (const char **) argv);
-		if (ret) {
-      throw runtime_error(rrd_get_error());
-    }
-	}
+  if (m_debug) {
+	  cout << argv[0] << endl;
+  }
 
+  int ret = rrdc_connect(m_socket);
+  if (ret) {
+    throw runtime_error(rrd_get_error());
+  }    
+    
+  ret = rrdc_flush_if_daemon(m_socket, m_file);
+  if (ret) {
+    throw runtime_error(rrd_get_error());
+  } 
+ 
+  ret = rrdc_update(m_file, Con::RRD_DS_LEN, (const char **) argv);
+  if (ret) {
+    throw runtime_error(rrd_get_error());
+  }
+  
   ret = rrdc_disconnect();
   if (ret) {
     throw runtime_error(rrd_get_error());
@@ -188,13 +190,13 @@ void Pulse::setEnergyCounter(void) const
     ofstream log;
     log.open("pulse.log", ios::app);
     struct tm* tm = localtime(&timestamp);
-    char time_buffer[20] = {0};
-    strftime(time_buffer, 19, "%F %T", tm);
+    char time_buffer[32] = {0};
+    strftime(time_buffer, 31, "%F %T", tm);
 
     log << time_buffer << "," << timestamp << "," << counter
       << "," << getEnergyCounter() << endl; 
     
-    log.close();  
+    log.close();
   }
 
 	free(*argv);
