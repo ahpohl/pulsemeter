@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <iomanip>
 #include <vector>
 #include <ctime>
@@ -107,7 +108,12 @@ void Pulse::createFile(char const* t_file, char const* t_socket,
 
 unsigned long Pulse::getEnergyCounter(void) const
 {
-  int ret = rrdc_flush_if_daemon(m_socket, m_file);
+  int ret = rrdc_connect(m_socket);
+  if (ret) {
+    throw runtime_error(rrd_get_error());
+  }  
+
+  ret = rrdc_flush_if_daemon(m_socket, m_file);
   if (ret) {
     throw runtime_error(rrd_get_error());
   }
@@ -122,6 +128,11 @@ unsigned long Pulse::getEnergyCounter(void) const
   if (ret) {
     throw runtime_error(rrd_get_error());
   }
+
+  ret = rrdc_disconnect();
+  if (ret) {
+    throw runtime_error(rrd_get_error());
+  }  
   
   // ds_data[0]: energy counts, ds_data[1]: power counts
   unsigned long counter = atol(ds_data[0]);
@@ -171,6 +182,19 @@ void Pulse::setEnergyCounter(void) const
   ret = rrdc_disconnect();
   if (ret) {
     throw runtime_error(rrd_get_error());
+  }
+
+  if (m_debug) {
+    ofstream log;
+    log.open("pulse.log", ios::app);
+    struct tm* tm = localtime(&timestamp);
+    char time_buffer[20] = {0};
+    strftime(time_buffer, 19, "%F %R", tm);
+
+    log << time_buffer << "," << timestamp << "," << counter
+      << getEnergyCounter() << endl; 
+    
+    log.close();  
   }
 
 	free(*argv);
