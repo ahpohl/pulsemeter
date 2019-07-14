@@ -129,7 +129,7 @@ void Pulse::uploadToPVOutput(void)
 
   if (m_debug) {
     ofstream log;
-    log.open("pulse.log", ios::app);
+    log.open("pvoutput.log", ios::app);
 
     // Date,Timestamp,Energy [Wh],Power [W]
     log << buffer << "," << endtime << "," << fixed << setprecision(1)

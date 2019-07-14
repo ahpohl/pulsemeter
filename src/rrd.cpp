@@ -195,12 +195,13 @@ void Pulse::setEnergyCounter(void) const
 
     static time_t previous_time = 0;
     double energy = static_cast<double>(counter) * 1000 / m_rev;
-    double power = 3600000 / (static_cast<double>(m_rev) * (timestamp - previous_time));
+    double power = static_cast<double>(3600000) / 
+      (m_rev * (timestamp - previous_time));
     previous_time = timestamp;
 
     // Date,Timestamp,Counter,Energy [Wh],Power [W] 
     log << time_buffer << "," << timestamp << "," << counter
-      << "," << energy << "," << power << endl; 
+      << fixed << setprecision(1) << "," << energy << "," << power << endl; 
     
     log.close();
   }
@@ -276,7 +277,4 @@ void Pulse::getEnergyAndPower(time_t const& t_time, time_t* t_endtime,
 	// ds_data[0]: energy in Wh, ds_data[1]: power in W
   memcpy(t_energy, ds_data, sizeof(double));
   memcpy(t_power, ++ds_data, sizeof(double));
-
-  rrd_freemem(ds_data);
-  rrd_freemem(ds_legend);
 }
