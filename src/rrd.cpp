@@ -186,7 +186,6 @@ void Pulse::setEnergyCounter(void) const
     throw runtime_error(rrd_get_error());
   }
 
-  /*
   if (m_debug) {
     ofstream log;
     log.open("pulse.log", ios::app);
@@ -206,7 +205,6 @@ void Pulse::setEnergyCounter(void) const
     
     log.close();
   }
-  */
 
 	free(*argv);
 }

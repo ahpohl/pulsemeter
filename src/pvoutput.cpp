@@ -83,8 +83,11 @@ void Pulse::uploadToPVOutput(void)
   static unsigned long previous_counter = 0;
 
   double energy = static_cast<double>(counter) * 1000 / m_rev;
-  double power = (static_cast<double>(counter) - previous_counter) * 3600000 /
-    (m_rev * (rawtime - previous_time));
+  double power = 0;
+  if (previous_time) {
+    double power = (static_cast<double>(counter) - previous_counter) * 3600000 /
+      (m_rev * (rawtime - previous_time));
+  }
   previous_time = rawtime;
   previous_counter = counter;
 
