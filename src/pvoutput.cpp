@@ -184,7 +184,7 @@ void Pulse::logXport(void) const
   strftime(buffer, 31, "%F %T", tm);
 
   ofstream log;
-  log.open("pvoutput_xport.log", ios::app);
+  log.open("xport.log", ios::app);
 
   // Date,Timestamp,Energy [Wh],Power [W]
   log << buffer << "," << endtime << "," << fixed << setprecision(1)
