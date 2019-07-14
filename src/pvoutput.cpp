@@ -40,7 +40,7 @@ size_t Pulse::curlCallback(void * t_contents, size_t t_size,
   return (t_size * t_nmemb);
 }
 
-void Pulse::uploadToPVOutput(void) 
+void Pulse::uploadToPVOutput(void) const
 {
   if (!m_pvoutput) {
     return;
@@ -138,4 +138,57 @@ void Pulse::uploadToPVOutput(void)
 
     log.close();
   }
+}
+
+void Pulse::logXport(void) const
+{
+  if (!m_pvoutput) {
+    return;
+  }
+
+  int const STEPS = 12;
+  int interval[STEPS] = {0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55};
+  int *p = interval;
+  time_t rawtime = time(nullptr);
+  struct tm* tm = localtime(&rawtime);
+  bool is_time = false;
+
+  // upload at interval[steps] plus the offset in minutes
+  // because the rrd average consolitation won't be ready at
+  // exact intervals, so upload will happen later.
+  // PVOutput.org will correct the offsets and saves the 
+  // data at exact intervals
+  for (int i = 0; i < STEPS; ++i, ++p) {
+    if (((*p + Con::RRD_MIN_OFFSET) == tm->tm_min) && (tm->tm_sec == 0)) {
+      is_time = true;
+      break;
+    }
+  }
+
+  if (!is_time) {
+    return;
+  }
+
+  time_t endtime = 0;
+  double energy = 0;
+  double power = 0;
+ 
+  getEnergyAndPower(rawtime, &endtime, &energy, &power);
+  tm = localtime(&endtime);
+
+  if ((endtime != rawtime) && m_debug) {
+    cout << "Requested time does not match time reported by rrd xport" << endl;
+  }
+
+  char buffer[32] = {0};
+  strftime(buffer, 31, "%F %T", tm);
+
+  ofstream log;
+  log.open("pvoutput_xport.log", ios::app);
+
+  // Date,Timestamp,Energy [Wh],Power [W]
+  log << buffer << "," << endtime << "," << fixed << setprecision(1)
+    << energy << "," << power << endl;
+
+  log.close();
 }

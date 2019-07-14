@@ -57,6 +57,9 @@ void Pulse::runPVOutput(void)
 {
   while (1) {
     uploadToPVOutput();
+    if (m_debug) {
+      logXport();
+    }
     sleep(1);
   }
 } 
