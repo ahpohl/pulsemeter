@@ -126,4 +126,15 @@ void Pulse::uploadToPVOutput(void)
     << m_sysid << endl;
 	
   cout << "PVOutput response: " << read_buffer << endl;
+
+  if (m_debug) {
+    ofstream log;
+    log.open("pulse.log", ios::app);
+
+    // Date,Timestamp,Energy [Wh],Power [W]
+    log << buffer << "," << endtime << "," << fixed << setprecision(1)
+        << energy << "," << power << endl;
+
+    log.close();
+  }
 }

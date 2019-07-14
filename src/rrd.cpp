@@ -193,8 +193,14 @@ void Pulse::setEnergyCounter(void) const
     char time_buffer[32] = {0};
     strftime(time_buffer, 31, "%F %T", tm);
 
+    static time_t previous_time = 0;
+    double energy = static_cast<double>(counter) * 1000 / m_rev;
+    double power = 3600000 / (static_cast<double>(m_rev) * (timestamp - previous_time));
+    previous_time = timestamp;
+
+    // Date,Timestamp,Counter,Energy [Wh],Power [W] 
     log << time_buffer << "," << timestamp << "," << counter
-      << "," << getEnergyCounter() << endl; 
+      << "," << energy << "," << power << endl; 
     
     log.close();
   }
