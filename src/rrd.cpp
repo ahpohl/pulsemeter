@@ -189,10 +189,10 @@ void Pulse::setEnergyCounter(void) const
     log.open("pulse.log", ios::app);
     struct tm* tm = localtime(&timestamp);
     char time_buffer[20] = {0};
-    strftime(time_buffer, 19, "%F %R", tm);
+    strftime(time_buffer, 19, "%F %T", tm);
 
     log << time_buffer << "," << timestamp << "," << counter
-      << getEnergyCounter() << endl; 
+      << "," << getEnergyCounter() << endl; 
     
     log.close();  
   }
