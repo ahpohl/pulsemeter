@@ -53,13 +53,8 @@ void Pulse::uploadToPVOutput(void)
   struct tm* tm = localtime(&rawtime);
   bool is_time = false;
 
-  // upload at interval[steps] plus the offset in minutes
-  // because the rrd average consolitation won't be ready at
-  // exact intervals, so upload will happen later.
-  // PVOutput.org will correct the offsets and saves the 
-  // data at exact intervals
   for (int i = 0; i < STEPS; ++i, ++p) {
-    if (((*p + Con::RRD_MIN_OFFSET) == tm->tm_min) && (tm->tm_sec == 0)) {
+    if ((*p == tm->tm_min) && (tm->tm_sec == 0)) {
       is_time = true;
       break;
     }
@@ -83,16 +78,18 @@ void Pulse::uploadToPVOutput(void)
 	headers = curl_slist_append(headers, sys_id_header.c_str());
 	curl_easy_setopt(easyhandle, CURLOPT_HTTPHEADER, headers);
 
-  time_t endtime = 0;
-  double energy = 0;
-  double power = 0;
- 
-  getEnergyAndPower(rawtime, &endtime, &energy, &power);
+  static time_t previous_time = 0;
+  unsigned long counter = getEnergyCounter();
+  static unsigned long previous_counter = 0;
+
+  double energy = static_cast<double>(counter) * 1000 / m_rev;
+  double power = (static_cast<double>(counter) - previous_counter) * 3600000 /
+    (m_rev * (rawtime - previous_time));
+  previous_time = rawtime;
+  previous_counter = counter;
 
   char date_buffer[12] = {0};
   char time_buffer[12] = {0};
-  
-  tm = localtime(&endtime);
   strftime(date_buffer, 11, "%Y%m%d", tm);
 	strftime(time_buffer, 11, "%R", tm);
 
@@ -118,11 +115,6 @@ void Pulse::uploadToPVOutput(void)
 	curl_easy_cleanup(easyhandle);
   curl_slist_free_all(headers);
 
-
-  if ((endtime != rawtime) && m_debug) {
-    cout << "Requested time does not match time reported by rrd xport" << endl;
-  }
-
   char buffer[32] = {0};
   strftime(buffer, 31, "%F %T", tm);
 
@@ -137,9 +129,9 @@ void Pulse::uploadToPVOutput(void)
     ofstream log;
     log.open("pvoutput.log", ios::app);
 
-    // Date,Timestamp,Energy [Wh],Power [W]
-    log << buffer << "," << endtime << "," << fixed << setprecision(1)
-        << energy << "," << power << endl;
+    // Date,Timestamp,Counter,Energy [Wh],Power [W]
+    log << buffer << "," << rawtime << "," << counter << "," 
+        << fixed << setprecision(1) << energy << "," << power << endl;
 
     log.close();
   }
