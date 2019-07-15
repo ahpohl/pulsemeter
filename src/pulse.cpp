@@ -56,9 +56,9 @@ void Pulse::runTrigger(void)
 void Pulse::runPVOutput(void)
 {
   while (1) {
-    uploadToPVOutput();
+    uploadXport();
     if (m_debug) {
-      logXport();
+      logAverage();
     }
     sleep(1);
   }

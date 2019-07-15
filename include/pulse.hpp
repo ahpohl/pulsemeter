@@ -27,8 +27,8 @@ public:
   
   void setPVOutput(char const* t_apikey, char const* t_sysid,
     char const* t_url);
-  void uploadToPVOutput(void) const;
-  void logXport(void) const;
+  void logAverage(void) const;
+  void uploadXport(void) const;
 
 private:
   char const* m_file;           // filename of RRD database
