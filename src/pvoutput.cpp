@@ -68,10 +68,10 @@ void Pulse::logAverage(void) const
   unsigned long counter = getEnergyCounter();
   static unsigned long previous_counter = 0;
 
-  double energy = static_cast<double>(counter) * 1000 / m_rev;
+  double energy = 1000.0 * counter / m_rev;
   double power = 0;
   if (previous_time) {
-    power = (static_cast<double>(counter) - previous_counter) * 3600000 /
+    power = 3600.0 * 1000.0 * (counter - previous_counter) /
       (m_rev * (rawtime - previous_time));
   }
   previous_time = rawtime;
@@ -171,7 +171,7 @@ void Pulse::uploadXport(void) const
   strftime(buffer, 31, "%F %T", tm);
 
   cout << "Date: " << buffer
-    << ", energy: " << fixed << setprecision(1) << energy / 1000
+    << ", energy: " << fixed << setprecision(1) << energy / 1000.0
     << " kWh, power: " << setprecision(1) << power << " W, sys id: "
     << m_sysid << endl;
 

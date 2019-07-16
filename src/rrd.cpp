@@ -36,7 +36,7 @@ void Pulse::createFile(char const* t_file, char const* t_socket,
   m_rev = t_rev;
 
 	time_t timestamp_start = time(nullptr) - 120;
-	const int ds_count = 10;
+	const int ds_count = 14;
 	const int step_size = 60;
 	const int no_overwrite = 1;
 
@@ -50,12 +50,16 @@ void Pulse::createFile(char const* t_file, char const* t_socket,
 		"DS:energy:GAUGE:3600:0:U",
     "DS:power:COUNTER:3600:0:48000",
 		"RRA:LAST:0.5:1:1500",
+    "RRA:AVERAGE:0.5:1:1500",
 		"RRA:LAST:0.5:5:900",
+    "RRA:AVERAGE:0.5:5:900",
+    "RRA:LAST:0.5:10:450",
+    "RRA:AVERAGE:0.5:10:450",
+    "RRA:LAST:0.5:15:300",
+    "RRA:AVERAGE:0.5:15:300",
 		"RRA:LAST:0.5:60:750",
+    "RRA:AVERAGE:0.5:60:750",
 		"RRA:LAST:0.5:1440:375",
-		"RRA:AVERAGE:0.5:1:1500",
-		"RRA:AVERAGE:0.5:5:900",
-		"RRA:AVERAGE:0.5:60:750",
     "RRA:AVERAGE:0.5:1440:375",
 		nullptr};
 
@@ -205,9 +209,8 @@ void Pulse::setEnergyCounter(void) const
     strftime(time_buffer, 31, "%F %T", tm);
 
     static time_t previous_time = 0;
-    double energy = static_cast<double>(counter) * 1000 / m_rev;
-    double power = static_cast<double>(3600000) / 
-      (m_rev * (timestamp - previous_time));
+    double energy = 1000.0 * counter / m_rev;
+    double power = 3600.0 * 1000.0 / (m_rev * (timestamp - previous_time));
     previous_time = timestamp;
 
     // Date,Timestamp,Counter,Energy [Wh],Power [W] 
@@ -260,9 +263,9 @@ void Pulse::getEnergyAndPower(time_t const& t_time, time_t* t_endtime,
 	string cdef_energy_kwh = string("CDEF:energy_kwh=counts,") 
 		+ to_string(m_rev) + ",/";
 	args.push_back(cdef_energy_kwh.c_str());
-	args.push_back("CDEF:energy=energy_kwh,1000,*");
+	args.push_back("CDEF:energy=energy_kwh,1000.0,*");
 	string cdef_power = string("CDEF:power=value,") 
-		+ to_string(3600 * 1000 / m_rev) + ",*";
+		+ to_string(3600.0 * 1000.0 / m_rev) + ",*";
 	args.push_back(cdef_power.c_str());	
 	args.push_back("XPORT:energy");
 	args.push_back("XPORT:power");
