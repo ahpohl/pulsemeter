@@ -35,11 +35,6 @@ void Pulse::createFile(char const* t_file, char const* t_socket,
   m_socket = t_socket;
   m_rev = t_rev;
 
-  int ret = rrdc_connect(t_socket);
-  if (ret) {
-    throw runtime_error(rrd_get_error());
-  }
-
 	time_t timestamp_start = time(nullptr) - 120;
 	const int ds_count = 10;
 	const int step_size = 60;
@@ -70,10 +65,20 @@ void Pulse::createFile(char const* t_file, char const* t_socket,
 	// keep 1 year in 1 day resolution
 	// consolidate LAST (energy) and AVERAGE (power)
 
+  int ret = rrdc_connect(t_socket);
+  if (ret) {
+    throw runtime_error(rrd_get_error());
+  }
+
 	ret = rrdc_create(t_file, step_size, timestamp_start, no_overwrite, 
 		ds_count, ds_schema);
 	if (!ret) {
     cout << "Round Robin Database \"" << t_file << "\" created" << endl;
+  }
+
+  ret = rrdc_disconnect();
+  if (ret) {
+    throw runtime_error(rrd_get_error());
   }
   
   char * argv[Con::RRD_BUF_SIZE];
@@ -88,19 +93,25 @@ void Pulse::createFile(char const* t_file, char const* t_socket,
     snprintf(*argv, Con::RRD_BUF_SIZE, "%ld:%ld:%ld", timestamp, 
       requested_counter, requested_counter);
 
+    ret = rrdc_connect(t_socket);
+    if (ret) {
+      throw runtime_error(rrd_get_error());
+    }
+
     ret = rrdc_update(m_file, Con::RRD_DS_LEN, (const char **) argv);
     if (ret) {
       throw runtime_error(rrd_get_error());
     }
+
+    ret = rrdc_disconnect();
+    if (ret) {
+      throw runtime_error(rrd_get_error());
+    }
+
     counter = requested_counter;
     free(*argv);
   }
   
-  ret = rrdc_disconnect();
-  if (ret) {
-    throw runtime_error(rrd_get_error());
-  }
-
   cout << "Meter reading: " << fixed << setprecision(1)
     << static_cast<double>(counter) / t_rev << " kWh, "
     << dec << counter << " counts"  << endl;
