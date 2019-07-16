@@ -23,7 +23,7 @@ LFLAGS =
 # define any libraries to link into executable:
 #   if I want to link in libraries (libx.so or libx.a) I use the -llibname 
 #   option, something like (this will link in libmylib.so and libm.so:
-LIBS = -lrrd -lcurl
+LIBS = -lm -lrrd -lcurl
 
 # define src and obj directories
 SRC_DIR = src
