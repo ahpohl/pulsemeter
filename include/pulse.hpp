@@ -26,7 +26,7 @@ public:
     double* t_energy, double* t_power) const;
   
   void setPVOutput(char const* t_apikey, char const* t_sysid,
-    char const* t_url);
+    char const* t_url, int const& t_interval);
   void logAverage(void) const;
   void uploadXport(void) const;
 
@@ -36,6 +36,7 @@ private:
   char const* m_apikey;         // PVOutput api key
   char const* m_sysid;          // PVOutput system id
   char const* m_url;            // PVOutput add status url
+  int m_interval;               // PVOutput interval setting
   int m_rev;                    // revolutions per kWh
   bool m_debug;                 // debug flag
   int m_serialport;             // serial port

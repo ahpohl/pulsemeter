@@ -21,6 +21,7 @@ int main(int argc, char* argv[])
   char const* pvoutput_api_key = 0;
   char const* pvoutput_system_id = 0;
   char const* pvoutput_url = nullptr;
+  int pvoutput_interval = 0;
 
   const struct option longOpts[] = {
     { "help", no_argument, nullptr, 'h' },
@@ -37,10 +38,11 @@ int main(int argc, char* argv[])
     { "api-key", required_argument, nullptr, 'A' },
     { "sys-id", required_argument, nullptr, 'S' },
     { "url", required_argument, nullptr, 'u' },
+    { "interval", required_argument, nullptr, 'i' },
     { nullptr, 0, nullptr, 0 }
   };
 
-  const char * optString = "hVDd:RL:H:f:s:r:m:A:S:u:";
+  const char * optString = "hVDd:RL:H:f:s:r:m:A:S:u:i:";
   int opt = 0;
   int longIndex = 0;
 
@@ -89,6 +91,8 @@ int main(int argc, char* argv[])
     case 'u':
       pvoutput_url = optarg;
       break;
+    case 'i':
+      pvoutput_interval = atoi(optarg);
     default:
       break;
     }
@@ -97,24 +101,25 @@ int main(int argc, char* argv[])
 
   if (help)
   {
-    cout << "Energy Pulsemeter Version " << VERSION_TAG << endl;
+    cout << "Energy Pulsemeter " << VERSION_TAG << endl;
     cout << endl << "Usage: " << argv[0] << " [options]" << endl << endl;
     cout << "\
-  -h --help             Show help message\n\
-  -V --version          Show build info\n\
-  -D --debug            Show debug messages\n\
-  -d --device [dev]     Serial device\n\
-  -R --raw              Select raw mode\n\
-  -L --low [int]        Set trigger level low\n\
-  -H --high [int]       Set trigger level high\n\
-  -c --create           Create new Round Robin Database\n\
-  -f --file [path]      Full path to rrd file\n\
-  -s --socket [fd]      Set socket of rrdcached daemon\n\
-  -r --rev [int]        Set revolutions per kWh\n\
-  -m --meter [float]    Set meter reading [kWh]\n\
-  -A --api-key [key]    PVOutput.org api key\n\
-  -S --sys-id [id]      PVOutput.org system id\n\
-  -u --url [url]        PVOutput.org add status url"
+  -h --help              Show help message\n\
+  -V --version           Show build info\n\
+  -D --debug             Show debug messages\n\
+  -d --device [dev]      Serial device\n\
+  -R --raw               Select raw mode\n\
+  -L --low [int]         Set trigger level low\n\
+  -H --high [int]        Set trigger level high\n\
+  -c --create            Create new Round Robin Database\n\
+  -f --file [path]       Full path to rrd file\n\
+  -s --socket [fd]       Set socket of rrdcached daemon\n\
+  -r --rev [int]         Set revolutions per kWh\n\
+  -m --meter [float]     Set meter reading [kWh]\n\
+  -A --api-key [key]     PVOutput.org api key\n\
+  -S --sys-id [id]       PVOutput.org system id\n\
+  -u --url [url]         PVOutput.org add status url\n\
+  -i --interval [int]    PVOutput.org interval setting"
     << endl;
     return 0;
   }
@@ -153,7 +158,8 @@ int main(int argc, char* argv[])
 
   thread pvoutput_thread;
 
-  meter->setPVOutput(pvoutput_api_key, pvoutput_system_id, pvoutput_url);
+  meter->setPVOutput(pvoutput_api_key, pvoutput_system_id, 
+    pvoutput_url, pvoutput_interval);
   pvoutput_thread = thread(&Pulse::runPVOutput, meter);
  
   if (sensor_thread.joinable()) {

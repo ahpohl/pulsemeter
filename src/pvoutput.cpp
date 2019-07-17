@@ -20,15 +20,19 @@ using namespace std;
 
 // set PVOutput.org parameters
 void Pulse::setPVOutput(char const* t_apikey, char const* t_sysid, 
-  char const* t_url)
+  char const* t_url, int const& t_interval)
 {
-  if ( (!t_apikey) || (!t_sysid) || (!t_url) ) {
-    cout << "Upload to PVOutput.org disabled" << endl;
+  if ( (!t_apikey) || (!t_sysid) || (!t_url) || (!t_interval) ) {
+    cout << "Upload to PVOutput.org disabled" << endl;  
+  } else if (t_interval != 5 || t_interval != 10 || t_interval != 15) {
+    throw runtime_error(string("PVOutput interval \'") 
+      + to_string(t_interval) + "\' not supported");
   } else {
     m_pvoutput = true;
     m_apikey = t_apikey;
     m_sysid = t_sysid;
     m_url = t_url;
+    m_interval = t_interval;
   }
 }
 
@@ -46,9 +50,13 @@ void Pulse::logAverage(void) const
     return;
   }
 
-  int const STEPS = 12;
-  int interval[STEPS] = {0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55};
-  int *p = interval;
+  const int STEPS = (60 / m_interval);
+  int upload[STEPS] = {0};
+  for (int i = 1; i < STEPS; ++i) {
+    upload[i] += m_interval;
+  }
+
+  int *p = upload;
   time_t rawtime = time(nullptr);
   struct tm* tm = localtime(&rawtime);
   bool is_time = false;
