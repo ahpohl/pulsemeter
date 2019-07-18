@@ -22,21 +22,25 @@ using namespace std;
 void Pulse::setPVOutput(char const* t_apikey, char const* t_sysid, 
   char const* t_url, int const& t_interval)
 {
-  if ( (!t_apikey) || (!t_sysid) || (!t_url) || (!t_interval) ) {
+  if ((!t_apikey) || (!t_sysid) || (!t_url) || (!t_interval)) {
     cout << "Upload to PVOutput.org disabled" << endl;
-  } else if (t_interval == 5 || t_interval == 10 || t_interval == 15) {
-    m_pvoutput = true;
-    m_apikey = t_apikey;
-    m_sysid = t_sysid;
-    m_url = t_url;
-    m_interval = t_interval;
-    if (m_debug) {
-      cout << "Upload to PVOutput.org every " << t_interval
-        << " minutes" << endl;
-    }
-  } else {
+    return;
+  } 
+  
+  if (!(t_interval == 5 || t_interval == 10 || t_interval == 15)) {
     throw runtime_error(string("Upload to PVOutput.org every ")
       + to_string(t_interval) + " minutes not supported");
+  }
+  
+  m_pvoutput = true;
+  m_apikey = t_apikey;
+  m_sysid = t_sysid;
+  m_url = t_url;
+  m_interval = t_interval;
+    
+  if (m_debug) {
+    cout << "Upload to PVOutput.org every " << t_interval
+      << " minutes" << endl;
   }
 }
 
