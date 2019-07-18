@@ -56,20 +56,19 @@ void Pulse::logAverage(void) const
 
   const int STEPS = (60 / m_interval);
   int upload[STEPS] = {0};
-  for (int i = 1; i < STEPS; ++i) {
-    upload[i] += m_interval;
-  }
-
   int *p = upload;
+  int step = 0;
+  bool is_time = false;
   time_t rawtime = time(nullptr);
   struct tm* tm = localtime(&rawtime);
-  bool is_time = false;
 
   for (int i = 0; i < STEPS; ++i, ++p) {
+    *p = step;
     if ((*p == tm->tm_min) && (tm->tm_sec == 0)) {
       is_time = true;
       break;
     }
+    step += m_interval;
   }
 
   if (!is_time) {
@@ -108,13 +107,9 @@ void Pulse::uploadXport(void) const
     return;
   }
 
-  const int STEPS = (60 / m_interval);
-  int upload[STEPS] = {0};
-  for (int i = 1; i < STEPS; ++i) {
-    upload[i] += m_interval;
-  }
-
-  int *p = upload;
+  int const STEPS = 12;
+  int interval[STEPS] = {0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55};
+  int *p = interval;
   time_t rawtime = time(nullptr);
   struct tm* tm = localtime(&rawtime);
   bool is_time = false;
