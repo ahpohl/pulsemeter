@@ -17,6 +17,7 @@ Pulse::Pulse(void)
   m_serialport = 0;
   m_raw = false;
   m_pvoutput = false;
+  m_interval = 0;
 }
 
 Pulse::~Pulse(void)
