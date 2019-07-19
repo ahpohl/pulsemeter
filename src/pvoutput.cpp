@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iomanip>
 #include <ctime>
+#include <cmath>
 
 // c headers
 #include <curl/curl.h>
@@ -95,7 +96,11 @@ void Pulse::uploadXport(void) const
  
   getEnergyAndPower(rawtime, (m_interval * 60), &endtime, &energy, &power);
   struct tm* tm = localtime(&endtime);
-  
+ 
+  if (isnan(power)) {
+    power = 0;
+  }
+ 
   char date_buffer[12] = {0};
   char time_buffer[12] = {0};
   strftime(date_buffer, 11, "%Y%m%d", tm);

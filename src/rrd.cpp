@@ -4,7 +4,7 @@
 #include <vector>
 #include <ctime>
 #include <curl/curl.h>
-#include <math.h>
+#include <cmath>
 
 extern "C" {
 #include <rrd.h>
