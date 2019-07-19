@@ -223,7 +223,7 @@ void Pulse::setEnergyCounter(void) const
 	free(*argv);
 }
 
-void Pulse::getEnergyAndPower(time_t const& t_time, int const& t_interval,
+void Pulse::getEnergyAndPower(time_t const& t_time, int const& t_step,
   time_t* t_endtime, double* t_energy, double* t_power) const
 {
   if (!t_time) {
@@ -241,17 +241,16 @@ void Pulse::getEnergyAndPower(time_t const& t_time, int const& t_interval,
   }
  
   *t_endtime = t_time - (Con::RRD_MIN_OFFSET * 60); 
-	unsigned long step_size = t_interval * 60;
 	vector<char const*> args;	
 
   args.push_back("xport");
 	args.push_back("--daemon");
 	args.push_back(m_socket); 
 	args.push_back("--step");
-	string step = to_string(step_size);
+	string step = to_string(t_step);
 	args.push_back(step.c_str());
 	args.push_back("--start");
-	string start = to_string(*t_endtime - step_size);
+	string start = to_string(*t_endtime - t_step);
 	args.push_back(start.c_str());
 	args.push_back("--end");
 	string end = to_string(*t_endtime);
@@ -272,6 +271,7 @@ void Pulse::getEnergyAndPower(time_t const& t_time, int const& t_interval,
 
 	time_t start_time = 0;
   int no_output = 0;
+  unsigned long step_size = 0;
   unsigned long ds_count = 0;
   char ** ds_legend = 0;
   rrd_value_t * ds_data = 0;

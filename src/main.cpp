@@ -120,7 +120,7 @@ int main(int argc, char* argv[])
   -S --sys-id [id]       PVOutput.org system id\n\
   -u --url [url]         PVOutput.org add status url\n\
   -i --interval [int]    PVOutput.org interval setting"
-    << endl;
+    << endl << endl;
     return 0;
   }
 

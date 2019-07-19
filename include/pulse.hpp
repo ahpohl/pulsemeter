@@ -22,7 +22,7 @@ public:
     int const& t_rev, double const& t_meter);
   unsigned long getEnergyCounter(void) const;
   void setEnergyCounter(void) const;
-  void getEnergyAndPower(time_t const& t_time, int const& t_interval,
+  void getEnergyAndPower(time_t const& t_time, int const& t_step,
       time_t* t_endtime, double* t_energy, double* t_power) const;
   
   void setPVOutput(char const* t_apikey, char const* t_sysid,

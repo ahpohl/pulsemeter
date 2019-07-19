@@ -93,7 +93,7 @@ void Pulse::uploadXport(void) const
   double power = 0;
   time_t rawtime = time(nullptr);
  
-  getEnergyAndPower(rawtime, m_interval, &endtime, &energy, &power);
+  getEnergyAndPower(rawtime, (m_interval * 60), &endtime, &energy, &power);
   struct tm* tm = localtime(&endtime);
   
   char date_buffer[12] = {0};
