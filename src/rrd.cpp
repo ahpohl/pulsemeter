@@ -223,8 +223,8 @@ void Pulse::setEnergyCounter(void) const
 	free(*argv);
 }
 
-void Pulse::getEnergyAndPower(time_t const& t_time, time_t* t_endtime,
-  double* t_energy, double* t_power) const
+void Pulse::getEnergyAndPower(time_t const& t_time, int const& t_interval,
+  time_t* t_endtime, double* t_energy, double* t_power) const
 {
   if (!t_time) {
     throw runtime_error("Timestamp not set");
@@ -241,7 +241,7 @@ void Pulse::getEnergyAndPower(time_t const& t_time, time_t* t_endtime,
   }
  
   *t_endtime = t_time - (Con::RRD_MIN_OFFSET * 60); 
-	unsigned long step_size = 300;
+	unsigned long step_size = t_interval * 60;
 	vector<char const*> args;	
 
   args.push_back("xport");

@@ -84,12 +84,16 @@ void Pulse::logAverage(void) const
 
 void Pulse::uploadXport(void) const
 {
+  if (!m_pvoutput) {
+    return;
+  }
+
   time_t endtime = 0;
   double energy = 0;
   double power = 0;
   time_t rawtime = time(nullptr);
  
-  getEnergyAndPower(rawtime, &endtime, &energy, &power);
+  getEnergyAndPower(rawtime, m_interval, &endtime, &energy, &power);
   struct tm* tm = localtime(&endtime);
   
   char date_buffer[12] = {0};
