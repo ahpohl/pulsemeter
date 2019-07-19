@@ -54,31 +54,7 @@ size_t Pulse::curlCallback(void * t_contents, size_t t_size,
 
 void Pulse::logAverage(void) const
 {
-  if (!m_pvoutput) {
-    return;
-  }
-
-  const int STEPS = (60 / m_interval);
-  int upload[STEPS] = {0};
-  int *p = upload;
-  int step = 0;
-  bool is_time = false;
   time_t rawtime = time(nullptr);
-  struct tm* tm = localtime(&rawtime);
-
-  for (int i = 0; i < STEPS; ++i, ++p) {
-    *p = step;
-    if ((*p == tm->tm_min) && (tm->tm_sec == 0)) {
-      is_time = true;
-      break;
-    }
-    step += m_interval;
-  }
-
-  if (!is_time) {
-    return;
-  }
-
   static time_t previous_time = 0;
   unsigned long counter = getEnergyCounter();
   static unsigned long previous_counter = 0;
@@ -92,6 +68,7 @@ void Pulse::logAverage(void) const
   previous_time = rawtime;
   previous_counter = counter;
 
+  struct tm* tm = localtime(&rawtime);
   char buffer[32] = {0};
   strftime(buffer, 31, "%F %T", tm);
 
@@ -107,39 +84,13 @@ void Pulse::logAverage(void) const
 
 void Pulse::uploadXport(void) const
 {
-  if (!m_pvoutput) {
-    return;
-  }
-
-  int const STEPS = 12;
-  int interval[STEPS] = {0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55};
-  int *p = interval;
-  time_t rawtime = time(nullptr);
-  struct tm* tm = localtime(&rawtime);
-  bool is_time = false;
-
-  // upload at interval[steps] plus the offset in minutes
-  // because the rrd average consolitation won't be ready at
-  // exact intervals, so upload will happen later.
-  // PVOutput.org will correct the offsets and saves the 
-  // data at exact intervals
-  for (int i = 0; i < STEPS; ++i, ++p) {
-    if (((*p + Con::RRD_MIN_OFFSET) == tm->tm_min) && (tm->tm_sec == 0)) {
-      is_time = true;
-      break;
-    }
-  }
-
-  if (!is_time) {
-    return;
-  }
-
   time_t endtime = 0;
   double energy = 0;
   double power = 0;
+  time_t rawtime = time(nullptr);
  
   getEnergyAndPower(rawtime, &endtime, &energy, &power);
-  tm = localtime(&endtime);
+  struct tm* tm = localtime(&endtime);
   
   char date_buffer[12] = {0};
   char time_buffer[12] = {0};

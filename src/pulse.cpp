@@ -2,6 +2,7 @@
 #include <unistd.h>
 
 #include "pulse.hpp"
+#include "rrd.hpp"
 
 using namespace std;
 
@@ -56,11 +57,36 @@ void Pulse::runTrigger(void)
 
 void Pulse::runPVOutput(void)
 {
+  int const STEPS = (60 / m_interval);
+  int upload[STEPS] = {0};
+  int *p = upload;
+  int step = 0;
+  time_t rawtime = 0;
+  struct tm* tm = nullptr;
+
   while (1) {
-    uploadXport();
-    if (m_debug) {
-      logAverage();
+    rawtime = time(nullptr);
+    tm = localtime(&rawtime);
+    for (int i = 0; i < STEPS; ++i, ++p) {
+      *p = step;
+
+      // upload at interval[steps] plus the offset in minutes
+      // because the rrd average consolitation won't be ready at
+      // exact intervals, so upload will happen later.
+      // PVOutput.org will correct the offsets and saves the 
+      // data at exact intervals
+      if ((*p + Con::RRD_MIN_OFFSET == tm->tm_min) && 
+          (tm->tm_sec == 0)) {
+        uploadXport();
+        if (m_debug) {
+          logAverage();
+        }
+        break;
+      }
+      step += m_interval;
     }
+    step = 0;
+    p = upload;
     sleep(1);
   }
-} 
+}
