@@ -41,21 +41,21 @@ void Pulse::setDebug(void)
   m_debug = true;
 }
 
-void Pulse::runRaw(void)
+void Pulse::runRaw(void) const
 {
   while (1) {
     getSensorValue();
   }
 }
 
-void Pulse::runTrigger(void)
+void Pulse::runTrigger(void) const
 {
   while (1) {
     setEnergyCounter();
   }
 }
 
-void Pulse::runPVOutput(void)
+void Pulse::runPVOutput(void) const
 {
   int const STEPS = (60 / m_interval);
   int upload[STEPS] = {0};

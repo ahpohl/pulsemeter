@@ -9,9 +9,9 @@ public:
   Pulse(void);
   ~Pulse(void);
   void setDebug(void);
-  void runRaw(void);
-  void runTrigger(void);
-  void runPVOutput(void);
+  void runRaw(void) const;
+  void runTrigger(void) const;
+  void runPVOutput(void) const;
 
   void openSerialPort(char const* t_device);
   void setRawMode(void);
@@ -49,7 +49,6 @@ private:
   void sendCommand(unsigned char const* t_cmd, int const& t_length) const;
   bool syncPacket(void) const;
   void receivePacket(unsigned char * t_packet, int const& t_size) const;
-
   static size_t curlCallback(void * t_contents, size_t t_size,
     size_t t_nmemb, void * t_user);
 };
