@@ -24,10 +24,10 @@ public:
   void setEnergyCounter(void) const;
   void getEnergyAndPower(time_t const& t_time, int const& t_step,
       time_t* t_endtime, double* t_energy, double* t_power) const;
-  
+  void logAverage(void) const; 
+ 
   void setPVOutput(char const* t_apikey, char const* t_sysid,
     char const* t_url, int const& t_interval);
-  void logAverage(void) const;
   void uploadXport(void) const;
 
 private:

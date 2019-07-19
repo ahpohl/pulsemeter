@@ -53,36 +53,6 @@ size_t Pulse::curlCallback(void * t_contents, size_t t_size,
   return (t_size * t_nmemb);
 }
 
-void Pulse::logAverage(void) const
-{
-  time_t rawtime = time(nullptr);
-  static time_t previous_time = 0;
-  unsigned long counter = getEnergyCounter();
-  static unsigned long previous_counter = 0;
-
-  double energy = 1000.0 * counter / m_rev;
-  double power = 0;
-  if (previous_time) {
-    power = 3600.0 * 1000.0 * (counter - previous_counter) /
-      (m_rev * (rawtime - previous_time));
-  }
-  previous_time = rawtime;
-  previous_counter = counter;
-
-  struct tm* tm = localtime(&rawtime);
-  char buffer[32] = {0};
-  strftime(buffer, 31, "%F %T", tm);
-
-  ofstream log;
-  log.open("average.log", ios::app);
-
-  // Date,Timestamp,Counter,Energy [Wh],Power [W]
-  log << buffer << "," << rawtime << "," << counter << "," 
-    << fixed << setprecision(1) << energy << "," << power << endl;
-
-  log.close();
-}
-
 void Pulse::uploadXport(void) const
 {
   if (!m_pvoutput) {
