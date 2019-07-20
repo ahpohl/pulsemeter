@@ -13,7 +13,7 @@ CPPFLAGS = -Wall -g -std=c++11 -pthread
 
 # define any directories containing header files other than /usr/include
 #
-INCLUDES = -I/scratch/git/pulse/include
+INCLUDES = -I./include
 
 # define library paths in addition to /usr/lib
 #   if I wanted to include libraries not in /usr/lib I'd specify
@@ -75,7 +75,7 @@ CPPFLAGS += -DVERSION_BUILD_DATE=\""$(shell date "+%F %T")"\" \
 # deleting dependencies appended to the file from 'make depend'
 #
 
-.PHONY: depend clean
+.PHONY: depend clean install
 
 all: $(MAIN)
 
@@ -94,5 +94,19 @@ clean:
 
 depend: $(SRCS)
 	makedepend $(INCLUDES) $^
+
+# define install directories
+RES_DIR = ./resources
+ifeq ($(PREFIX),)
+  PREFIX = /usr
+endif
+SYS_DIR = /etc/systemd/system
+ETC_DIR = /etc
+
+install: all
+	install -d $(PREFIX)/bin/ 
+	install -m 755 $(MAIN) $(PREFIX)/bin/
+	install -m 644 $(RES_DIR)/pulse.service $(SYS_DIR)
+	install -m 644 $(RES_DIR)/pulse_defs.conf $(ETC_DIR)
 
 # DO NOT DELETE THIS LINE -- make depend needs it

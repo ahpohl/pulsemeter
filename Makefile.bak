@@ -1,0 +1,251 @@
+#
+# 'make depend' uses makedepend to automatically generate dependencies 
+#               (dependencies are added to end of Makefile)
+# 'make'        build executable file 'mycc'
+# 'make clean'  removes all .o and executable files
+#
+
+# define the C compiler to use
+CPP = g++
+
+# define any compile-time flags
+CPPFLAGS = -Wall -g -std=c++11 -pthread
+
+# define any directories containing header files other than /usr/include
+#
+INCLUDES = -I./include
+
+# define library paths in addition to /usr/lib
+#   if I wanted to include libraries not in /usr/lib I'd specify
+#   their path using -Lpath, something like:
+LFLAGS =
+
+# define any libraries to link into executable:
+#   if I want to link in libraries (libx.so or libx.a) I use the -llibname 
+#   option, something like (this will link in libmylib.so and libm.so:
+LIBS = -lrrd -lcurl
+
+# define src, obj and resources directories
+SRC_DIR = src
+OBJ_DIR = obj
+RES_DIR = resources
+
+# define the C source files
+SRCS = $(wildcard $(SRC_DIR)/*.cpp)
+
+# define the C object files 
+#
+# This uses Suffix Replacement within a macro:
+#   $(name:string1=string2)
+#         For each word in 'name' replace 'string1' with 'string2'
+# Below we are replacing the suffix .c of all words in the macro SRCS
+# with the .o suffix
+#
+OBJS = $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
+
+# define the executable file 
+MAIN = pulse
+
+#
+# get version info from git and compile into the program
+# https://embeddedartistry.com/blog/2016/10/27/giving-you-build-a-version
+#
+
+version := $(subst -, ,$(shell git describe --long --dirty --tags))
+COMMIT := $(strip $(word 3, $(version)))
+COMMITS_PAST := $(strip $(word 2, $(version)))
+DIRTY := $(strip $(word 4, $(version)))
+ifneq ($(COMMITS_PAST), 0)
+    BUILD_INFO_COMMITS := "."$(COMMITS_PAST)
+endif
+ifneq ($(DIRTY),)
+    BUILD_INFO_DIRTY :="+"
+endif
+
+export BUILD_TAG :=$(strip $(word 1, $(version)))
+export BUILD_INFO := $(COMMIT)$(BUILD_INFO_COMMITS)$(BUILD_INFO_DIRTY)
+
+CPPFLAGS += -DVERSION_BUILD_DATE=\""$(shell date "+%F %T")"\" \
+            -DVERSION_BUILD_MACHINE=\""$(shell echo `whoami`@`hostname`)"\" \
+            -DVERSION_TAG=\"$(BUILD_TAG)\" \
+            -DVERSION_BUILD=\"$(BUILD_INFO)\"
+
+#
+# The following part of the makefile is generic; it can be used to 
+# build any executable just by changing the definitions above and by
+# deleting dependencies appended to the file from 'make depend'
+#
+
+.PHONY: depend clean install
+
+all: $(MAIN)
+
+$(MAIN): $(OBJS) 
+	$(CPP) $(CPPFLAGS) $(INCLUDES) -o $(MAIN) $(OBJS) $(LFLAGS) $(LIBS)
+
+# this is a suffix replacement rule for building .o's from .c's
+# it uses automatic variables $<: the name of the prerequisite of
+# the rule(a .c file) and $@: the name of the target of the rule (a .o file) 
+# (see the gnu make manual section about automatic variables)
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+	$(CPP) $(CPPFLAGS) $(INCLUDES) -c $<  -o $@
+
+clean:
+	$(RM) $(OBJS) *~ $(MAIN)
+
+depend: $(SRCS)
+	makedepend $(INCLUDES) $^
+
+install: all
+	install -m 755 $(MAIN) /usr/bin/
+	install -m 644 $(RES_DIR)/pulse.service /etc/systemd/system/
+	install -m 644 $(RES_DIR)/pulse_defs.conf /etc/
+
+# DO NOT DELETE THIS LINE -- make depend needs it
+
+src/cobs.o: /usr/include/stdint.h /usr/include/bits/libc-header-start.h
+src/cobs.o: /usr/include/features.h /usr/include/stdc-predef.h
+src/cobs.o: /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h
+src/cobs.o: /usr/include/bits/long-double.h /usr/include/gnu/stubs.h
+src/cobs.o: /usr/include/gnu/stubs-lp64.h /usr/include/bits/types.h
+src/cobs.o: /usr/include/bits/timesize.h /usr/include/bits/typesizes.h
+src/cobs.o: /usr/include/bits/time64.h /usr/include/bits/wchar.h
+src/cobs.o: /usr/include/bits/stdint-intn.h /usr/include/bits/stdint-uintn.h
+src/pulse.o: /usr/include/unistd.h /usr/include/features.h
+src/pulse.o: /usr/include/stdc-predef.h /usr/include/sys/cdefs.h
+src/pulse.o: /usr/include/bits/wordsize.h /usr/include/bits/long-double.h
+src/pulse.o: /usr/include/gnu/stubs.h /usr/include/gnu/stubs-lp64.h
+src/pulse.o: /usr/include/bits/posix_opt.h /usr/include/bits/environments.h
+src/pulse.o: /usr/include/bits/types.h /usr/include/bits/timesize.h
+src/pulse.o: /usr/include/bits/typesizes.h /usr/include/bits/time64.h
+src/pulse.o: /usr/include/bits/confname.h /usr/include/bits/getopt_posix.h
+src/pulse.o: /usr/include/bits/getopt_core.h ./include/pulse.hpp
+src/pulse.o: ./include/rrd.hpp
+src/comm.o: /usr/include/termios.h /usr/include/features.h
+src/comm.o: /usr/include/stdc-predef.h /usr/include/sys/cdefs.h
+src/comm.o: /usr/include/bits/wordsize.h /usr/include/bits/long-double.h
+src/comm.o: /usr/include/gnu/stubs.h /usr/include/gnu/stubs-lp64.h
+src/comm.o: /usr/include/bits/types.h /usr/include/bits/timesize.h
+src/comm.o: /usr/include/bits/typesizes.h /usr/include/bits/time64.h
+src/comm.o: /usr/include/bits/termios.h /usr/include/bits/termios-struct.h
+src/comm.o: /usr/include/bits/termios-c_cc.h
+src/comm.o: /usr/include/bits/termios-c_iflag.h
+src/comm.o: /usr/include/bits/termios-c_oflag.h
+src/comm.o: /usr/include/bits/termios-baud.h
+src/comm.o: /usr/include/bits/termios-c_cflag.h
+src/comm.o: /usr/include/bits/termios-c_lflag.h
+src/comm.o: /usr/include/bits/termios-tcflow.h
+src/comm.o: /usr/include/bits/termios-misc.h /usr/include/sys/ttydefaults.h
+src/comm.o: /usr/include/fcntl.h /usr/include/bits/fcntl.h
+src/comm.o: /usr/include/bits/fcntl-linux.h
+src/comm.o: /usr/include/bits/types/struct_timespec.h
+src/comm.o: /usr/include/bits/stat.h /usr/include/endian.h
+src/comm.o: /usr/include/bits/endian.h /usr/include/bits/byteswap.h
+src/comm.o: /usr/include/bits/uintn-identity.h /usr/include/unistd.h
+src/comm.o: /usr/include/bits/posix_opt.h /usr/include/bits/environments.h
+src/comm.o: /usr/include/bits/confname.h /usr/include/bits/getopt_posix.h
+src/comm.o: /usr/include/bits/getopt_core.h /usr/include/errno.h
+src/comm.o: /usr/include/bits/errno.h /usr/include/linux/errno.h
+src/comm.o: /usr/include/asm/errno.h /usr/include/asm-generic/errno.h
+src/comm.o: /usr/include/asm-generic/errno-base.h /usr/include/sys/ioctl.h
+src/comm.o: /usr/include/bits/ioctls.h /usr/include/asm/ioctls.h
+src/comm.o: /usr/include/asm-generic/ioctls.h /usr/include/linux/ioctl.h
+src/comm.o: /usr/include/asm/ioctl.h /usr/include/asm-generic/ioctl.h
+src/comm.o: /usr/include/bits/ioctl-types.h ./include/pulse.hpp
+src/comm.o: ./include/comm.hpp ./include/cobs.hpp /usr/include/stdint.h
+src/comm.o: /usr/include/bits/libc-header-start.h /usr/include/bits/wchar.h
+src/comm.o: /usr/include/bits/stdint-intn.h /usr/include/bits/stdint-uintn.h
+src/pvoutput.o: /usr/include/curl/curl.h /usr/include/curl/curlver.h
+src/pvoutput.o: /usr/include/curl/system.h /usr/include/sys/types.h
+src/pvoutput.o: /usr/include/features.h /usr/include/stdc-predef.h
+src/pvoutput.o: /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h
+src/pvoutput.o: /usr/include/bits/long-double.h /usr/include/gnu/stubs.h
+src/pvoutput.o: /usr/include/gnu/stubs-lp64.h /usr/include/bits/types.h
+src/pvoutput.o: /usr/include/bits/timesize.h /usr/include/bits/typesizes.h
+src/pvoutput.o: /usr/include/bits/time64.h /usr/include/bits/types/clock_t.h
+src/pvoutput.o: /usr/include/bits/types/clockid_t.h
+src/pvoutput.o: /usr/include/bits/types/time_t.h
+src/pvoutput.o: /usr/include/bits/types/timer_t.h
+src/pvoutput.o: /usr/include/bits/stdint-intn.h /usr/include/endian.h
+src/pvoutput.o: /usr/include/bits/endian.h /usr/include/bits/byteswap.h
+src/pvoutput.o: /usr/include/bits/uintn-identity.h /usr/include/sys/select.h
+src/pvoutput.o: /usr/include/bits/select.h /usr/include/bits/types/sigset_t.h
+src/pvoutput.o: /usr/include/bits/types/__sigset_t.h
+src/pvoutput.o: /usr/include/bits/types/struct_timeval.h
+src/pvoutput.o: /usr/include/bits/types/struct_timespec.h
+src/pvoutput.o: /usr/include/bits/pthreadtypes.h
+src/pvoutput.o: /usr/include/bits/thread-shared-types.h
+src/pvoutput.o: /usr/include/bits/pthreadtypes-arch.h
+src/pvoutput.o: /usr/include/sys/socket.h
+src/pvoutput.o: /usr/include/bits/types/struct_iovec.h
+src/pvoutput.o: /usr/include/bits/socket.h /usr/include/bits/socket_type.h
+src/pvoutput.o: /usr/include/bits/sockaddr.h /usr/include/asm/socket.h
+src/pvoutput.o: /usr/include/asm-generic/socket.h
+src/pvoutput.o: /usr/include/linux/posix_types.h /usr/include/linux/stddef.h
+src/pvoutput.o: /usr/include/asm/posix_types.h
+src/pvoutput.o: /usr/include/asm-generic/posix_types.h
+src/pvoutput.o: /usr/include/asm/bitsperlong.h
+src/pvoutput.o: /usr/include/asm-generic/bitsperlong.h
+src/pvoutput.o: /usr/include/asm/sockios.h /usr/include/asm-generic/sockios.h
+src/pvoutput.o: /usr/include/bits/types/struct_osockaddr.h
+src/pvoutput.o: /usr/include/stdio.h /usr/include/bits/libc-header-start.h
+src/pvoutput.o: /usr/include/bits/types/__fpos_t.h
+src/pvoutput.o: /usr/include/bits/types/__mbstate_t.h
+src/pvoutput.o: /usr/include/bits/types/__fpos64_t.h
+src/pvoutput.o: /usr/include/bits/types/__FILE.h
+src/pvoutput.o: /usr/include/bits/types/FILE.h
+src/pvoutput.o: /usr/include/bits/types/struct_FILE.h
+src/pvoutput.o: /usr/include/bits/stdio_lim.h /usr/include/bits/sys_errlist.h
+src/pvoutput.o: /usr/include/limits.h /usr/include/bits/posix1_lim.h
+src/pvoutput.o: /usr/include/bits/local_lim.h /usr/include/linux/limits.h
+src/pvoutput.o: /usr/include/bits/posix2_lim.h /usr/include/time.h
+src/pvoutput.o: /usr/include/bits/time.h /usr/include/bits/types/struct_tm.h
+src/pvoutput.o: /usr/include/bits/types/struct_itimerspec.h
+src/pvoutput.o: /usr/include/bits/types/locale_t.h
+src/pvoutput.o: /usr/include/bits/types/__locale_t.h /usr/include/sys/time.h
+src/pvoutput.o: /usr/include/curl/easy.h /usr/include/curl/multi.h
+src/pvoutput.o: /usr/include/curl/curl.h /usr/include/curl/urlapi.h
+src/pvoutput.o: ./include/pulse.hpp
+src/rrd.o: /usr/include/rrd.h /usr/include/sys/types.h
+src/rrd.o: /usr/include/features.h /usr/include/stdc-predef.h
+src/rrd.o: /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h
+src/rrd.o: /usr/include/bits/long-double.h /usr/include/gnu/stubs.h
+src/rrd.o: /usr/include/gnu/stubs-lp64.h /usr/include/bits/types.h
+src/rrd.o: /usr/include/bits/timesize.h /usr/include/bits/typesizes.h
+src/rrd.o: /usr/include/bits/time64.h /usr/include/bits/types/clock_t.h
+src/rrd.o: /usr/include/bits/types/clockid_t.h
+src/rrd.o: /usr/include/bits/types/time_t.h /usr/include/bits/types/timer_t.h
+src/rrd.o: /usr/include/bits/stdint-intn.h /usr/include/endian.h
+src/rrd.o: /usr/include/bits/endian.h /usr/include/bits/byteswap.h
+src/rrd.o: /usr/include/bits/uintn-identity.h /usr/include/sys/select.h
+src/rrd.o: /usr/include/bits/select.h /usr/include/bits/types/sigset_t.h
+src/rrd.o: /usr/include/bits/types/__sigset_t.h
+src/rrd.o: /usr/include/bits/types/struct_timeval.h
+src/rrd.o: /usr/include/bits/types/struct_timespec.h
+src/rrd.o: /usr/include/bits/pthreadtypes.h
+src/rrd.o: /usr/include/bits/thread-shared-types.h
+src/rrd.o: /usr/include/bits/pthreadtypes-arch.h /usr/include/unistd.h
+src/rrd.o: /usr/include/bits/posix_opt.h /usr/include/bits/environments.h
+src/rrd.o: /usr/include/bits/confname.h /usr/include/bits/getopt_posix.h
+src/rrd.o: /usr/include/bits/getopt_core.h /usr/include/time.h
+src/rrd.o: /usr/include/bits/time.h /usr/include/bits/types/struct_tm.h
+src/rrd.o: /usr/include/bits/types/struct_itimerspec.h
+src/rrd.o: /usr/include/bits/types/locale_t.h
+src/rrd.o: /usr/include/bits/types/__locale_t.h /usr/include/stdio.h
+src/rrd.o: /usr/include/bits/libc-header-start.h
+src/rrd.o: /usr/include/bits/types/__fpos_t.h
+src/rrd.o: /usr/include/bits/types/__mbstate_t.h
+src/rrd.o: /usr/include/bits/types/__fpos64_t.h
+src/rrd.o: /usr/include/bits/types/__FILE.h /usr/include/bits/types/FILE.h
+src/rrd.o: /usr/include/bits/types/struct_FILE.h
+src/rrd.o: /usr/include/bits/stdio_lim.h /usr/include/bits/sys_errlist.h
+src/rrd.o: /usr/include/string.h /usr/include/strings.h
+src/rrd.o: /usr/include/rrd_client.h /usr/include/stdint.h
+src/rrd.o: /usr/include/bits/wchar.h /usr/include/bits/stdint-uintn.h
+src/rrd.o: ./include/pulse.hpp ./include/rrd.hpp
+src/main.o: /usr/include/getopt.h /usr/include/features.h
+src/main.o: /usr/include/stdc-predef.h /usr/include/sys/cdefs.h
+src/main.o: /usr/include/bits/wordsize.h /usr/include/bits/long-double.h
+src/main.o: /usr/include/gnu/stubs.h /usr/include/gnu/stubs-lp64.h
+src/main.o: /usr/include/bits/getopt_core.h /usr/include/bits/getopt_ext.h
+src/main.o: ./include/pulse.hpp
