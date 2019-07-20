@@ -107,6 +107,7 @@ install: all
 	install -d $(PREFIX)/bin/ 
 	install -m 755 $(MAIN) $(PREFIX)/bin/
 	install -m 644 $(RES_DIR)/pulse.service $(SYS_DIR)
+	install -m 644 $(RES_DIR)/rrdcached.service $(SYS_DIR)
 	install -m 644 $(RES_DIR)/pulse_defs.conf $(ETC_DIR)
 
 # DO NOT DELETE THIS LINE -- make depend needs it
