@@ -3,7 +3,6 @@
 #include <iomanip>
 #include <vector>
 #include <ctime>
-#include <curl/curl.h>
 #include <cmath>
 
 extern "C" {

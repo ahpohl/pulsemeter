@@ -1,6 +1,5 @@
 #include <iostream>
 #include <unistd.h>
-
 #include "pulse.hpp"
 #include "rrd.hpp"
 

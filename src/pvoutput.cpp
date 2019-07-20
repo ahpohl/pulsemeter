@@ -1,21 +1,9 @@
-// c++ headers
 #include <iostream>
 #include <fstream>
 #include <iomanip>
 #include <ctime>
-#include <cmath>
-
-// c headers
 #include <curl/curl.h>
-
-extern "C" {
-#include <rrd.h>
-#include <rrd_client.h>
-}
-
-// program headers
 #include "pulse.hpp"
-#include "rrd.hpp"
 
 using namespace std;
 
@@ -66,10 +54,6 @@ void Pulse::uploadXport(void) const
  
   getEnergyAndPower(rawtime, (m_interval * 60), &endtime, &energy, &power);
   struct tm* tm = localtime(&endtime);
- 
-  if (isnan(power)) {
-    power = 0;
-  }
  
   char date_buffer[12] = {0};
   char time_buffer[12] = {0};
