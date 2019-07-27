@@ -102,8 +102,6 @@ ifeq ($(PREFIX),)
 endif
 SYS_DIR = /etc/systemd/system
 ETC_DIR = /etc
-VAR_DIR = /var
-RUN_DIR = /run
 
 install: all
 	install -d $(PREFIX)/bin/ 
@@ -111,7 +109,5 @@ install: all
 	install -m 644 $(RES_DIR)/pulse.service $(SYS_DIR)
 	install -m 644 $(RES_DIR)/pulse_defs.conf $(ETC_DIR)
 	install -m 644 $(RES_DIR)/rrdcached.service $(SYS_DIR)
-	install -d -o rrdcached -g rrdcached $(VAR_DIR)/lib/rrdcached/
-	install -d -o rrdcached -g rrdcached $(RUN_DIR)/rrdcached/
 
 # DO NOT DELETE THIS LINE -- make depend needs it
