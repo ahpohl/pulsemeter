@@ -57,7 +57,7 @@ The serial protocol used to communiate between the Arduino sensor and the Pulse 
 
 4 Installation
 
-The Arduino sketch can be either uploaded using the standard Arduino IDE or via the provided programmer script if the sensor is alreay connected to the target embedded PC (such as Raspberry Pi, Odroid etc.; anything really which has at least one free USB port and a C++ compiler is available). The daemon is compiled and installed using the GNU Makefile. Note the program version string is automatically pulled in from the git tag (thanks to these instructions [10]). There is also an Arch Linux package available in the AUR called "pulse".
+The Arduino sketch can be either uploaded using the standard Arduino IDE or via the provided programmer script if the sensor is alreay connected to the target embedded PC (such as Raspberry Pi, Odroid etc.; anything really which has at least one free USB port and a C++ compiler is available). The daemon is compiled and installed using the GNU Makefile. Note the program version string is automatically pulled in from the git tag (thanks to these instructions [10]). There is also an Arch Linux package available in the AUR called "pulse" [11].
 
 5 Changelog
 
@@ -98,3 +98,4 @@ This project is licensed under the MIT license - see the [LICENSE] file for deta
     https://en.wikipedia.org/wiki/Consistent_Overhead_Byte_Stuffing
 10. Giving Your Firmware Build a Version
     https://embeddedartistry.com/blog/2016/10/27/giving-you-build-a-version
+11. [Ref to Arch Linux package in AUR]
