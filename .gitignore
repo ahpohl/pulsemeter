@@ -1,6 +1,5 @@
 pulse
 *.o
-*.png
 *.hex
 *.ods
 *.dump
