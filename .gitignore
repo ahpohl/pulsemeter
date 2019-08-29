@@ -3,6 +3,5 @@ pulse
 *.hex
 *.ods
 *.dump
-*.log
 *.bak
 *.opj
