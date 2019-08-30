@@ -95,19 +95,13 @@ clean:
 depend: $(SRCS)
 	makedepend $(INCLUDES) $^
 
-# define install directories
-RES_DIR = ./resources
-ifeq ($(PREFIX),)
-  PREFIX = /usr
+# define install directory
+ifeq ($(DESTDIR),)
+  DESTDIR = /usr/local
 endif
-SYS_DIR = /etc/systemd/system
-ETC_DIR = /etc
 
 install: all
-	install -d $(PREFIX)/bin/ 
-	install -m 755 $(MAIN) $(PREFIX)/bin/
-	install -m 644 $(RES_DIR)/pulse.service $(SYS_DIR)
-	install -m 644 $(RES_DIR)/pulse_defs.conf $(ETC_DIR)
-	install -m 644 $(RES_DIR)/rrdcached.service $(SYS_DIR)
+	install -d $(DESTDIR)/bin/ 
+	install -m 755 $(MAIN) $(DESTDIR)/bin/
 
 # DO NOT DELETE THIS LINE -- make depend needs it
