@@ -1,4 +1,4 @@
-Convpot contributors (sorted alphabetically)
+Pulse contributors (sorted alphabetically)
 ============================================
 
 * **[Alexander Pohl](https://github.com/ahpohl)**
