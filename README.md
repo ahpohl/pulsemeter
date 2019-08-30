@@ -8,11 +8,13 @@ There are many energy meters out there either with DIY hardware or commercial me
 
 ## Hardware
 
-I used a spare blue/white LED I had lying around from an old ceiling lamp instead of the IR LED. Because of the algorithm of how the sensor is read, it is still fairly tolerant to the ambient light and I found the IR diode is not necessary. The receiving side is a simple phototransistor I had in my electronics toys box. I do not have any data sheet, but it seems to work well. I soldered the sensor together according to the following scheme: ![Fig. 1: schematic diagram](https://github.com/ahpohl/pulse/blob/master/resources/schematic.png)
+The hardware is built around an Arduino One, a character LCD and a sensor made from a blue/white LED and a simple photo transitor (I do not have a datasheet but it seems to work well). Because of the algorithm of how the sensor is read, it is still fairly tolerant to the ambient light and I found an IR diode to block the light is not necessary. The Arduino (any cheap clone will also do, as long the µC has at least one ADC and a couple of GPIOs to connect the LEDs and the LCD) is connected via a 5 meter USB cable to an Odroid C2, which is housed in my network cabinet. The whole installation in the switchboard looks like this:
 
-The sensor is connected to the Arduino One (any cheap clone will also do, as long the µC has at least one ADC and a couple of GPIOs to connect the LEDs and the LCD) and the whole installation in the switchboard looks like this: ![Fig. 2: photo of electrical switchbox](https://github.com/ahpohl/pulse/blob/master/resources/ferraris_meter.jpg)
+![Fig. 2: photo of electrical switchbox](https://github.com/ahpohl/pulse/blob/master/resources/ferraris_meter.jpg)
 
-The Arduino is connected via a 5 meter USB cable to an Odroid C2, which is housed in my network cabinet.
+The components are wired according to the following scheme:
+
+![Fig. 1: schematic diagram](https://github.com/ahpohl/pulse/blob/master/resources/schematic.png)
 
 ## Software
 
