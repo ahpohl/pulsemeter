@@ -1,5 +1,7 @@
 #include <iostream>
+#include <fstream>
 #include <iomanip>
+#include <chrono>
 
 #include <cstring>
 #include <termios.h>    // contains POSIX terminal control definition
@@ -317,6 +319,7 @@ void Pulse::setRawMode(void)
  
   if (m_debug) { 
     cout << "Sensor raw mode" << endl;
+    m_clock = std::chrono::high_resolution_clock::now();
   }
 }
 
@@ -371,6 +374,15 @@ int Pulse::getSensorValue(void) const
 
   if (m_raw) {
     cout << dec << sensor_value << endl;
+
+    if (m_debug) {
+      std::chrono::high_resolution_clock::time_point elapsed = std::chrono::high_resolution_clock::now();
+      long long duration = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed - m_clock).count(); 
+      ofstream log;
+      log.open("raw.log", ios::app);
+      log << duration << "," << sensor_value << endl;
+      log.close();
+    }
   }
 
   return sensor_value;
