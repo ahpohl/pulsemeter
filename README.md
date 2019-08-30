@@ -10,7 +10,9 @@ There are many energy meters out there either with DIY hardware or commercial me
 
 I used a spare blue/white LED I had lying around from an old ceiling lamp instead of the IR LED. Because of the algorithm of how the sensor is read, it is still fairly tolerant to the ambient light and I found the IR diode is not necessary. The receiving side is a simple phototransistor I had in my electronics toys box. I do not have any data sheet, but it seems to work well. I soldered the sensor together according to the following scheme: ![Fig. 1: schematic diagram](https://github.com/ahpohl/pulse/blob/master/resources/schematic.png)
 
-The sensor is connected to the Arduino One (any cheap clone will also do, as long the µC has at least one ADC and a couple of GPIOs to connect the LEDs and the LCD) and the whole installation in the switchboard looks like this: ![Fig. 2: photo of electrical switchbox](https://github.com/ahpohl/pulse/blob/master/resources/ferraris_meter.png). The Arduino is connected via a 5 meter USB cable to an Odroid C2, which is housed in my network cabinet.
+The sensor is connected to the Arduino One (any cheap clone will also do, as long the µC has at least one ADC and a couple of GPIOs to connect the LEDs and the LCD) and the whole installation in the switchboard looks like this: ![Fig. 2: photo of electrical switchbox](https://github.com/ahpohl/pulse/blob/master/resources/ferraris_meter.jpg)
+
+The Arduino is connected via a 5 meter USB cable to an Odroid C2, which is housed in my network cabinet.
 
 ## Software
 
@@ -20,7 +22,9 @@ The software constists of two components. First, an Arduino sketch to process th
 
 The original command line interface [1] was removed from the Arduino sketch. The Arduino communicates with the daemon using a packet serial protocol with COBS encoding instead [7, 8]. The daemon sends two different commands to put the sensor either into raw or trigger mode. In raw mode, the Arduino responds with the raw sensor values which can be logged to a file to produce a plot like this: ![Fig. 3: diagram of raw sensor values with intital trigger levels](https://github.com/ahpohl/pulse/blob/master/resources/sensor.png)
 
-The raw sensor plot gives a good estimation for the intial low and high trigger threshold levels, although the trigger detection algorithm has been modified so that the low and high trigger levels are automatically adjusted after each revolution of the disc (currently, the low level will be 15 units above the minimum sensor value and the high level 30 units above the minimum). In trigger mode, the Arduino sends a "1" if the sensor value falls below the low threshold, and a "0" if the sensor value has raised above the high level after being low to indicate that one complete revolution of the disc has passed (these trigger events will be counted by the daemon to calculate the energy consumed). The raw sensor value and the revolution counter are displayed on a 16x2 character LCD. ![Fig. 4: LCD with annotation of fields](https://github.com/ahpohl/pulse/blob/master/resources/lcd.png)
+The raw sensor plot gives a good estimation for the intial low and high trigger threshold levels, although the trigger detection algorithm has been modified so that the low and high trigger levels are automatically adjusted after each revolution of the disc (currently, the low level will be 15 units above the minimum sensor value and the high level 30 units above the minimum). In trigger mode, the Arduino sends a "1" if the sensor value falls below the low threshold, and a "0" if the sensor value has raised above the high level after being low to indicate that one complete revolution of the disc has passed (these trigger events will be counted by the daemon to calculate the energy consumed). The raw sensor value and the revolution counter are displayed on a 16x2 character LCD. 
+
+![Fig. 4: LCD with annotation of fields](https://github.com/ahpohl/pulse/blob/master/resources/lcd.png)
 
 ### Pulse daemon program
 
