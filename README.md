@@ -20,7 +20,7 @@ The original command line interface [1] was removed from the Arduino sketch. The
 
 ### Pulse daemon program
 
-The Pulse daemon counts the events received by the Arduino sensor and writes them into a Round Robin Database. The RRD database is accessed through the rrdcached daemon located at a local unix socket (remote access by IP address would be possible but is currently not implemented). The initial RRD database is created with the current meter reading and can be later updated if necessary, for example when the sensor was offline for some time without Pulse registering all trigger events. Both Pulse and RRDCached instances are started and stopped via the provided systemd startup scripts, and all parameters such as the intial meter reading are set in a separate systemd environment file called [pulse_defs.conf, insert example]. The energy and power values recorded in the RRD database are optionally uploaded to PVOutput every 5, 10 or 15 minutes (at the intervals currently supported by the PVOutput api). See the 24-hour plot below [Fig. 5: PVoutput energy consumption plot].
+The Pulse daemon counts the events received by the Arduino sensor and writes them into a Round Robin Database. The RRD database is accessed through the rrdcached daemon located at a local unix socket (remote access by IP address would be possible but is currently not implemented). The initial RRD database is created with the current meter reading and can be later updated if necessary, for example when the sensor was offline for some time without Pulse registering all trigger events. Both Pulse and RRDCached instances are started and stopped via the provided systemd startup scripts, and all parameters such as the intial meter reading are set in a separate systemd environment file called [pulse_defs.conf](https://github.com/ahpohl/pulse/blob/master/resources/pulse_defs.conf). The energy and power values recorded in the RRD database are optionally uploaded to PVOutput every 5, 10 or 15 minutes (at the intervals currently supported by the PVOutput api). See the 24-hour plot below [Fig. 5: PVoutput energy consumption plot].
 
 ### Serial protocol
 
@@ -64,41 +64,31 @@ The Arduino sketch can be either uploaded using the standard Arduino IDE or via 
 
 ## Changelog
 
-All notable changes and releases are documented in the [CHANGELOG].
+All notable changes and releases are documented in the [CHANGELOG](https://github.com/ahpohl/pulse/blob/master/CHANGELOG.md).
 
 ## Acknowledgements
 
-* **Martin Kompf** for the inspiration and the initial idea of the project
-* **Tobias Oetiker** for the Round Robin Database library
-* The **PVOutput Team** for providing an excellent website with a simple to use API
-* **Christopher Baker** for the Arduino packet serial library and 
-* **Jacques Fortier** for the C implementation of the COBS encoding
-* **Phillip Johnston** for git versioning in a Makefile
+* Martin Kompf for the inspiration and the initial idea of the project
+* Tobias Oetiker for the Round Robin Database library
+* The PVOutput Team for providing an excellent website with a simple to use API
+* Christopher Baker for the Arduino packet serial library and 
+* Jacques Fortier for the C implementation of the COBS encoding
+* Phillip Johnston for git versioning in a Makefile
 
 ## License
 
-This project is licensed under the MIT license - see the [LICENSE] file for details
+This project is licensed under the MIT license - see the [LICENSE](https://github.com/ahpohl/pulse/blob/master/LICENSE) file for details
 
 ## References
 
-1.  Infrared light switch with Arduino to read your energy meter
-    https://www.kompf.de/tech/emeir.html
-1.  Round Robin Database
-    https://oss.oetiker.ch/rrdtool/
-1.  PVOutput is a free service for sharing and comparing PV output data.
-    https://pvoutput.org/
-1.  Ilvesheim system on PVOutput
-    https://pvoutput.org/intraday.jsp?id=74913&sid=66419
-1.  123Solar Web Solar logger
-    https://123solar.org/
-1.  PVOutput Pro mobile app
-    https://apps.apple.com/au/app/pvoutput-pro/id994297624
-1.  Packet serial library for Arduino
-    https://github.com/bakercp/PacketSerial
-1.  Consistent Overhead Byte Stuffing (C implementation)
-    https://github.com/jacquesf/COBS-Consistent-Overhead-Byte-Stuffing
-1.  Consistent Overhead Byte Stuffing (background)
-    https://en.wikipedia.org/wiki/Consistent_Overhead_Byte_Stuffing
-1. Giving Your Firmware Build a Version
-    https://embeddedartistry.com/blog/2016/10/27/giving-you-build-a-version
-1. [Ref to Arch Linux package in AUR]
+1. [Infrared light switch with Arduino to read your energy meter](https://www.kompf.de/tech/emeir.html)
+1. [Round Robin Database](https://oss.oetiker.ch/rrdtool/)
+1. [PVOutput is a free service for sharing and comparing PV output data.](https://pvoutput.org/)
+1. [Ilvesheim system on PVOutput](https://pvoutput.org/intraday.jsp?id=74913&sid=66419)
+1. [123Solar Web Solar logger](https://123solar.org/)
+1. [PVOutput Pro mobile app](https://apps.apple.com/au/app/pvoutput-pro/id994297624)
+1. [Packet serial library for Arduino](https://github.com/bakercp/PacketSerial)
+1. [Consistent Overhead Byte Stuffing (C implementation)](https://github.com/jacquesf/COBS-Consistent-Overhead-Byte-Stuffing)
+1. [Consistent Overhead Byte Stuffing (background)](https://en.wikipedia.org/wiki/Consistent_Overhead_Byte_Stuffing)
+1. [Giving Your Firmware Build a Version](https://embeddedartistry.com/blog/2016/10/27/giving-you-build-a-version)
+1. [Ref to Arch Linux package in AUR](https://aur.archlinux.org)
