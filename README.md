@@ -34,7 +34,7 @@ The Pulse daemon counts the events received by the Arduino sensor and writes the
 
 ### Serial protocol
 
-The serial protocol used to communiate between the Arduino sensor and the Pulse daemon program consists of fixed length packets encoded by the consistent overhead byte stuffing [(COBS)][9] algorithm. The command packets are seven bytes long, whereas the data packets are five bytes long.
+The serial protocol used to communiate between the Arduino sensor and the Pulse daemon program consists of fixed length packets encoded by the [consistent overhead byte stuffing][9] (COBS) algorithm. The command packets are seven bytes long, whereas the data packets are five bytes long.
 
 ```
        Command packet
