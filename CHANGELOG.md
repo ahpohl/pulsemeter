@@ -1,4 +1,4 @@
-# Convpot changelog
+# Pulse changelog
 
-## v1.0.0 - 2019-07-27
+## v1.0.0 - 2019-08-30
 * initial release
