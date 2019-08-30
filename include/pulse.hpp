@@ -2,6 +2,7 @@
 #define PULSE_HPP
 
 #include <ctime>
+#include <chrono>
 
 class Pulse
 {
@@ -42,6 +43,7 @@ private:
   int m_serialport;             // serial port
   bool m_raw;                   // flag for raw sensor mode
   bool m_pvoutput;              // flag for pvoutput
+  std::chrono::high_resolution_clock::time_point m_clock; // high resolution clock
 
   unsigned short crc16(unsigned char const* t_packet, int t_length) const;
   void configureSerialPort(unsigned char const& t_vmin,
