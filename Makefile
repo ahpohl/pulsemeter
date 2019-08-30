@@ -75,11 +75,14 @@ CPPFLAGS += -DVERSION_BUILD_DATE=\""$(shell date "+%F %T")"\" \
 # deleting dependencies appended to the file from 'make depend'
 #
 
-.PHONY: depend clean install
+.PHONY: depend clean install out
 
 all: $(MAIN)
 
-$(MAIN): $(OBJS) 
+$(OBJ_DIR):
+	mkdir -p $(OBJ_DIR)
+
+$(MAIN): $(OBJ_DIR) $(OBJS) 
 	$(CPP) $(CPPFLAGS) $(INCLUDES) -o $(MAIN) $(OBJS) $(LFLAGS) $(LIBS)
 
 # this is a suffix replacement rule for building .o's from .c's
