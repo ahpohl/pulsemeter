@@ -4,7 +4,7 @@ Pulse energy meter with Arduino and simple LED sensor
 
 ## Introduction
 
-There are many energy meters out there either with DIY hardware or commercial meters, which need to be permanently installed in your electrical switchboard. Before starting this project, I was inclined to buy one of these meters (modbus version of SDM...). I then decided to build one myself because of the cost involved to buy the commercial hardware and to get it professionally installed (I didn't want to tamper with the switchboard myself!). After searching around, I came across this project [1]. The hardware is really simple and the explanations of how the sensor and the Arduino code works are really easy to follow.
+There are many energy meters out there either with DIY hardware or commercial meters, which need to be permanently installed in your electrical switchboard. Before starting this project, I was inclined to buy one of these meters (modbus version of SDM...). I then decided to build one myself because of the cost involved to buy the commercial hardware and to get it professionally installed (I didn't want to tamper with the switchboard myself!). After searching around, I came across this [project][1]. The hardware is really simple and the explanations of how the sensor and the Arduino code works are really easy to follow.
 
 ## Hardware
 
@@ -18,11 +18,11 @@ The components are wired according to the following scheme:
 
 ## Software
 
-The software constists of two components. First, an Arduino sketch to process the raw sensor values and to detect a revolution of the ferraris disc, and second a daemon which receives the energy counts from the Arduino and saves it into a Round Robin Database [2]. The daemon has the option to submit the consumed energy and power output to PVOutput [3]. Additionally, my house is equipped with a photo voltaic system [4] (production data are not yet gathered by Pulse, but using 123Solar [5] connected to the PowerOne Aurora inverter instead). The net electricity data from Pulse and 123Solar can be conveniently montitored using the PVOutput mobile app [6].
+The software constists of two components. First, an Arduino sketch to process the raw sensor values and to detect a revolution of the ferraris disc, and second a daemon which receives the energy counts from the Arduino and saves it into a [Round Robin Database][2]. The daemon has the option to submit the consumed energy and power output to [PVOutput][3]. Additionally, my house is equipped with a [photo voltaic system][4] (production data are not yet gathered by Pulse, but using [123Solar][5] connected to the PowerOne Aurora inverter instead). The net electricity data from Pulse and 123Solar can be conveniently montitored using the [PVOutput mobile app][6].
 
 ### Arduino sketch
 
-The original command line interface [1] was removed from the Arduino sketch. The Arduino communicates with the daemon using a packet serial protocol with COBS encoding instead [7, 8]. The daemon sends two different commands to put the sensor either into raw or trigger mode. In raw mode, the Arduino responds with the raw sensor values which can be logged to a file to produce a plot like this: ![Fig. 3: diagram of raw sensor values with intital trigger levels](https://github.com/ahpohl/pulse/blob/master/resources/sensor.png)
+The original [command line interface][1] was removed from the Arduino sketch. The Arduino communicates with the daemon using a [packet serial protocol][7] with [COBS encoding][8] instead. The daemon sends two different commands to put the sensor either into raw or trigger mode. In raw mode, the Arduino responds with the raw sensor values which can be logged to a file to produce a plot like this: ![Fig. 3: diagram of raw sensor values with intital trigger levels](https://github.com/ahpohl/pulse/blob/master/resources/sensor.png)
 
 The raw sensor plot gives a good estimation for the intial low and high trigger threshold levels, although the trigger detection algorithm has been modified so that the low and high trigger levels are automatically adjusted after each revolution of the disc (currently, the low level will be 15 units above the minimum sensor value and the high level 30 units above the minimum). In trigger mode, the Arduino sends a "1" if the sensor value falls below the low threshold, and a "0" if the sensor value has raised above the high level after being low to indicate that one complete revolution of the disc has passed (these trigger events will be counted by the daemon to calculate the energy consumed). The raw sensor value and the revolution counter are displayed on a 16x2 character LCD. 
 
@@ -34,7 +34,7 @@ The Pulse daemon counts the events received by the Arduino sensor and writes the
 
 ### Serial protocol
 
-The serial protocol used to communiate between the Arduino sensor and the Pulse daemon program consists of fixed length packets encoded by the consistent overhead byte stuffing algorithm [9]. The command packets are seven bytes long, whereas the data packets are five bytes long.
+The serial protocol used to communiate between the Arduino sensor and the Pulse daemon program consists of fixed length packets encoded by the [consistent overhead byte stuffing][9] algorithm]. The command packets are seven bytes long, whereas the data packets are five bytes long.
 
 ```
        Command packet
@@ -70,7 +70,7 @@ The serial protocol used to communiate between the Arduino sensor and the Pulse 
 
 ## Installation
 
-The Arduino sketch can be either uploaded using the standard Arduino IDE or via the provided programmer script if the sensor is alreay connected to the target embedded PC (such as Raspberry Pi, Odroid etc.; anything really which has at least one free USB port and a C++ compiler is available). The daemon is compiled and installed using the GNU Makefile. Note the program version string is automatically pulled in from the git tag (thanks to these instructions [10]). There is also an Arch Linux package available in the AUR called "pulse" [11].
+The Arduino sketch can be either uploaded using the standard Arduino IDE or via the provided programmer script if the sensor is alreay connected to the target embedded PC (such as Raspberry Pi, Odroid etc.; anything really which has at least one free USB port and a C++ compiler is available). The daemon is compiled and installed using the GNU Makefile. Note the program version string is automatically pulled in from the git tag (thanks to [these][10] instructions). There is also an Arch Linux package available in the AUR called [pulse][11].
 
 ## Changelog
 
@@ -89,16 +89,14 @@ All notable changes and releases are documented in the [CHANGELOG](https://githu
 
 This project is licensed under the MIT license - see the [LICENSE](https://github.com/ahpohl/pulse/blob/master/LICENSE) file for details
 
-## References
-
-1. [Infrared light switch with Arduino to read your energy meter](https://www.kompf.de/tech/emeir.html)
-2. [Round Robin Database](https://oss.oetiker.ch/rrdtool/)
-3. [PVOutput is a free service for sharing and comparing PV output data.](https://pvoutput.org/)
-4. [Ilvesheim system on PVOutput](https://pvoutput.org/intraday.jsp?id=74913&sid=66419)
-5. [123Solar Web Solar logger](https://123solar.org/)
-6. [PVOutput Pro mobile app](https://apps.apple.com/au/app/pvoutput-pro/id994297624)
-7. [Packet serial library for Arduino](https://github.com/bakercp/PacketSerial)
-8. [Consistent Overhead Byte Stuffing (C implementation)](https://github.com/jacquesf/COBS-Consistent-Overhead-Byte-Stuffing)
-9. [Consistent Overhead Byte Stuffing (background)](https://en.wikipedia.org/wiki/Consistent_Overhead_Byte_Stuffing)
-10. [Giving Your Firmware Build a Version](https://embeddedartistry.com/blog/2016/10/27/giving-you-build-a-version)
-11. [Pulse Arch Linux package](https://aur.archlinux.org)
+[1]: https://www.kompf.de/tech/emeir.html "Infrared light switch with Arduino to read your energy meter"
+[2]: https://oss.oetiker.ch/rrdtool/ "Round Robin Database"
+[3]: https://pvoutput.org/ "PVOutput is a free service for sharing and comparing PV output data"
+[4]: https://pvoutput.org/intraday.jsp?id=74913&sid=66419 "Ilvesheim system on PVOutput"
+[5]: https://123solar.org/ "123Solar Web Solar logger"
+[6]: https://apps.apple.com/au/app/pvoutput-pro/id994297624 "PVOutput Pro mobile app"
+[7]: https://github.com/bakercp/PacketSerial "Packet serial library for Arduino"
+[8]: https://github.com/jacquesf/COBS-Consistent-Overhead-Byte-Stuffing "Consistent Overhead Byte Stuffing (C implementation)"
+[9]: https://en.wikipedia.org/wiki/Consistent_Overhead_Byte_Stuffing "Consistent Overhead Byte Stuffing (background)"
+[10]: https://embeddedartistry.com/blog/2016/10/27/giving-you-build-a-version "Giving Your Firmware Build a Version"
+[11]: https://aur.archlinux.org "Pulse Arch Linux package"
