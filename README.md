@@ -78,12 +78,12 @@ All notable changes and releases are documented in the [CHANGELOG](https://githu
 
 ## Acknowledgements
 
-* Martin Kompf for the inspiration and the initial idea of the project
-* Tobias Oetiker for the Round Robin Database library
-* The PVOutput Team for providing an excellent website with a simple to use API
-* Christopher Baker for the Arduino packet serial library and 
-* Jacques Fortier for the C implementation of the COBS encoding
-* Phillip Johnston for git versioning in a Makefile
+* *Martin Kompf* for the inspiration and the initial idea of the project
+* *Tobias Oetiker* for the Round Robin Database library
+* *The PVOutput Team* for providing an excellent website with a simple to use API
+* *Christopher Baker* for the Arduino packet serial library and 
+* *Jacques Fortier* for the C implementation of the COBS encoding
+* *Phillip Johnston* for git versioning in a Makefile
 
 ## License
 
