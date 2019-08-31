@@ -1,6 +1,7 @@
 [Unit]
 Description=energy pulse meter
-After=network.target rrdcached.service
+After=network.target
+Requires=rrdcached.socket
 
 [Service]
 Type=simple
