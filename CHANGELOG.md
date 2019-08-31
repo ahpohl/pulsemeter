@@ -1,4 +1,9 @@
-# Pulse changelog
+# Pulsemeter changelog
+
+## v1.4.4 - 2019-08-31
+* rename project from pulse to pulsemeter
+* pulsemeter create directory of rrd file
+* no throw on failed upload to pvoutput
 
 ## v1.4.3 - 2019-08-31
 * use rrdc_flush instead of rrd_flush_if_daemon

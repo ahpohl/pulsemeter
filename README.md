@@ -1,4 +1,4 @@
-# Pulse
+# Pulsemeter
 
 Pulse energy meter with Arduino and simple LED sensor
 
@@ -99,4 +99,4 @@ This project is licensed under the MIT license - see the [LICENSE](https://githu
 [8]: https://github.com/jacquesf/COBS-Consistent-Overhead-Byte-Stuffing "Consistent Overhead Byte Stuffing (C implementation)"
 [9]: https://en.wikipedia.org/wiki/Consistent_Overhead_Byte_Stuffing "Consistent Overhead Byte Stuffing (background)"
 [10]: https://embeddedartistry.com/blog/2016/10/27/giving-you-build-a-version "Giving Your Firmware Build a Version"
-[11]: https://aur.archlinux.org "Pulse Arch Linux package"
+[11]: https://aur.archlinux.org/packages/pulse "Pulse Arch Linux package"

@@ -4,6 +4,7 @@
 #include <vector>
 #include <ctime>
 #include <cmath>
+#include <filesystem>
 
 extern "C" {
 #include <rrd.h>
@@ -14,6 +15,7 @@ extern "C" {
 #include "rrd.hpp"
 
 using namespace std;
+namespace fs = std::filesystem;
 
 void Pulse::createFile(char const* t_file, char const* t_socket,
   int const& t_rev, double const& t_meter)
@@ -67,6 +69,17 @@ void Pulse::createFile(char const* t_file, char const* t_socket,
 	// keep 1 month in 1 hour resolution
 	// keep 1 year in 1 day resolution
 	// consolidate LAST (energy) and AVERAGE (power)
+
+  /*
+  char* pos = strrchr(t_file, '/');
+  int ret = rrd_mkdir_p(t_file[pos-1], 0777);
+  if (ret) {
+    throw runtime_error(rrd_get_error());
+  }
+  */
+
+  fs::path dir(t_file);
+  fs::create_directories(dir.parent_path());
 
   int ret = rrdc_connect(t_socket);
   if (ret) {
