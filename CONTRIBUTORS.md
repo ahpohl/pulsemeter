@@ -1,5 +1,5 @@
-Pulse contributors (sorted alphabetically)
-============================================
+Pulsemeter contributors (sorted alphabetically)
+===============================================
 
 * **[Alexander Pohl](https://github.com/ahpohl)**
 

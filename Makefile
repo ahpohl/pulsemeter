@@ -43,7 +43,7 @@ SRCS = $(wildcard $(SRC_DIR)/*.cpp)
 OBJS = $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
 # define the executable file 
-MAIN = pulse
+MAIN = pulsemeter
 
 #
 # get version info from git and compile into the program
