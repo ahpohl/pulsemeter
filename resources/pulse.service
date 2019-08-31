@@ -1,14 +1,14 @@
 [Unit]
 Description=energy pulse meter
 After=network.target
-Requires=rrdcached.socket
+Requires=rrdcached.service
 
 [Service]
 Type=simple
 EnvironmentFile=/etc/pulse_defs.conf
 ExecStart=/usr/bin/pulse --device ${SERIAL_DEVICE} --file ${RRD_FILE} --socket ${RRDCACHED_SOCKET} --low ${TRIGGER_LEVEL_LOW} --high ${TRIGGER_LEVEL_HIGH} --rev ${REV_PER_KWH} --meter ${METER_READING} --api-key ${PVOUTPUT_API_KEY} --sys-id ${PVOUTPUT_SYSTEM_ID} --url ${PVOUTPUT_URL} --interval ${PVOUTPUT_INTERVAL}
-User=pulse
-Group=pulse
+#User=pulse
+#Group=pulse
 Restart=always
 RestartSec=3
 

@@ -127,7 +127,7 @@ unsigned long Pulse::getEnergyCounter(void) const
     throw runtime_error(rrd_get_error());
   }  
 
-  ret = rrdc_flush_if_daemon(m_socket, m_file);
+  ret = rrdc_flush(m_file);
   if (ret) {
     throw runtime_error(rrd_get_error());
   }
@@ -185,7 +185,7 @@ void Pulse::setEnergyCounter(void) const
     throw runtime_error(rrd_get_error());
   }    
     
-  ret = rrdc_flush_if_daemon(m_socket, m_file);
+  ret = rrdc_flush(m_file);
   if (ret) {
     throw runtime_error(rrd_get_error());
   } 
@@ -234,7 +234,7 @@ void Pulse::getEnergyAndPower(time_t const& t_time, int const& t_step,
     throw runtime_error(rrd_get_error());
   }
 
-  ret = rrdc_flush_if_daemon(m_socket, m_file);
+  ret = rrdc_flush(m_file);
   if (ret) {
     throw runtime_error(rrd_get_error());
   }
