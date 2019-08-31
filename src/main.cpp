@@ -111,7 +111,6 @@ int main(int argc, char* argv[])
   -R --raw               Select raw mode\n\
   -L --low [int]         Set trigger level low\n\
   -H --high [int]        Set trigger level high\n\
-  -c --create            Create new Round Robin Database\n\
   -f --file [path]       Full path to rrd file\n\
   -s --socket [fd]       Set socket of rrdcached daemon\n\
   -r --rev [int]         Set revolutions per kWh\n\
